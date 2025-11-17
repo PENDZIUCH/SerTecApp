@@ -36,3 +36,8 @@ storage/*.key
 *.log
 npm-debug.log*
 yarn-debug.log*
+
+
+# Security - Scripts de utilidad no deben estar en repo
+update_password.php
+reset_*.php

@@ -180,8 +180,8 @@ Una vez aprobada la integración real, solo se cambia la URL del endpoint.
 ## 🎨 Sistema de Colores (Abonos)
 
 - **Verde**: 1 visita mensual
-- **Azul**: 2 visitas mensuales  
-- **Morado**: 3 visitas mensuales
+- **Amarillo**: 2 visitas mensuales  
+- **Rojo**: 3 visitas mensuales
 
 ## 📱 Capacidades PWA
 

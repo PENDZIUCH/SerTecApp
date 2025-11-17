@@ -17,11 +17,14 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../controllers/AuthController.php';
 require_once __DIR__ . '/../controllers/ClientesController.php';
 require_once __DIR__ . '/../controllers/OrdenesController.php';
+require_once __DIR__ . '/../controllers/RepuestosController.php';
 
 // Get request info
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$path = str_replace('/api', '', $path);
+// Remove /SerTecApp/backend/api or /SerTecApp/backend from path
+$path = preg_replace('#^/SerTecApp/backend(/api)?#', '', $path);
+$path = $path ?: '/';
 
 // Router
 try {
@@ -69,9 +72,25 @@ try {
             echo $controller->index();
             break;
             
+        case preg_match('#^/ordenes/(\d+)$#', $path, $matches) && $method === 'GET':
+            $controller = new OrdenesController();
+            echo $controller->show($matches[1]);
+            break;
+            
         case $path === '/ordenes' && $method === 'POST':
             $controller = new OrdenesController();
             echo $controller->store();
+            break;
+            
+        // Repuestos routes
+        case $path === '/repuestos' && $method === 'GET':
+            $controller = new RepuestosController();
+            echo $controller->index();
+            break;
+            
+        case preg_match('#^/repuestos/(\d+)$#', $path, $matches) && $method === 'GET':
+            $controller = new RepuestosController();
+            echo $controller->show($matches[1]);
             break;
             
         default:

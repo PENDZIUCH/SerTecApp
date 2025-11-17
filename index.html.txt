@@ -1,0 +1,10 @@
+fetch('http://localhost/SerTecApp/backend/clientes', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+        nombre: 'Club Ateneo Gym',
+        tipo: 'abonado',
+        frecuencia_visitas: 2,
+        telefono: '011-4444-5555'
+    })
+}).then(r => r.json()).then(console.log)

@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
+/* Configurar dark mode en Tailwind v4 */
+@variant dark (&:is(.dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+/* Dark mode */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+.dark body {
+  background-color: #111827;
+  color: #f9fafb;
 }
 
 @theme inline {
@@ -12,15 +26,57 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Animación para toast */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* Estilos de impresión */
+@media print {
+  /* Ocultar todo excepto el contenido del modal */
+  body > div:not(.print-content) {
+    display: none !important;
+  }
+  
+  /* Asegurar que el modal se vea bien */
+  .print-content {
+    display: block !important;
+    position: static !important;
+    background: white !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ocultar overlay oscuro */
+  .print-content > div:first-child {
+    background: transparent !important;
+  }
+  
+  /* Remover márgenes del body */
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Ocultar scrollbars */
+  * {
+    overflow: visible !important;
+  }
 }

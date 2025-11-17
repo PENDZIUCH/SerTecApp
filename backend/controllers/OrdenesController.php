@@ -136,4 +136,45 @@ class OrdenesController {
             'message' => 'Orden creada exitosamente'
         ]);
     }
+    
+    // Nuevo método para obtener detalle de una orden
+    public function show($id) {
+        // Obtener datos de la orden con joins
+        $orden = $this->db->fetchOne(
+            "SELECT ot.*, 
+                    c.nombre as cliente_nombre,
+                    c.telefono as cliente_telefono,
+                    c.email as cliente_email,
+                    u.nombre as tecnico_nombre
+             FROM ordenes_trabajo ot
+             JOIN clientes c ON ot.cliente_id = c.id
+             JOIN usuarios u ON ot.tecnico_id = u.id
+             WHERE ot.id = ?",
+            [$id]
+        );
+        
+        if (!$orden) {
+            http_response_code(404);
+            return json_encode([
+                'success' => false,
+                'message' => 'Orden no encontrada'
+            ]);
+        }
+        
+        // Obtener repuestos de la orden
+        $repuestos = $this->db->fetchAll(
+            "SELECT or_rep.*, r.descripcion, r.codigo
+             FROM orden_repuestos or_rep
+             JOIN repuestos r ON or_rep.repuesto_id = r.id
+             WHERE or_rep.orden_trabajo_id = ?",
+            [$id]
+        );
+        
+        $orden['repuestos'] = $repuestos;
+        
+        return json_encode([
+            'success' => true,
+            'data' => $orden
+        ]);
+    }
 }

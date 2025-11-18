@@ -676,3 +676,298 @@ Si sos un developer humano:
 > Si algo no está documentado, agregalo después de resolver el problema.
 
 **¡Buen código! 🚀**
+
+
+---
+
+## 🤝 CONTRATO FRONTEND-BACKEND
+
+> **CRÍTICO**: Esta sección define el "contrato" entre ClaudeWin (frontend) y ClaudeMac (backend).
+> NO CAMBIAR nada de esto sin coordinar con el otro dev.
+
+### 📡 API Endpoints (NO MODIFICAR sin avisar)
+
+**Base URL**: `http://localhost/SerTecApp/backend`
+
+#### Autenticación
+```
+POST /api/auth/login
+Body: { email: string, password: string }
+Response: { 
+  success: boolean, 
+  data: { token: string, user: {...} },
+  message?: string 
+}
+```
+
+#### Clientes
+```
+GET /api/clientes
+Headers: { Authorization: Bearer TOKEN }
+Response: { success: boolean, data: Cliente[] }
+
+POST /api/clientes
+Headers: { Authorization: Bearer TOKEN }
+Body: { nombre, razon_social, cuit, tipo, ... }
+Response: { success: boolean, data: Cliente, message }
+
+PUT /api/clientes/:id
+Headers: { Authorization: Bearer TOKEN }
+Body: { nombre, razon_social, ... }
+Response: { success: boolean, data: Cliente, message }
+
+DELETE /api/clientes/:id
+Headers: { Authorization: Bearer TOKEN }
+Response: { success: boolean, message }
+```
+
+#### Órdenes de Trabajo
+```
+GET /api/ordenes
+Headers: { Authorization: Bearer TOKEN }
+Response: { success: boolean, data: Orden[] }
+
+GET /api/ordenes/:id
+Headers: { Authorization: Bearer TOKEN }
+Response: { success: boolean, data: Orden }
+
+POST /api/ordenes
+Headers: { Authorization: Bearer TOKEN }
+Body: { cliente_id, equipo, descripcion, ... }
+Response: { success: boolean, data: Orden, message }
+
+PUT /api/ordenes/:id
+Headers: { Authorization: Bearer TOKEN }
+Body: { estado, observaciones, ... }
+Response: { success: boolean, data: Orden, message }
+
+DELETE /api/ordenes/:id
+Headers: { Authorization: Bearer TOKEN }
+Response: { success: boolean, message }
+```
+
+#### Dashboard / Stats
+```
+GET /api/stats
+Headers: { Authorization: Bearer TOKEN }
+Response: { 
+  success: boolean, 
+  data: {
+    total_clientes: number,
+    ordenes_pendientes: number,
+    ordenes_completadas: number,
+    total_ordenes: number
+  }
+}
+```
+
+### 📦 Estructura de Datos (NO CAMBIAR sin avisar)
+
+#### Cliente
+```typescript
+interface Cliente {
+  id: number;
+  nombre: string;
+  razon_social?: string;
+  cuit?: string;
+  tipo: 'abonado' | 'esporadico';
+  frecuencia_visitas?: number;
+  telefono?: string;
+  email?: string;
+  direccion?: string;
+  estado: 'activo' | 'inactivo';
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### Orden de Trabajo
+```typescript
+interface Orden {
+  id: number;
+  numero_parte: string;
+  cliente_id: number;
+  cliente_nombre?: string;  // Join con clientes
+  tecnico_id: number;
+  fecha_trabajo: string;
+  equipo: string;
+  descripcion_trabajo: string;
+  observaciones?: string;
+  estado: 'pendiente' | 'en_proceso' | 'completado';
+  firma_cliente?: string;  // Base64
+  total: number;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### User
+```typescript
+interface User {
+  id: number;
+  nombre: string;
+  email: string;
+  rol: 'admin' | 'tecnico' | 'cliente';
+  created_at: string;
+}
+```
+
+### 🔒 Formato de Respuesta Estándar
+
+**TODAS las respuestas deben seguir este formato:**
+
+```typescript
+// Éxito
+{
+  success: true,
+  data: any,           // El dato solicitado
+  message?: string     // Mensaje opcional
+}
+
+// Error
+{
+  success: false,
+  message: string,     // Descripción del error
+  error?: any          // Detalles técnicos (solo en dev)
+}
+```
+
+### 🚨 Reglas de Modificación
+
+#### ✅ PUEDE hacer ClaudeMac (backend) SIN avisar:
+- Optimizar queries SQL
+- Agregar índices a la BD
+- Mejorar validaciones internas
+- Refactorizar código interno
+- Agregar logs
+- Mejorar manejo de errores
+
+#### ⚠️ DEBE avisar ANTES de cambiar:
+- Estructura de respuesta JSON
+- Nombres de campos en data
+- URLs de endpoints
+- Códigos de estado HTTP
+- Tipos de datos (string → number, etc)
+- Agregar campos requeridos nuevos
+
+#### 🔥 COORDINACIÓN OBLIGATORIA para:
+- Cambiar estructura de BD (agregar/quitar columnas)
+- Cambiar lógica de autenticación
+- Modificar formato de JWT
+- Cambiar CORS policy
+- Agregar/quitar endpoints
+
+### 📞 Cómo Coordinar Cambios
+
+**Si ClaudeMac necesita cambiar algo del contrato:**
+
+1. Crear un archivo `PROPOSED_CHANGES.md` en la branch
+2. Documentar el cambio propuesto con ejemplos
+3. Hacer commit y avisar
+4. Esperar OK de ClaudeWin
+5. Implementar cambio
+6. Actualizar este documento
+
+**Ejemplo de PROPOSED_CHANGES.md:**
+```markdown
+## Propuesta: Cambiar formato de fecha
+
+### Actual
+fecha_trabajo: "2025-11-17 14:30:00"
+
+### Propuesto
+fecha_trabajo: "2025-11-17T14:30:00Z" (ISO 8601)
+
+### Razón
+- Estándar internacional
+- Mejor para timezone handling
+- Compatible con Date() de JS
+
+### Impacto en Frontend
+- Cambiar parsing de fechas en components
+- Actualizar formateo de display
+```
+
+### 🧪 Testing del Contrato
+
+**Antes de merge a develop, verificar:**
+
+- [ ] Todos los endpoints responden con formato correcto
+- [ ] Frontend consume exitosamente todas las APIs
+- [ ] No hay breaking changes no documentados
+- [ ] Tests de integración pasan
+- [ ] Postman collection actualizado (si existe)
+
+### 📝 Versionado de API (Futuro)
+
+Cuando lleguemos a producción:
+```
+/api/v1/clientes
+/api/v1/ordenes
+```
+
+Por ahora usamos `/api/` sin versión.
+
+---
+
+## 🎨 DIVISIÓN DE TRABAJO ACTUAL (Noviembre 2025)
+
+### ClaudeWin (Frontend) - Branch: feature/adminlte-layout
+**Tareas activas:**
+- [ ] Implementar AdminLayout component
+- [ ] Integrar Lucide React icons
+- [ ] Reemplazar layout actual manteniendo funcionalidad
+- [ ] Testear responsive en mobile/tablet
+- [ ] Dark mode en nuevo layout
+
+**NO DEBE tocar:**
+- ❌ Archivos en `/backend/`
+- ❌ Lógica de API calls en `page.tsx`
+- ❌ Estructura de datos
+- ❌ Base de datos
+
+### ClaudeMac (Backend) - Branch: feature/backend-improvements
+**Tareas sugeridas:**
+- [ ] Optimizar queries SQL lentas
+- [ ] Agregar validaciones de entrada
+- [ ] Mejorar mensajes de error
+- [ ] Implementar rate limiting
+- [ ] Agregar logs estructurados
+- [ ] Testing de endpoints
+
+**NO DEBE tocar:**
+- ❌ Archivos en `/frontend/app/`
+- ❌ Componentes React
+- ❌ Estilos CSS
+- ❌ Contrato de API sin avisar
+
+### Áreas Compartidas (coordinación requerida)
+- `page.tsx` - Lógica de negocio
+- Tipos TypeScript (si se crean interfaces compartidas)
+- Documentación (este archivo)
+
+---
+
+## 🔄 Workflow de Integración
+
+```
+1. ClaudeWin desarrolla UI          2. ClaudeMac optimiza Backend
+   ├─ AdminLayout.tsx                   ├─ Mejora controllers
+   ├─ Components nuevos                 ├─ Optimiza SQL
+   └─ Estilos                          └─ Validaciones
+          ↓                                    ↓
+3. Ambos trabajan en paralelo        4. Testing individual
+   ├─ No hay conflictos                 ├─ Frontend: UI funciona
+   └─ Commits independientes            └─ Backend: API funciona
+          ↓                                    ↓
+5. Merge coordinado                  6. Testing integrado
+   ├─ Merge feature branches            ├─ Frontend + Backend
+   ├─ a develop                         ├─ Todo funciona junto
+   └─ Resolver conflictos si hay        └─ Deploy a staging
+```
+
+---
+
+**Actualizado**: Noviembre 17, 2025 - 18:40  
+**Por**: ClaudeWin  
+**Cambio**: Agregado contrato Frontend-Backend para coordinación del equipo

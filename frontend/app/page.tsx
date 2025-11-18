@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import AdminLayout from './layouts/AdminLayout';
 import ClienteForm from './components/ClienteForm';
 import OrdenForm from './components/OrdenForm';
 import OrdenDetalle from './components/OrdenDetalle';

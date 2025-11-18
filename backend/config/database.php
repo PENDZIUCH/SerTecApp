@@ -11,6 +11,22 @@ class Database {
     private $password = '';
     
     private function __construct() {
+        // Load .env file
+        $envFile = __DIR__ . '/../.env';
+        if (file_exists($envFile)) {
+            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) continue;
+                list($key, $value) = explode('=', $line, 2);
+                $key = trim($key);
+                $value = trim($value);
+                if ($key === 'DB_HOST') $this->host = $value;
+                if ($key === 'DB_NAME') $this->db_name = $value;
+                if ($key === 'DB_USER') $this->username = $value;
+                if ($key === 'DB_PASS') $this->password = $value;
+            }
+        }
+        
         try {
             $this->conn = new PDO(
                 "mysql:host={$this->host};dbname={$this->db_name};charset=utf8mb4",

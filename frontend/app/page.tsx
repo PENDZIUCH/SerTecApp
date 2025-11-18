@@ -16,9 +16,9 @@ export default function Home() {
   const [token, setToken] = useState('');
   const [user, setUser] = useState<any>(null);
   const [view, setView] = useState('dashboard');
-  const [clientes, setClientes] = useState([]);
-  const [ordenes, setOrdenes] = useState([]);
-  const [stats, setStats] = useState({});
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [stats, setStats] = useState<{totalClientes?: number, totalOrdenes?: number, ordenesHoy?: number}>({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showClienteForm, setShowClienteForm] = useState(false);
@@ -49,13 +49,13 @@ export default function Home() {
   }, [isLoggedIn]);
 
   // Login
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const email = (e.target as any).email.value;
+    const password = (e.target as any).password.value;
     
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -116,7 +116,7 @@ export default function Home() {
     setStats({
       totalClientes: clientesData.data?.total || 0,
       totalOrdenes: ordenesData.data?.total || 0,
-      ordenesHoy: ordenesData.data?.data.filter(o => 
+      ordenesHoy: ordenesData.data?.data.filter((o: any) => 
         o.fecha_trabajo === new Date().toISOString().split('T')[0]
       ).length || 0
     });

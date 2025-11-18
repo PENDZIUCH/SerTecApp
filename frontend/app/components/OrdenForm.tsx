@@ -61,7 +61,7 @@ export default function OrdenForm({ onClose, onSuccess, orden, apiBase }: OrdenF
     
     // Si cambió el repuesto, actualizar el precio
     if (field === 'repuesto_id') {
-      const repuesto = repuestos.find((r: any) => r.id === parseInt(value));
+      const repuesto = repuestos.find((r: any) => r.id === parseInt(value)) as any;
       if (repuesto) {
         nuevosRepuestos[index].precio_unitario = repuesto.precio_unitario;
       }

@@ -16,9 +16,9 @@ export default function Home() {
   const [token, setToken] = useState('');
   const [user, setUser] = useState<any>(null);
   const [view, setView] = useState('dashboard');
-  const [clientes, setClientes] = useState([]);
-  const [ordenes, setOrdenes] = useState([]);
-  const [stats, setStats] = useState({});
+  const [clientes, setClientes] = useState<any[]>([]);
+  const [ordenes, setOrdenes] = useState<any[]>([]);
+  const [stats, setStats] = useState<{totalClientes?: number, totalOrdenes?: number, ordenesHoy?: number}>({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showClienteForm, setShowClienteForm] = useState(false);
@@ -28,8 +28,6 @@ export default function Home() {
   const [showOrdenDetalle, setShowOrdenDetalle] = useState(false);
   const [selectedOrdenId, setSelectedOrdenId] = useState<number | null>(null);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Cargar sesión del localStorage al iniciar
   useEffect(() => {
@@ -50,29 +48,14 @@ export default function Home() {
     }
   }, [isLoggedIn]);
 
-  // Cerrar menú de usuario al hacer click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (userMenuOpen && !target.closest('.user-menu-container')) {
-        setUserMenuOpen(false);
-      }
-    };
-
-    if (userMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [userMenuOpen]);
-
   // Login
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+    const email = (e.target as any).email.value;
+    const password = (e.target as any).password.value;
     
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
@@ -133,7 +116,7 @@ export default function Home() {
     setStats({
       totalClientes: clientesData.data?.total || 0,
       totalOrdenes: ordenesData.data?.total || 0,
-      ordenesHoy: ordenesData.data?.data.filter(o => 
+      ordenesHoy: ordenesData.data?.data.filter((o: any) => 
         o.fecha_trabajo === new Date().toISOString().split('T')[0]
       ).length || 0
     });
@@ -195,156 +178,18 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header Desktop/Mobile */}
-      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-40">
-        <div className="px-4 py-3">
-          {/* Desktop Header - Todo en una línea */}
-          <div className="hidden lg:flex items-center justify-between">
-            {/* Logo */}
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🔧 SerTecApp</h1>
-            
-            {/* Navegación Centro */}
-            <nav className="flex gap-2">
-              <button 
-                onClick={() => setView('dashboard')} 
-                className={`px-4 py-2 rounded transition text-sm font-medium ${view === 'dashboard' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                Dashboard
-              </button>
-              <button 
-                onClick={() => setView('clientes')} 
-                className={`px-4 py-2 rounded transition text-sm font-medium ${view === 'clientes' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                Clientes
-              </button>
-              <button 
-                onClick={() => setView('ordenes')} 
-                className={`px-4 py-2 rounded transition text-sm font-medium ${view === 'ordenes' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-              >
-                Órdenes
-              </button>
-            </nav>
-            
-            {/* Usuario y acciones derecha */}
-            <div className="flex gap-3 items-center">
-              <button
-                onClick={toggle}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              >
-                {isDark ? '☀️' : '🌙'}
-              </button>
-              
-              {/* Menú Usuario */}
-              <div className="relative user-menu-container">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                >
-                  <span className="text-sm text-gray-700 dark:text-gray-300">👤 {user?.nombre || 'Usuario'}</span>
-                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {/* Dropdown Menu */}
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg py-1 z-50">
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        // TODO: Implementar editar perfil
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    >
-                      ⚙️ Editar Perfil
-                    </button>
-                    <hr className="my-1 border-gray-200 dark:border-gray-600" />
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    >
-                      🚪 Cerrar Sesión
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Header */}
-          <div className="lg:hidden">
-            <div className="flex items-center justify-between">
-              {/* Hamburguesa y Logo */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <svg className="w-6 h-6 text-gray-700 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {mobileMenuOpen ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
-                    )}
-                  </svg>
-                </button>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">🔧 SerTecApp</h1>
-              </div>
-
-              {/* Usuario mobile */}
-              <span className="text-sm text-gray-600 dark:text-gray-300">👤</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Menú Mobile */}
-        {mobileMenuOpen && (
-          <nav className="lg:hidden border-t dark:border-gray-700 bg-white dark:bg-gray-800">
-            <button 
-              onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }} 
-              className={`w-full text-left px-4 py-4 border-b dark:border-gray-700 ${view === 'dashboard' ? 'bg-blue-50 dark:bg-blue-900 dark:bg-opacity-30 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
-            >
-              📊 Dashboard
-            </button>
-            <button 
-              onClick={() => { setView('clientes'); setMobileMenuOpen(false); }} 
-              className={`w-full text-left px-4 py-4 border-b dark:border-gray-700 ${view === 'clientes' ? 'bg-blue-50 dark:bg-blue-900 dark:bg-opacity-30 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
-            >
-              👥 Clientes
-            </button>
-            <button 
-              onClick={() => { setView('ordenes'); setMobileMenuOpen(false); }} 
-              className={`w-full text-left px-4 py-4 border-b dark:border-gray-700 ${view === 'ordenes' ? 'bg-blue-50 dark:bg-blue-900 dark:bg-opacity-30 text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
-            >
-              📝 Órdenes
-            </button>
-            
-            {/* Modo oscuro en menú mobile */}
-            <button
-              onClick={() => { toggle(); }}
-              className="w-full text-left px-4 py-4 border-b dark:border-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-between"
-            >
-              <span>{isDark ? '☀️ Modo Claro' : '🌙 Modo Oscuro'}</span>
-            </button>
-            
-            {/* Cerrar sesión al final */}
-            <button 
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-4 text-red-600 dark:text-red-400 font-medium"
-            >
-              🚪 Cerrar Sesión
-            </button>
-          </nav>
-        )}
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-4 sm:py-6 lg:py-8">
-        {view === 'dashboard' && (
+    <AdminLayout
+      currentView={view}
+      onViewChange={setView}
+      user={user}
+      onLogout={handleLogout}
+      isDark={isDark}
+      onToggleDark={toggle}
+    >
+      {/* CONTENIDO: Dashboard, Clientes, Órdenes - TODO IGUAL QUE ANTES */}
+      
+      {/* VISTA DASHBOARD */}
+      {view === 'dashboard' && (
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">Dashboard</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
@@ -530,7 +375,6 @@ export default function Home() {
             </div>
           </div>
         )}
-      </main>
 
       {/* Modal de Cliente */}
       {showClienteForm && (
@@ -584,6 +428,6 @@ export default function Home() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+    </AdminLayout>
   );
 }

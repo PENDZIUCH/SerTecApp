@@ -11,107 +11,80 @@ class AuthController {
     public function login() {
         $data = json_decode(file_get_contents('php://input'), true);
         
-        if (!isset($data['email']) || !isset($data['password'])) {
-            http_response_code(400);
-            return json_encode([
-                'success' => false,
-                'message' => 'Email y password requeridos'
-            ]);
+        // Sanitizar inputs
+        $clean = Sanitizer::fields($data, [
+            'email' => 'email',
+            'password' => 'string'
+        ]);
+        
+        // Validar
+        $validator = new Validator($clean);
+        $validator->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:6'
+        ]);
+        
+        if ($validator->fails()) {
+            return Response::validationError($validator->errors());
         }
         
         $user = $this->db->fetchOne(
             "SELECT * FROM usuarios WHERE email = ? AND activo = 1",
-            [$data['email']]
+            [$clean['email']]
         );
         
-        if (!$user || !password_verify($data['password'], $user['password_hash'])) {
-            http_response_code(401);
-            return json_encode([
-                'success' => false,
-                'message' => 'Credenciales inválidas'
-            ]);
+        if (!$user || !password_verify($clean['password'], $user['password_hash'])) {
+            return Response::unauthorized('Credenciales inválidas');
         }
         
-        // Generate JWT token (simplified)
-        $token = $this->generateToken($user);
+        // Generate JWT token
+        $payload = [
+            'user_id' => $user['id'],
+            'email' => $user['email'],
+            'rol' => $user['rol']
+        ];
         
-        return json_encode([
-            'success' => true,
-            'data' => [
-                'token' => $token,
-                'user' => [
-                    'id' => $user['id'],
-                    'nombre' => $user['nombre'],
-                    'email' => $user['email'],
-                    'rol' => $user['rol']
-                ]
+        $token = JWT::encode($payload);
+        $refreshToken = JWT::encodeRefresh($payload);
+        
+        return Response::success([
+            'token' => $token,
+            'refresh_token' => $refreshToken,
+            'token_type' => 'Bearer',
+            'expires_in' => Env::getInt('JWT_EXPIRES_IN', 86400),
+            'user' => [
+                'id' => $user['id'],
+                'nombre' => $user['nombre'],
+                'email' => $user['email'],
+                'rol' => $user['rol']
             ]
-        ]);
+        ], 'Login exitoso');
     }
     
     public function me() {
-        $token = $this->getBearerToken();
+        // Use middleware to authenticate
+        AuthMiddleware::required();
         
-        if (!$token) {
-            http_response_code(401);
-            return json_encode([
-                'success' => false,
-                'message' => 'No autenticado'
-            ]);
-        }
+        $user = AuthMiddleware::user();
         
-        $userId = $this->validateToken($token);
-        
-        if (!$userId) {
-            http_response_code(401);
-            return json_encode([
-                'success' => false,
-                'message' => 'Token inválido'
-            ]);
-        }
-        
-        $user = $this->db->fetchOne(
-            "SELECT id, nombre, email, rol, activo FROM usuarios WHERE id = ?",
-            [$userId]
-        );
-        
-        return json_encode([
-            'success' => true,
-            'data' => $user
-        ]);
+        return Response::success($user);
     }
     
-    private function generateToken($user) {
-        // Simplified JWT - en producción usar librería real
-        $payload = base64_encode(json_encode([
-            'user_id' => $user['id'],
-            'exp' => time() + (60 * 60 * 24) // 24 hours
-        ]));
+    public function refresh() {
+        // Use refresh token to get new access token
+        AuthMiddleware::required();
         
-        return 'Bearer.' . $payload;
-    }
-    
-    private function validateToken($token) {
-        $parts = explode('.', $token);
-        if (count($parts) !== 2) return false;
+        $newToken = AuthMiddleware::refreshToken();
         
-        $payload = json_decode(base64_decode($parts[1]), true);
-        
-        if ($payload['exp'] < time()) return false;
-        
-        return $payload['user_id'];
-    }
-    
-    private function getBearerToken() {
-        $headers = apache_request_headers();
-        
-        if (isset($headers['Authorization'])) {
-            $matches = [];
-            if (preg_match('/Bearer\s+(.+)/', $headers['Authorization'], $matches)) {
-                return $matches[1];
-            }
+        if (!$newToken) {
+            return Response::error('No se pudo generar nuevo token', 500);
         }
         
-        return null;
+        return Response::success([
+            'token' => $newToken,
+            'token_type' => 'Bearer',
+            'expires_in' => Env::getInt('JWT_EXPIRES_IN', 86400)
+        ], 'Token renovado exitosamente');
     }
+
 }

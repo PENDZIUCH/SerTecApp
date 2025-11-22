@@ -46,15 +46,12 @@ class ClientesController {
             array_merge($params, [$perPage, $offset])
         );
         
-        return json_encode([
-            'success' => true,
-            'data' => [
-                'data' => $clientes,
-                'current_page' => (int)$page,
-                'per_page' => (int)$perPage,
-                'total' => (int)$total,
-                'last_page' => ceil($total / $perPage)
-            ]
+        return Response::success([
+            'data' => $clientes,
+            'current_page' => (int)$page,
+            'per_page' => (int)$perPage,
+            'total' => (int)$total,
+            'last_page' => ceil($total / $perPage)
         ]);
     }
     
@@ -71,31 +68,46 @@ class ClientesController {
         );
         
         if (!$cliente) {
-            http_response_code(404);
-            return json_encode([
-                'success' => false,
-                'message' => 'Cliente no encontrado'
-            ]);
+            return Response::notFound('Cliente no encontrado');
         }
         
-        return json_encode([
-            'success' => true,
-            'data' => $cliente
-        ]);
+        return Response::success($cliente);
     }
     
     public function store() {
         $data = json_decode(file_get_contents('php://input'), true);
         
-        $required = ['nombre'];
-        foreach ($required as $field) {
-            if (!isset($data[$field])) {
-                http_response_code(400);
-                return json_encode([
-                    'success' => false,
-                    'message' => "El campo $field es requerido"
-                ]);
-            }
+        // Sanitizar
+        $clean = Sanitizer::fields($data, [
+            'nombre' => 'string',
+            'razon_social' => 'string',
+            'cuit' => 'cuit',
+            'tipo' => 'string',
+            'frecuencia_visitas' => 'int',
+            'direccion' => 'string',
+            'localidad' => 'string',
+            'provincia' => 'string',
+            'codigo_postal' => 'string',
+            'telefono' => 'phone',
+            'email' => 'email',
+            'contacto_nombre' => 'string',
+            'contacto_telefono' => 'phone',
+            'estado' => 'string',
+            'notas' => 'string'
+        ]);
+        
+        // Validar
+        $validator = new Validator($clean);
+        $validator->validate([
+            'nombre' => 'required|min:3|max:200',
+            'tipo' => 'in:abonado,esporadico',
+            'frecuencia_visitas' => 'integer|min:0|max:10',
+            'email' => 'email',
+            'cuit' => 'cuit'
+        ]);
+        
+        if ($validator->fails()) {
+            return Response::validationError($validator->errors());
         }
         
         $sql = "INSERT INTO clientes (nombre, razon_social, cuit, tipo, frecuencia_visitas,
@@ -104,21 +116,21 @@ class ClientesController {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         $params = [
-            $data['nombre'],
-            $data['razon_social'] ?? null,
-            $data['cuit'] ?? null,
-            $data['tipo'] ?? 'esporadico',
-            $data['frecuencia_visitas'] ?? 0,
-            $data['direccion'] ?? null,
-            $data['localidad'] ?? null,
-            $data['provincia'] ?? null,
-            $data['codigo_postal'] ?? null,
-            $data['telefono'] ?? null,
-            $data['email'] ?? null,
-            $data['contacto_nombre'] ?? null,
-            $data['contacto_telefono'] ?? null,
-            $data['estado'] ?? 'activo',
-            $data['notas'] ?? null
+            $clean['nombre'],
+            $clean['razon_social'] ?? null,
+            $clean['cuit'] ?? null,
+            $clean['tipo'] ?? 'esporadico',
+            $clean['frecuencia_visitas'] ?? 0,
+            $clean['direccion'] ?? null,
+            $clean['localidad'] ?? null,
+            $clean['provincia'] ?? null,
+            $clean['codigo_postal'] ?? null,
+            $clean['telefono'] ?? null,
+            $clean['email'] ?? null,
+            $clean['contacto_nombre'] ?? null,
+            $clean['contacto_telefono'] ?? null,
+            $clean['estado'] ?? 'activo',
+            $clean['notas'] ?? null
         ];
         
         $this->db->execute($sql, $params);
@@ -132,11 +144,7 @@ class ClientesController {
         
         $cliente = $this->db->fetchOne("SELECT id FROM clientes WHERE id = ?", [$id]);
         if (!$cliente) {
-            http_response_code(404);
-            return json_encode([
-                'success' => false,
-                'message' => 'Cliente no encontrado'
-            ]);
+            return Response::notFound('Cliente no encontrado');
         }
         
         $fields = [];
@@ -154,11 +162,7 @@ class ClientesController {
         }
         
         if (empty($fields)) {
-            http_response_code(400);
-            return json_encode([
-                'success' => false,
-                'message' => 'No hay campos para actualizar'
-            ]);
+            return Response::error('No hay campos para actualizar', 400);
         }
         
         $params[] = $id;
@@ -171,9 +175,6 @@ class ClientesController {
     public function delete($id) {
         $this->db->execute("DELETE FROM clientes WHERE id = ?", [$id]);
         
-        return json_encode([
-            'success' => true,
-            'message' => 'Cliente eliminado exitosamente'
-        ]);
+        return Response::success(null, 'Cliente eliminado exitosamente');
     }
 }

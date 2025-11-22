@@ -14,6 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/jwt.php';
+require_once __DIR__ . '/../utils/Validator.php';
+require_once __DIR__ . '/../utils/Sanitizer.php';
+require_once __DIR__ . '/../utils/Response.php';
+require_once __DIR__ . '/../middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../controllers/AuthController.php';
 require_once __DIR__ . '/../controllers/ClientesController.php';
 require_once __DIR__ . '/../controllers/OrdenesController.php';
@@ -35,6 +40,11 @@ try {
         case $path === '/auth/me' && $method === 'GET':
             $controller = new AuthController();
             echo $controller->me();
+            break;
+            
+        case $path === '/auth/refresh' && $method === 'POST':
+            $controller = new AuthController();
+            echo $controller->refresh();
             break;
             
         // Clientes routes
@@ -79,11 +89,14 @@ try {
             echo json_encode(['success' => false, 'message' => 'Endpoint not found']);
             break;
     }
+} catch (ValidationException $e) {
+    echo Response::validationError($e->getErrors());
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Internal server error',
-        'error' => $e->getMessage()
-    ]);
+    error_log('API Exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    
+    if (Env::getBool('APP_DEBUG')) {
+        echo Response::serverError($e->getMessage());
+    } else {
+        echo Response::serverError();
+    }
 }

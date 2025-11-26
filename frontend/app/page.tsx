@@ -8,7 +8,7 @@ import OrdenDetalle from './components/OrdenDetalle';
 import Toast from './components/Toast';
 import { useDarkMode } from './hooks/useDarkMode';
 
-const API_BASE = 'http://localhost/SerTecApp/backend';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Home() {
   const { isDark, toggle } = useDarkMode();

@@ -22,8 +22,17 @@ require_once __DIR__ . '/../controllers/RepuestosController.php';
 // Get request info
 $method = $_SERVER['REQUEST_METHOD'];
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-// Remove /SerTecApp/backend/api or /SerTecApp/backend from path
-$path = preg_replace('#^/SerTecApp/backend(/api)?#', '', $path);
+
+// Normalize path - remove base paths for both local and production
+// Supports:
+// - /SerTecApp/backend/api (Mac local)
+// - /SerTecApp/backend (Mac local)
+// - /backend/api (Production hosting)
+// - /backend (Production hosting)
+$path = str_replace('/SerTecApp/backend/api', '', $path);
+$path = str_replace('/SerTecApp/backend', '', $path);
+$path = str_replace('/backend/api', '', $path);
+$path = str_replace('/backend', '', $path);
 $path = $path ?: '/';
 
 // Router

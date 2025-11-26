@@ -80,11 +80,11 @@ export default function OrdenDetalle({ ordenId, onClose, apiBase }: OrdenDetalle
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto print-content"
+      className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8 print:shadow-none print:my-0 print:max-w-full"
+        className="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8 print-content print:shadow-none print:my-0 print:max-w-full"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

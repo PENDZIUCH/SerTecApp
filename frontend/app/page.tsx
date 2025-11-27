@@ -8,7 +8,7 @@ import OrdenDetalle from './components/OrdenDetalle';
 import Toast from './components/Toast';
 import { useDarkMode } from './hooks/useDarkMode';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://demo.pendziuch.com/backend/api';
 
 export default function Home() {
   const { isDark, toggle } = useDarkMode();

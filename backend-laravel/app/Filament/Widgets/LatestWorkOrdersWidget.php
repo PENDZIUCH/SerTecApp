@@ -24,11 +24,11 @@ class LatestWorkOrdersWidget extends BaseWidget
                     ->label('Nº Orden')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('customer.name')
+                Tables\Columns\TextColumn::make('customer.business_name')
                     ->label('Cliente')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('equipment.name')
+                Tables\Columns\TextColumn::make('equipment.serial_number')
                     ->label('Equipo')
                     ->searchable(),
                 Tables\Columns\BadgeColumn::make('status')

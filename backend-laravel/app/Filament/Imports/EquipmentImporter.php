@@ -35,8 +35,8 @@ class EquipmentImporter extends Importer
             ImportColumn::make('installation_date')
                 ->rules(['date']),
             ImportColumn::make('status')
-                ->rules(['in:operational,under_repair,decommissioned'])
-                ->default('operational'),
+                ->rules(['in:active,inactive,in_workshop,decommissioned'])
+                ->default('active'),
             ImportColumn::make('location')
                 ->rules(['max:255']),
         ];

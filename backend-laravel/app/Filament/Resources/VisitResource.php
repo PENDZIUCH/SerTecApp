@@ -3,133 +3,45 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\VisitResource\Pages;
-use App\Filament\Resources\VisitResource\RelationManagers;
 use App\Models\Visit;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class VisitResource extends Resource
 {
     protected static ?string $model = Visit::class;
-
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-map-pin';
+    protected static ?string $navigationLabel = 'Visitas';
+    protected static ?string $modelLabel = 'Visita';
+    protected static ?string $pluralModelLabel = 'Visitas';
 
     public static function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('work_order_id')
-                    ->required()
-                    ->numeric(),
-                Forms\Components\TextInput::make('assigned_tech_id')
-                    ->numeric(),
-                Forms\Components\TextInput::make('subscription_id')
-                    ->numeric(),
-                Forms\Components\DatePicker::make('visit_date')
-                    ->required(),
-                Forms\Components\TextInput::make('scheduled_time'),
-                Forms\Components\TextInput::make('estimated_duration_minutes')
-                    ->numeric(),
-                Forms\Components\DateTimePicker::make('check_in'),
-                Forms\Components\DateTimePicker::make('check_out'),
-                Forms\Components\TextInput::make('duration_minutes')
-                    ->numeric(),
-                Forms\Components\TextInput::make('status')
-                    ->required(),
-                Forms\Components\Textarea::make('notes')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('latitude')
-                    ->numeric(),
-                Forms\Components\TextInput::make('longitude')
-                    ->numeric(),
-                Forms\Components\TextInput::make('created_by')
-                    ->numeric(),
-                Forms\Components\TextInput::make('updated_by')
-                    ->numeric(),
-            ]);
+        return $form->schema([
+            Forms\Components\Select::make('work_order_id')->relationship('workOrder', 'wo_number')->label('Orden de Trabajo')->required()->searchable(),
+            Forms\Components\Select::make('assigned_tech_id')->relationship('assignedTech', 'name')->label('Técnico')->searchable(),
+            Forms\Components\DatePicker::make('visit_date')->label('Fecha')->required(),
+            Forms\Components\TimePicker::make('scheduled_time')->label('Hora'),
+            Forms\Components\TextInput::make('estimated_duration_minutes')->label('Duración Estimada (min)')->numeric(),
+            Forms\Components\Select::make('status')->label('Estado')
+                ->options(['scheduled' => 'Programada', 'in_progress' => 'En Progreso', 'completed' => 'Completada'])
+                ->default('scheduled'),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table
-            ->columns([
-                Tables\Columns\TextColumn::make('work_order_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('assigned_tech_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('subscription_id')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('visit_date')
-                    ->date()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('scheduled_time'),
-                Tables\Columns\TextColumn::make('estimated_duration_minutes')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('check_in')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('check_out')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('duration_minutes')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('latitude')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('longitude')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_by')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('updated_by')
-                    ->numeric()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                ExportAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    ExportBulkAction::make(),
-                ]),
-            ]);
-    }
-
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
+        return $table->columns([
+            Tables\Columns\TextColumn::make('workOrder.wo_number')->label('N° Orden')->searchable(),
+            Tables\Columns\TextColumn::make('assignedTech.name')->label('Técnico'),
+            Tables\Columns\TextColumn::make('visit_date')->label('Fecha')->date(),
+            Tables\Columns\BadgeColumn::make('status')->label('Estado'),
+        ])
+        ->actions([Tables\Actions\EditAction::make()])
+        ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 
     public static function getPages(): array

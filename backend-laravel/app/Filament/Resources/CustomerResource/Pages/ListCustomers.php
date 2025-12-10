@@ -122,7 +122,7 @@ class ListCustomers extends ListRecords
                                     'city' => $city,
                                     'phone' => $this->getColumnValue($rowData, ['nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'telefono', 'celular', 'tel']),
                                     'email' => $this->getColumnValue($rowData, ['mail', 'email', 'correo', 'e-mail']),
-                                    'tax_id' => null,
+                                    'tax_id' => $this->parseTaxId($this->getColumnValue($rowData, ['cuit', 'cuil', 'cuit/cuil', 'tax id', 'id fiscal'])),
                                     'state' => null,
                                     'country' => 'Argentina',
                                     'postal_code' => null,
@@ -277,5 +277,60 @@ class ListCustomers extends ListRecords
         $str = trim($str);
         
         return $str;
+    }
+    
+    /**
+     * SMART TAX ID PARSER (CUIT/CUIL)
+     * Valida y formatea CUIT/CUIL argentino
+     * 
+     * @param string|null $taxId - CUIT/CUIL raw
+     * @return string|null - CUIT/CUIL formateado o null si inválido
+     */
+    private function parseTaxId(?string $taxId): ?string
+    {
+        if (!$taxId) {
+            return null;
+        }
+        
+        // Remover todo excepto números
+        $clean = preg_replace('/[^0-9]/', '', $taxId);
+        
+        // Validar longitud (debe tener 11 dígitos)
+        if (strlen($clean) !== 11) {
+            return null;
+        }
+        
+        // Validar dígito verificador
+        if (!$this->validateCuitCheckDigit($clean)) {
+            // Si es inválido, devolver formateado pero sin validar
+            // (puede ser error en origen)
+            return substr($clean, 0, 2) . '-' . substr($clean, 2, 8) . '-' . substr($clean, 10, 1);
+        }
+        
+        // Formatear: XX-XXXXXXXX-X
+        return substr($clean, 0, 2) . '-' . substr($clean, 2, 8) . '-' . substr($clean, 10, 1);
+    }
+    
+    /**
+     * Validar dígito verificador de CUIT/CUIL argentino
+     * Algoritmo: módulo 11
+     */
+    private function validateCuitCheckDigit(string $cuit): bool
+    {
+        if (strlen($cuit) !== 11) {
+            return false;
+        }
+        
+        $multipliers = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+        $sum = 0;
+        
+        for ($i = 0; $i < 10; $i++) {
+            $sum += (int)$cuit[$i] * $multipliers[$i];
+        }
+        
+        $mod = $sum % 11;
+        $checkDigit = $mod === 0 ? 0 : ($mod === 1 ? 9 : 11 - $mod);
+        
+        return (int)$cuit[10] === $checkDigit;
     }
 }

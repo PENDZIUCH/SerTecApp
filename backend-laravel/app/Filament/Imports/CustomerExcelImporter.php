@@ -17,49 +17,76 @@ class CustomerExcelImporter extends Importer
             ImportColumn::make('business_name')
                 ->label('Cliente')
                 ->requiredMapping()
-                ->rules(['max:255']),
+                ->guess(['cliente', 'razon social', 'nombre', 'name', 'business_name', 'empresa', 'razon_social'])
+                ->rules(['required', 'max:255']),
             
             ImportColumn::make('address')
                 ->label('Dirección')
+                ->guess(['direccion', 'address', 'domicilio', 'dir', 'direccion'])
                 ->rules(['nullable', 'max:500']),
             
             ImportColumn::make('first_name')
                 ->label('Contacto')
+                ->guess(['contacto', 'nombre contacto', 'first_name', 'contact', 'persona', 'nombre_contacto'])
                 ->rules(['nullable', 'max:100']),
             
             ImportColumn::make('phone')
-                ->label('Nº de celular')
+                ->label('Teléfono')
+                ->guess(['telefono', 'celular', 'phone', 'tel', 'nro', 'numero', 'nro_celular', 'nro_linea', 'nº de celular', 'nº de línea'])
                 ->rules(['nullable', 'max:50']),
             
             ImportColumn::make('email')
-                ->label('Mail')
-                ->rules(['nullable', 'email', 'max:255']),
+                ->label('Email')
+                ->guess(['email', 'mail', 'correo', 'e-mail', 'e_mail'])
+                ->rules(['nullable', 'email:filter', 'max:255']),
             
             ImportColumn::make('notes')
                 ->label('Observaciones')
+                ->guess(['observaciones', 'notas', 'notes', 'comentarios', 'obs', 'observacion'])
                 ->rules(['nullable']),
         ];
     }
 
     public function resolveRecord(): ?Customer
     {
-        // Crear nuevo cliente o actualizar si existe por email
-        if (!empty($this->data['email'])) {
-            return Customer::firstOrNew([
-                'email' => $this->data['email'],
-            ]);
+        $data = $this->data;
+
+        // Defaults
+        $data['customer_type'] = $data['customer_type'] ?? 'company';
+        $data['is_active'] = $data['is_active'] ?? true;
+        $data['country'] = $data['country'] ?? 'Argentina';
+
+        // Limpiar email
+        if (empty($data['email']) || in_array($data['email'], ['-', 'N/A', 'n/a', ''])) {
+            $data['email'] = null;
         }
-        
-        // Si no hay email, crear siempre nuevo
-        return new Customer();
+
+        // Buscar duplicado
+        if (!empty($data['email'])) {
+            $existing = Customer::where('email', $data['email'])->first();
+            if ($existing) {
+                $existing->update($data);
+                return $existing;
+            }
+        }
+
+        if (!empty($data['business_name'])) {
+            $existing = Customer::where('business_name', $data['business_name'])->first();
+            if ($existing) {
+                $existing->update($data);
+                return $existing;
+            }
+        }
+
+        return Customer::create($data);
     }
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Importación de clientes completada. ' . number_format($import->successful_rows) . ' ' . str('fila')->plural($import->successful_rows) . ' importadas.';
+        $body = '✅ ' . number_format($import->successful_rows) . ' cliente(s) importado(s)';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
-            $body .= ' ' . number_format($failedRowsCount) . ' ' . str('fila')->plural($failedRowsCount) . ' fallaron.';
+            $body .= ' | ❌ ' . number_format($failedRowsCount) . ' error(es)';
         }
 
         return $body;

@@ -18,10 +18,16 @@ class ListCustomers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            // BOTÓN PRINCIPAL: Crear Cliente (VERDE - seguro para todos)
+            Actions\CreateAction::make()
+                ->color('success'),
+            
+            // BOTÓN SECUNDARIO: Importar (AMARILLO - solo admin)
             Actions\Action::make('import')
                 ->label('Importar Excel/CSV')
                 ->icon('heroicon-o-arrow-up-tray')
-                ->color('success')
+                ->color('warning')
+                ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->form([
                     FileUpload::make('file')
                         ->label('Archivo Excel o CSV')
@@ -130,21 +136,23 @@ class ListCustomers extends ListRecords
                     }
                 }),
             
-            Actions\CreateAction::make(),
-            
+            // BOTÓN PELIGROSO: Eliminar Todos (ROJO - solo admin)
             Actions\Action::make('deleteAll')
                 ->label('Eliminar Todos')
                 ->icon('heroicon-o-trash')
                 ->color('danger')
+                ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->requiresConfirmation()
-                ->modalHeading('¿Eliminar todos los clientes?')
-                ->modalDescription('Esta acción NO se puede deshacer. Se eliminarán TODOS los clientes de la base de datos.')
-                ->modalSubmitActionLabel('Sí, eliminar todos')
+                ->modalHeading('⚠️ ¿Eliminar TODOS los clientes?')
+                ->modalDescription('PELIGRO: Esta acción NO se puede deshacer. Se eliminarán PERMANENTEMENTE todos los clientes de la base de datos. Solo usar en caso de reset completo.')
+                ->modalSubmitActionLabel('Sí, eliminar TODOS')
                 ->action(function () {
+                    $count = Customer::count();
                     Customer::query()->delete();
                     Notification::make()
                         ->title('Clientes eliminados')
-                        ->success()
+                        ->body("Se eliminaron {$count} cliente(s)")
+                        ->warning()
                         ->send();
                 }),
         ];

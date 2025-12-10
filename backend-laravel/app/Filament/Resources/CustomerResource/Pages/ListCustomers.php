@@ -80,6 +80,16 @@ class ListCustomers extends ListRecords
                                 $rawBusinessName = $this->getColumnValue($rowData, ['cliente', 'razon social', 'nombre', 'empresa']);
                                 $rawContactName = $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona']);
                                 $rawAddress = $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address', 'dir']);
+                                $rawEmail = $this->getColumnValue($rowData, ['mail', 'correo electronico', 'email', 'correo', 'e-mail']);
+                                
+                                // SMART EMAIL PARSER: Separar múltiples emails
+                                $email = null;
+                                $secondaryEmail = null;
+                                if ($rawEmail) {
+                                    $emails = $this->parseMultipleEmails($rawEmail);
+                                    $email = $emails[0] ?? null;
+                                    $secondaryEmail = $emails[1] ?? null;
+                                }
                                 
                                 // SMART PARSING: Split contact name into first/last
                                 $firstName = null;
@@ -120,9 +130,10 @@ class ListCustomers extends ListRecords
                                     'last_name' => $lastName,
                                     'address' => $address,
                                     'city' => $city,
-                                    'phone' => $this->getColumnValue($rowData, ['nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'telefono', 'celular', 'tel']),
-                                    'email' => $this->getColumnValue($rowData, ['mail', 'email', 'correo', 'e-mail']),
-                                    'tax_id' => $this->parseTaxId($this->getColumnValue($rowData, ['cuit', 'cuil', 'cuit/cuil', 'tax id', 'id fiscal'])),
+                                    'phone' => $this->getColumnValue($rowData, ['movil', 'telefono 1', 'nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'telefono', 'celular', 'tel']),
+                                    'email' => $email,
+                                    'secondary_email' => $secondaryEmail,
+                                    'tax_id' => $this->parseTaxId($this->getColumnValue($rowData, ['nro. de documento', 'nro de documento', 'documento', 'cuit', 'cuil', 'cuit/cuil', 'tax id', 'id fiscal'])),
                                     'state' => null,
                                     'country' => 'Argentina',
                                     'postal_code' => null,
@@ -258,6 +269,31 @@ class ListCustomers extends ListRecords
             }
         }
         return null;
+    }
+    
+    /**
+     * SMART EMAIL PARSER
+     * Separa múltiples emails en primary y secondary
+     * 
+     * @param string $rawEmail - Email(s) raw con separadores
+     * @return array - [email1, email2] o [email1] o []
+     */
+    private function parseMultipleEmails(string $rawEmail): array
+    {
+        // Separadores comunes: / , ; espacio
+        $emails = preg_split('/[\/,;\s]+/', $rawEmail);
+        
+        // Filtrar y validar
+        $validEmails = [];
+        foreach ($emails as $email) {
+            $email = trim($email);
+            // Validación básica de email
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $validEmails[] = $email;
+            }
+        }
+        
+        return array_slice($validEmails, 0, 2); // Max 2 emails
     }
     
     private function normalizeString(string $str): string

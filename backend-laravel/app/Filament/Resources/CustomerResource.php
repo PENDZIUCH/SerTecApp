@@ -36,6 +36,10 @@ class CustomerResource extends Resource
             Forms\Components\TextInput::make('email')
                 ->email()
                 ->label('Email (Mail)'),
+            Forms\Components\TextInput::make('secondary_email')
+                ->email()
+                ->label('Email Secundario')
+                ->helperText('Si tiene múltiples emails separados por /'),
             Forms\Components\TextInput::make('phone')
                 ->tel()
                 ->label('Teléfono (Nº de celular / Nº de línea)'),

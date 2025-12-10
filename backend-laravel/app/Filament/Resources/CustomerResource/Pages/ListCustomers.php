@@ -22,6 +22,53 @@ class ListCustomers extends ListRecords
             Actions\CreateAction::make()
                 ->color('success'),
             
+            // BOTÓN EXPORT: Backup/Exportar (AZUL - solo admin)
+            Actions\Action::make('export')
+                ->label('Exportar Excel')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('info')
+                ->visible(fn () => auth()->user()->hasRole('admin'))
+                ->action(function () {
+                    $fileName = 'clientes_' . now()->format('Y-m-d_His') . '.xlsx';
+                    
+                    return Excel::download(new class implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+                        public function collection()
+                        {
+                            return Customer::all()->map(function ($customer) {
+                                return [
+                                    'ID' => $customer->id,
+                                    'Tipo' => $customer->customer_type,
+                                    'Razón Social' => $customer->business_name,
+                                    'Nombre' => $customer->first_name,
+                                    'Apellido' => $customer->last_name,
+                                    'Email' => $customer->email,
+                                    'Email Secundario' => $customer->secondary_email,
+                                    'Teléfono' => $customer->phone,
+                                    'CUIT/CUIL' => $customer->tax_id,
+                                    'Dirección' => $customer->address,
+                                    'Ciudad' => $customer->city,
+                                    'Provincia' => $customer->state,
+                                    'País' => $customer->country,
+                                    'Código Postal' => $customer->postal_code,
+                                    'Activo' => $customer->is_active ? 'Sí' : 'No',
+                                    'Creado' => $customer->created_at?->format('Y-m-d H:i'),
+                                    'Actualizado' => $customer->updated_at?->format('Y-m-d H:i'),
+                                ];
+                            });
+                        }
+                        
+                        public function headings(): array
+                        {
+                            return [
+                                'ID', 'Tipo', 'Razón Social', 'Nombre', 'Apellido',
+                                'Email', 'Email Secundario', 'Teléfono', 'CUIT/CUIL',
+                                'Dirección', 'Ciudad', 'Provincia', 'País', 'Código Postal',
+                                'Activo', 'Creado', 'Actualizado'
+                            ];
+                        }
+                    }, $fileName);
+                }),
+            
             // BOTÓN SECUNDARIO: Importar (AMARILLO - solo admin)
             Actions\Action::make('import')
                 ->label('Importar Excel/CSV')

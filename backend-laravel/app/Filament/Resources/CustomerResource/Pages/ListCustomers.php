@@ -76,17 +76,53 @@ class ListCustomers extends ListRecords
                             $rowData = array_combine($headers, $row);
                             
                             try {
+                                // Get raw values
+                                $rawBusinessName = $this->getColumnValue($rowData, ['cliente', 'razon social', 'nombre', 'empresa']);
+                                $rawContactName = $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona']);
+                                $rawAddress = $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address', 'dir']);
+                                
+                                // SMART PARSING: Split contact name into first/last
+                                $firstName = null;
+                                $lastName = null;
+                                if ($rawContactName) {
+                                    $nameParts = explode(' ', trim($rawContactName));
+                                    if (count($nameParts) >= 2) {
+                                        // Si tiene 2+ palabras: primera = nombre, resto = apellido
+                                        $firstName = $nameParts[0];
+                                        $lastName = implode(' ', array_slice($nameParts, 1));
+                                    } else {
+                                        // Si tiene 1 palabra: todo en first_name
+                                        $firstName = $rawContactName;
+                                    }
+                                }
+                                
+                                // SMART PARSING: Extract city from address
+                                $address = $rawAddress;
+                                $city = null;
+                                if ($rawAddress) {
+                                    // Buscar última palabra después de coma, slash o guión
+                                    if (preg_match('/[,\/\-]\s*([A-Za-zÀ-ÿ\s]+)$/u', $rawAddress, $matches)) {
+                                        $possibleCity = trim($matches[1]);
+                                        // Si tiene menos de 30 caracteres, probablemente es ciudad
+                                        if (strlen($possibleCity) < 30 && !preg_match('/\d/', $possibleCity)) {
+                                            $city = $possibleCity;
+                                            // Remover ciudad de la dirección
+                                            $address = trim(preg_replace('/[,\/\-]\s*' . preg_quote($possibleCity, '/') . '$/u', '', $rawAddress));
+                                        }
+                                    }
+                                }
+                                
                                 // Map columns - NOMBRES EXACTOS DEL EXCEL
                                 $customerData = [
                                     'customer_type' => 'company',
-                                    'business_name' => $this->getColumnValue($rowData, ['cliente', 'razon social', 'nombre', 'empresa']),
-                                    'first_name' => $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona']),
-                                    'last_name' => null,
-                                    'address' => $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address', 'dir']),
+                                    'business_name' => $rawBusinessName,
+                                    'first_name' => $firstName,
+                                    'last_name' => $lastName,
+                                    'address' => $address,
+                                    'city' => $city,
                                     'phone' => $this->getColumnValue($rowData, ['nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'telefono', 'celular', 'tel']),
                                     'email' => $this->getColumnValue($rowData, ['mail', 'email', 'correo', 'e-mail']),
                                     'tax_id' => null,
-                                    'city' => null,
                                     'state' => null,
                                     'country' => 'Argentina',
                                     'postal_code' => null,

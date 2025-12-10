@@ -77,29 +77,34 @@ class ListCustomers extends ListRecords
                             try {
                                 // Map columns
                                 $customerData = [
+                                    'customer_type' => 'company', // Gimnasios = company
                                     'business_name' => $this->getColumnValue($rowData, ['cliente', 'razon social', 'nombre', 'empresa']),
-                                    'address' => $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address']),
                                     'first_name' => $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona']),
+                                    'last_name' => null, // No viene en el Excel
+                                    'address' => $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address']),
                                     'phone' => $this->getColumnValue($rowData, ['telefono', 'celular', 'nro de celular', 'nro de linea', 'tel']),
                                     'email' => $this->getColumnValue($rowData, ['email', 'mail', 'correo']),
-                                    'notes' => $this->getColumnValue($rowData, ['observaciones', 'notas', 'obs']),
-                                    'customer_type' => 'company',
-                                    'is_active' => true,
+                                    'tax_id' => null, // No viene en el Excel
+                                    'city' => null, // No viene en el Excel
+                                    'state' => null, // No viene en el Excel
                                     'country' => 'Argentina',
+                                    'postal_code' => null, // No viene en el Excel
+                                    'notes' => $this->getColumnValue($rowData, ['observaciones', 'notas', 'obs']),
+                                    'is_active' => true,
                                 ];
                                 
-                                // Validar que al menos tenga nombre
+                                // Validar que al menos tenga business_name
                                 if (empty($customerData['business_name'])) {
                                     $errors++;
                                     continue;
                                 }
                                 
                                 // Limpiar email vacío
-                                if (empty($customerData['email']) || in_array($customerData['email'], ['-', 'N/A'])) {
+                                if (empty($customerData['email']) || in_array($customerData['email'], ['-', 'N/A', 'n/a', ''])) {
                                     $customerData['email'] = null;
                                 }
                                 
-                                // Buscar duplicado
+                                // Buscar duplicado por email
                                 if (!empty($customerData['email'])) {
                                     $existing = Customer::where('email', $customerData['email'])->first();
                                     if ($existing) {
@@ -107,6 +112,14 @@ class ListCustomers extends ListRecords
                                         $imported++;
                                         continue;
                                     }
+                                }
+                                
+                                // Buscar duplicado por business_name (gimnasios suelen no tener email único)
+                                $existing = Customer::where('business_name', $customerData['business_name'])->first();
+                                if ($existing) {
+                                    $existing->update($customerData);
+                                    $imported++;
+                                    continue;
                                 }
                                 
                                 Customer::create($customerData);

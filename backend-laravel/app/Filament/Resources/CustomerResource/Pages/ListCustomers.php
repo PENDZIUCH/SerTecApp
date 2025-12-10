@@ -75,21 +75,21 @@ class ListCustomers extends ListRecords
                             $rowData = array_combine($headers, $row);
                             
                             try {
-                                // Map columns
+                                // Map columns - NOMBRES EXACTOS DEL EXCEL
                                 $customerData = [
-                                    'customer_type' => 'company', // Gimnasios = company
+                                    'customer_type' => 'company',
                                     'business_name' => $this->getColumnValue($rowData, ['cliente', 'razon social', 'nombre', 'empresa']),
                                     'first_name' => $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona']),
-                                    'last_name' => null, // No viene en el Excel
-                                    'address' => $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address']),
-                                    'phone' => $this->getColumnValue($rowData, ['telefono', 'celular', 'nro de celular', 'nro de linea', 'tel']),
-                                    'email' => $this->getColumnValue($rowData, ['email', 'mail', 'correo']),
-                                    'tax_id' => null, // No viene en el Excel
-                                    'city' => null, // No viene en el Excel
-                                    'state' => null, // No viene en el Excel
+                                    'last_name' => null,
+                                    'address' => $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address', 'dir']),
+                                    'phone' => $this->getColumnValue($rowData, ['nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'telefono', 'celular', 'tel']),
+                                    'email' => $this->getColumnValue($rowData, ['mail', 'email', 'correo', 'e-mail']),
+                                    'tax_id' => null,
+                                    'city' => null,
+                                    'state' => null,
                                     'country' => 'Argentina',
-                                    'postal_code' => null, // No viene en el Excel
-                                    'notes' => $this->getColumnValue($rowData, ['observaciones', 'notas', 'obs']),
+                                    'postal_code' => null,
+                                    'notes' => $this->getColumnValue($rowData, ['observaciones', 'notas', 'obs', 'comentarios']),
                                     'is_active' => true,
                                 ];
                                 
@@ -174,11 +174,36 @@ class ListCustomers extends ListRecords
     private function getColumnValue(array $row, array $possibleNames): ?string
     {
         foreach ($possibleNames as $name) {
-            $name = strtolower(trim($name));
-            if (isset($row[$name]) && !empty(trim($row[$name]))) {
-                return trim($row[$name]);
+            // Normalizar: quitar acentos, convertir a minúsculas, quitar espacios extra
+            $normalizedName = $this->normalizeString($name);
+            
+            foreach ($row as $key => $value) {
+                $normalizedKey = $this->normalizeString($key);
+                
+                if ($normalizedKey === $normalizedName && !empty(trim($value))) {
+                    return trim($value);
+                }
             }
         }
         return null;
+    }
+    
+    private function normalizeString(string $str): string
+    {
+        // Convertir a minúsculas
+        $str = mb_strtolower($str, 'UTF-8');
+        
+        // Quitar acentos
+        $str = str_replace(
+            ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü', 'º', 'ª'],
+            ['a', 'e', 'i', 'o', 'u', 'n', 'u', 'o', 'a'],
+            $str
+        );
+        
+        // Quitar espacios extra y caracteres especiales
+        $str = preg_replace('/\s+/', ' ', $str);
+        $str = trim($str);
+        
+        return $str;
     }
 }

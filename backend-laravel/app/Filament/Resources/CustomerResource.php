@@ -25,18 +25,37 @@ class CustomerResource extends Resource
                 ->label('Tipo')
                 ->options(['individual' => 'Individual', 'company' => 'Empresa', 'gym' => 'Gimnasio'])
                 ->required(),
-            Forms\Components\TextInput::make('business_name')->label('Razón Social'),
-            Forms\Components\TextInput::make('first_name')->label('Nombre'),
-            Forms\Components\TextInput::make('last_name')->label('Apellido'),
-            Forms\Components\TextInput::make('email')->email()->label('Email'),
-            Forms\Components\TextInput::make('phone')->tel()->label('Teléfono'),
-            Forms\Components\TextInput::make('tax_id')->label('CUIT/CUIL'),
-            Forms\Components\Textarea::make('address')->label('Dirección')->columnSpanFull(),
-            Forms\Components\TextInput::make('city')->label('Ciudad'),
-            Forms\Components\TextInput::make('state')->label('Provincia'),
-            Forms\Components\TextInput::make('country')->label('País')->default('Argentina'),
-            Forms\Components\TextInput::make('postal_code')->label('Código Postal'),
-            Forms\Components\Toggle::make('is_active')->label('Activo')->default(true),
+            Forms\Components\TextInput::make('business_name')
+                ->label('Razón Social (Cliente)')
+                ->helperText('Nombre del gimnasio o empresa'),
+            Forms\Components\TextInput::make('first_name')
+                ->label('Nombre (Contacto)')
+                ->helperText('Persona de contacto'),
+            Forms\Components\TextInput::make('last_name')
+                ->label('Apellido'),
+            Forms\Components\TextInput::make('email')
+                ->email()
+                ->label('Email (Mail)'),
+            Forms\Components\TextInput::make('phone')
+                ->tel()
+                ->label('Teléfono (Nº de celular / Nº de línea)'),
+            Forms\Components\TextInput::make('tax_id')
+                ->label('CUIT/CUIL'),
+            Forms\Components\Textarea::make('address')
+                ->label('Dirección')
+                ->columnSpanFull(),
+            Forms\Components\TextInput::make('city')
+                ->label('Ciudad'),
+            Forms\Components\TextInput::make('state')
+                ->label('Provincia'),
+            Forms\Components\TextInput::make('country')
+                ->label('País')
+                ->default('Argentina'),
+            Forms\Components\TextInput::make('postal_code')
+                ->label('Código Postal'),
+            Forms\Components\Toggle::make('is_active')
+                ->label('Activo')
+                ->default(true),
         ]);
     }
 

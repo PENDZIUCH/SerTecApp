@@ -68,6 +68,7 @@ class ListCustomers extends ListRecords
                         
                         $imported = 0;
                         $errors = 0;
+                        $warnings = 0; // Registros con campos críticos vacíos
                         
                         foreach ($rows as $row) {
                             if (empty(array_filter($row))) continue; // Skip empty rows
@@ -93,10 +94,21 @@ class ListCustomers extends ListRecords
                                     'is_active' => true,
                                 ];
                                 
-                                // Validar que al menos tenga business_name
+                                // Validar campo obligatorio
                                 if (empty($customerData['business_name'])) {
                                     $errors++;
                                     continue;
+                                }
+                                
+                                // ALARMA: Detectar si faltan campos críticos
+                                $missingCritical = [];
+                                if (empty($customerData['phone'])) $missingCritical[] = 'teléfono';
+                                if (empty($customerData['address'])) $missingCritical[] = 'dirección';
+                                if (empty($customerData['email'])) $missingCritical[] = 'email';
+                                
+                                if (count($missingCritical) >= 2) {
+                                    // Si faltan 2 o más campos críticos, es sospechoso
+                                    $warnings++;
                                 }
                                 
                                 // Limpiar email vacío
@@ -104,19 +116,32 @@ class ListCustomers extends ListRecords
                                     $customerData['email'] = null;
                                 }
                                 
-                                // Buscar duplicado por email
+                                // Buscar duplicado por email (incluyendo soft deleted)
                                 if (!empty($customerData['email'])) {
-                                    $existing = Customer::where('email', $customerData['email'])->first();
+                                    $existing = Customer::withTrashed()
+                                        ->where('email', $customerData['email'])
+                                        ->first();
+                                    
                                     if ($existing) {
+                                        if ($existing->trashed()) {
+                                            // Si estaba eliminado, restaurar y actualizar
+                                            $existing->restore();
+                                        }
                                         $existing->update($customerData);
                                         $imported++;
                                         continue;
                                     }
                                 }
                                 
-                                // Buscar duplicado por business_name (gimnasios suelen no tener email único)
-                                $existing = Customer::where('business_name', $customerData['business_name'])->first();
+                                // Buscar duplicado por business_name (gimnasios sin email único)
+                                $existing = Customer::withTrashed()
+                                    ->where('business_name', $customerData['business_name'])
+                                    ->first();
+                                
                                 if ($existing) {
+                                    if ($existing->trashed()) {
+                                        $existing->restore();
+                                    }
                                     $existing->update($customerData);
                                     $imported++;
                                     continue;
@@ -133,11 +158,22 @@ class ListCustomers extends ListRecords
                         // Limpiar archivo
                         Storage::disk('local')->delete($data['file']);
                         
-                        // Notificación
+                        // Notificación con alarmas
+                        $message = "✅ {$imported} cliente(s) importado(s)";
+                        if ($errors > 0) $message .= " | ❌ {$errors} error(es)";
+                        if ($warnings > 0) $message .= " | ⚠️ {$warnings} con datos incompletos";
+                        
+                        $notificationType = 'success';
+                        if ($warnings > ($imported * 0.3)) {
+                            // Si más del 30% tiene datos incompletos, es warning
+                            $notificationType = 'warning';
+                            $message .= "\n\n⚠️ ALERTA: Muchos registros sin teléfono/dirección/email. Verificar formato del Excel.";
+                        }
+                        
                         Notification::make()
                             ->title('Importación completada')
-                            ->body("✅ {$imported} cliente(s) importado(s)" . ($errors > 0 ? " | ❌ {$errors} error(es)" : ''))
-                            ->success()
+                            ->body($message)
+                            ->{$notificationType}()
                             ->send();
                             
                     } catch (\Exception $e) {
@@ -157,14 +193,14 @@ class ListCustomers extends ListRecords
                 ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->requiresConfirmation()
                 ->modalHeading('⚠️ ¿Eliminar TODOS los clientes?')
-                ->modalDescription('PELIGRO: Esta acción NO se puede deshacer. Se eliminarán PERMANENTEMENTE todos los clientes de la base de datos. Solo usar en caso de reset completo.')
+                ->modalDescription('PELIGRO: Esta acción NO se puede deshacer. Se eliminarán PERMANENTEMENTE todos los clientes de la base de datos (incluyendo borrados). Solo usar en caso de reset completo.')
                 ->modalSubmitActionLabel('Sí, eliminar TODOS')
                 ->action(function () {
-                    $count = Customer::count();
-                    Customer::query()->delete();
+                    $count = Customer::withTrashed()->count();
+                    Customer::withTrashed()->forceDelete(); // Force delete = elimina físicamente
                     Notification::make()
                         ->title('Clientes eliminados')
-                        ->body("Se eliminaron {$count} cliente(s)")
+                        ->body("Se eliminaron permanentemente {$count} cliente(s)")
                         ->warning()
                         ->send();
                 }),

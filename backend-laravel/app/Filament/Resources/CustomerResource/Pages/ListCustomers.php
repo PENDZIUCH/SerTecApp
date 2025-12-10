@@ -132,10 +132,13 @@ class ListCustomers extends ListRecords
                                 // SMART EMAIL PARSER: Separar múltiples emails
                                 $email = null;
                                 $secondaryEmail = null;
+                                $additionalEmailsNote = null;
+                                
                                 if ($rawEmail) {
-                                    $emails = $this->parseMultipleEmails($rawEmail);
-                                    $email = $emails[0] ?? null;
-                                    $secondaryEmail = $emails[1] ?? null;
+                                    $parsedEmails = $this->parseMultipleEmails($rawEmail);
+                                    $email = $parsedEmails['primary'];
+                                    $secondaryEmail = $parsedEmails['secondary'];
+                                    $additionalEmailsNote = $parsedEmails['additional'];
                                 }
                                 
                                 // SMART PARSING: Split contact name into first/last
@@ -187,6 +190,11 @@ class ListCustomers extends ListRecords
                                     'notes' => $this->getColumnValue($rowData, ['observaciones', 'notas', 'obs', 'comentarios']),
                                     'is_active' => true,
                                 ];
+                                
+                                // Agregar emails adicionales a notas si existen
+                                if ($additionalEmailsNote) {
+                                    $customerData['notes'] = trim(($customerData['notes'] ?? '') . "\n\n" . $additionalEmailsNote);
+                                }
                                 
                                 // Validar campo obligatorio
                                 if (empty($customerData['business_name'])) {
@@ -320,10 +328,10 @@ class ListCustomers extends ListRecords
     
     /**
      * SMART EMAIL PARSER
-     * Separa múltiples emails en primary y secondary
+     * Separa múltiples emails en primary, secondary y additional (notes)
      * 
      * @param string $rawEmail - Email(s) raw con separadores
-     * @return array - [email1, email2] o [email1] o []
+     * @return array - ['primary' => string, 'secondary' => string, 'additional' => string]
      */
     private function parseMultipleEmails(string $rawEmail): array
     {
@@ -340,7 +348,19 @@ class ListCustomers extends ListRecords
             }
         }
         
-        return array_slice($validEmails, 0, 2); // Max 2 emails
+        $result = [
+            'primary' => $validEmails[0] ?? null,
+            'secondary' => $validEmails[1] ?? null,
+            'additional' => null,
+        ];
+        
+        // Si hay más de 2 emails, el resto va a notas
+        if (count($validEmails) > 2) {
+            $additionalEmails = array_slice($validEmails, 2);
+            $result['additional'] = "Emails adicionales:\n" . implode("\n", $additionalEmails);
+        }
+        
+        return $result;
     }
     
     private function normalizeString(string $str): string

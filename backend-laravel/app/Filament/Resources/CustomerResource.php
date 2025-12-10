@@ -26,23 +26,20 @@ class CustomerResource extends Resource
                 ->options(['individual' => 'Individual', 'company' => 'Empresa', 'gym' => 'Gimnasio'])
                 ->required(),
             Forms\Components\TextInput::make('business_name')
-                ->label('Razón Social (Cliente)')
-                ->helperText('Nombre del gimnasio o empresa'),
+                ->label('Razón Social'),
             Forms\Components\TextInput::make('first_name')
-                ->label('Nombre (Contacto)')
-                ->helperText('Persona de contacto'),
+                ->label('Nombre'),
             Forms\Components\TextInput::make('last_name')
                 ->label('Apellido'),
             Forms\Components\TextInput::make('email')
                 ->email()
-                ->label('Email (Mail)'),
+                ->label('Email'),
             Forms\Components\TextInput::make('secondary_email')
                 ->email()
-                ->label('Email Secundario')
-                ->helperText('Si tiene múltiples emails separados por /'),
+                ->label('Email Secundario'),
             Forms\Components\TextInput::make('phone')
                 ->tel()
-                ->label('Teléfono (Nº de celular / Nº de línea)'),
+                ->label('Teléfono'),
             Forms\Components\TextInput::make('tax_id')
                 ->label('CUIT/CUIL'),
             Forms\Components\Textarea::make('address')

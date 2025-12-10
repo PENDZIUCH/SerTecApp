@@ -25,14 +25,16 @@ class ListCustomers extends ListRecords
                 ->form([
                     FileUpload::make('file')
                         ->label('Archivo Excel o CSV')
+                        ->required()
+                        ->maxSize(10240)
                         ->acceptedFileTypes([
                             'application/vnd.ms-excel',
                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.oasis.opendocument.spreadsheet',
                             'text/csv',
                             'text/plain',
+                            'application/csv',
                         ])
-                        ->maxSize(10240)
-                        ->required()
                         ->helperText('Formatos: .xlsx, .xls, .csv (máx 10MB)')
                         ->disk('local')
                         ->directory('imports')

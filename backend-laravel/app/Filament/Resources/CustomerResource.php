@@ -36,12 +36,14 @@ class CustomerResource extends Resource
                 ->label('Email')
                 ->unique(ignoreRecord: true)
                 ->rules([
-                    function () {
-                        return function (string $attribute, $value, \Closure $fail) {
+                    function ($livewire) {
+                        return function (string $attribute, $value, \Closure $fail) use ($livewire) {
                             if (empty($value)) return;
                             
+                            $recordId = $livewire->record->id ?? null;
+                            
                             // Buscar si el email existe en primary O secondary de otros registros
-                            $exists = \App\Models\Customer::where('id', '!=', request()->route('record') ?? 0)
+                            $exists = \App\Models\Customer::where('id', '!=', $recordId)
                                 ->where(function ($query) use ($value) {
                                     $query->where('email', $value)
                                           ->orWhere('secondary_email', $value);
@@ -62,12 +64,14 @@ class CustomerResource extends Resource
                 ->label('Email Secundario')
                 ->different('email')
                 ->rules([
-                    function () {
-                        return function (string $attribute, $value, \Closure $fail) {
+                    function ($livewire) {
+                        return function (string $attribute, $value, \Closure $fail) use ($livewire) {
                             if (empty($value)) return;
                             
+                            $recordId = $livewire->record->id ?? null;
+                            
                             // Buscar si el email existe en primary O secondary de otros registros
-                            $exists = \App\Models\Customer::where('id', '!=', request()->route('record') ?? 0)
+                            $exists = \App\Models\Customer::where('id', '!=', $recordId)
                                 ->where(function ($query) use ($value) {
                                     $query->where('email', $value)
                                           ->orWhere('secondary_email', $value);

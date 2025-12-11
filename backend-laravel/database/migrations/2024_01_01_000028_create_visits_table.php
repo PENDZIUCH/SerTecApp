@@ -12,7 +12,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('work_order_id')->constrained('work_orders')->onDelete('cascade');
             $table->foreignId('assigned_tech_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('subscription_id')->nullable()->constrained('subscriptions')->onDelete('set null');
+            // subscription_id comentado - tabla subscriptions se crea DESPUÉS
+            // $table->foreignId('subscription_id')->nullable()->constrained('subscriptions')->onDelete('set null');
+            $table->unsignedBigInteger('subscription_id')->nullable();
             $table->date('visit_date');
             $table->time('scheduled_time')->nullable();
             $table->integer('estimated_duration_minutes')->nullable();

@@ -140,16 +140,24 @@ class CustomerResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
-            Tables\Columns\TextColumn::make('customer_type')->label('Tipo')->badge(),
-            Tables\Columns\TextColumn::make('business_name')->label('Razón Social')->searchable(),
-            Tables\Columns\TextColumn::make('first_name')->label('Nombre')->searchable(),
-            Tables\Columns\TextColumn::make('email')->label('Email')->searchable(),
-            Tables\Columns\TextColumn::make('phone')->label('Teléfono'),
-            Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean(),
-        ])
-        ->actions([Tables\Actions\EditAction::make()])
-        ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('customer_type')->label('Tipo')->badge()->sortable(),
+                Tables\Columns\TextColumn::make('business_name')->label('Razón Social')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('first_name')->label('Nombre')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('phone')->label('Teléfono')->sortable(),
+                Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean()->sortable(),
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([Tables\Actions\EditAction::make()])
+            ->bulkActions([Tables\Actions\DeleteBulkAction::make()])
+            ->emptyStateHeading('No hay clientes')
+            ->emptyStateDescription('Crea tu primer cliente o importa desde Excel')
+            ->defaultSort('created_at', 'desc')
+            ->striped();
     }
 
     public static function getPages(): array

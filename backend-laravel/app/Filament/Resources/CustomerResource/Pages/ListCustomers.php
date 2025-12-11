@@ -17,10 +17,9 @@ class ListCustomers extends ListRecords
 
     protected static ?string $recordTitleAttribute = 'business_name';
     
-    protected function getTableQuery(): ?\Illuminate\Database\Eloquent\Builder
-    {
-        return parent::getTableQuery()->latest('created_at');
-    }
+    protected ?string $heading = 'Clientes';
+    
+    protected static ?string $breadcrumb = null;
 
     protected function getHeaderActions(): array
     {

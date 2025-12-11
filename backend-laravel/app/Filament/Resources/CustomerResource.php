@@ -33,10 +33,18 @@ class CustomerResource extends Resource
                 ->label('Apellido'),
             Forms\Components\TextInput::make('email')
                 ->email()
-                ->label('Email'),
+                ->label('Email')
+                ->unique(ignoreRecord: true)
+                ->validationMessages([
+                    'unique' => 'Este email ya está registrado en otro cliente.',
+                ]),
             Forms\Components\TextInput::make('secondary_email')
                 ->email()
-                ->label('Email Secundario'),
+                ->label('Email Secundario')
+                ->different('email')
+                ->validationMessages([
+                    'different' => 'El email secundario debe ser diferente del email principal.',
+                ]),
             Forms\Components\TextInput::make('phone')
                 ->tel()
                 ->label('Teléfono'),

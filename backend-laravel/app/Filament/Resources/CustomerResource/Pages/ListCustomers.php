@@ -15,6 +15,13 @@ class ListCustomers extends ListRecords
 {
     protected static string $resource = CustomerResource::class;
 
+    protected static ?string $recordTitleAttribute = 'business_name';
+    
+    protected function getTableQuery(): ?\Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getTableQuery()->latest('created_at');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -132,10 +132,11 @@ class ListCustomers extends ListRecords
                             
                             try {
                                 // Get raw values
-                                $rawBusinessName = $this->getColumnValue($rowData, ['cliente', 'razon social', 'nombre', 'empresa']);
-                                $rawContactName = $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona']);
-                                $rawAddress = $this->getColumnValue($rowData, ['direccion', 'domicilio', 'address', 'dir']);
+                                $rawBusinessName = $this->getColumnValue($rowData, ['cliente', 'razon social', 'razón social', 'nombre', 'empresa']);
+                                $rawContactName = $this->getColumnValue($rowData, ['contacto', 'nombre contacto', 'persona', 'nombre']);
+                                $rawAddress = $this->getColumnValue($rowData, ['direccion', 'dirección', 'domicilio', 'address', 'dir']);
                                 $rawEmail = $this->getColumnValue($rowData, ['mail', 'correo electronico', 'email', 'correo', 'e-mail']);
+                                $rawSecondaryEmail = $this->getColumnValue($rowData, ['email secundario', 'mail secundario', 'segundo email', 'secondary email']);
                                 
                                 // SMART EMAIL PARSER: Separar múltiples emails
                                 $email = null;
@@ -145,8 +146,12 @@ class ListCustomers extends ListRecords
                                 if ($rawEmail) {
                                     $parsedEmails = $this->parseMultipleEmails($rawEmail);
                                     $email = $parsedEmails['primary'];
-                                    $secondaryEmail = $parsedEmails['secondary'];
+                                    // Si hay rawSecondaryEmail explícito, usarlo
+                                    $secondaryEmail = $rawSecondaryEmail ?: $parsedEmails['secondary'];
                                     $additionalEmailsNote = $parsedEmails['additional'];
+                                } elseif ($rawSecondaryEmail) {
+                                    // Si solo hay secondary email, ponerlo como primary
+                                    $email = $rawSecondaryEmail;
                                 }
                                 
                                 // SMART PARSING: Split contact name into first/last

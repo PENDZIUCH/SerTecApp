@@ -187,19 +187,19 @@ class ListCustomers extends ListRecords
                                 
                                 // Map columns - NOMBRES EXACTOS DEL EXCEL
                                 $customerData = [
-                                    'customer_type' => 'company',
+                                    'customer_type' => $this->getColumnValue($rowData, ['tipo']) ?: 'company',
                                     'business_name' => $rawBusinessName,
                                     'first_name' => $firstName,
                                     'last_name' => $lastName,
                                     'address' => $address,
                                     'city' => $city,
-                                    'phone' => $this->getColumnValue($rowData, ['movil', 'telefono 1', 'nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'telefono', 'celular', 'tel']),
+                                    'phone' => $this->getColumnValue($rowData, ['movil', 'telefono 1', 'telefono', 'nº de celular', 'nº de linea', 'no de celular', 'no de linea', 'celular', 'tel']),
                                     'email' => $email,
                                     'secondary_email' => $secondaryEmail,
-                                    'tax_id' => $this->parseTaxId($this->getColumnValue($rowData, ['nro. de documento', 'nro de documento', 'documento', 'cuit', 'cuil', 'cuit/cuil', 'tax id', 'id fiscal'])),
-                                    'state' => null,
-                                    'country' => 'Argentina',
-                                    'postal_code' => null,
+                                    'tax_id' => $this->parseTaxId($this->getColumnValue($rowData, ['cuit/cuil', 'nro. de documento', 'nro de documento', 'documento', 'cuit', 'cuil', 'tax id', 'id fiscal'])),
+                                    'state' => $this->getColumnValue($rowData, ['provincia', 'state']),
+                                    'country' => $this->getColumnValue($rowData, ['pais', 'país', 'country']) ?: 'Argentina',
+                                    'postal_code' => $this->getColumnValue($rowData, ['codigo postal', 'código postal', 'cp', 'postal code', 'zip']),
                                     'notes' => $this->getColumnValue($rowData, ['observaciones', 'notas', 'obs', 'comentarios']),
                                     'is_active' => true,
                                 ];
@@ -231,37 +231,43 @@ class ListCustomers extends ListRecords
                                     $customerData['email'] = null;
                                 }
                                 
-                                // Buscar duplicado por email (incluyendo soft deleted)
+                                // LÓGICA DE DUPLICADOS MEJORADA
+                                $existing = null;
+                                
+                                // 1. Buscar por email (más confiable)
                                 if (!empty($customerData['email'])) {
                                     $existing = Customer::withTrashed()
                                         ->where('email', $customerData['email'])
                                         ->first();
-                                    
-                                    if ($existing) {
-                                        if ($existing->trashed()) {
-                                            // Si estaba eliminado, restaurar y actualizar
-                                            $existing->restore();
-                                        }
-                                        $existing->update($customerData);
-                                        $imported++;
-                                        continue;
-                                    }
                                 }
                                 
-                                // Buscar duplicado por business_name (gimnasios sin email único)
-                                $existing = Customer::withTrashed()
-                                    ->where('business_name', $customerData['business_name'])
-                                    ->first();
+                                // 2. Si no hay email O no se encontró por email, buscar por business_name + phone
+                                if (!$existing && !empty($customerData['business_name']) && !empty($customerData['phone'])) {
+                                    $existing = Customer::withTrashed()
+                                        ->where('business_name', $customerData['business_name'])
+                                        ->where('phone', $customerData['phone'])
+                                        ->first();
+                                }
                                 
                                 if ($existing) {
                                     if ($existing->trashed()) {
                                         $existing->restore();
                                     }
-                                    $existing->update($customerData);
+                                    
+                                    // MERGE: Solo actualizar campos que vienen con datos
+                                    $updateData = [];
+                                    foreach ($customerData as $key => $value) {
+                                        if (!empty($value) || $key === 'is_active') {
+                                            $updateData[$key] = $value;
+                                        }
+                                    }
+                                    
+                                    $existing->update($updateData);
                                     $imported++;
                                     continue;
                                 }
                                 
+                                // No existe, crear nuevo
                                 Customer::create($customerData);
                                 $imported++;
                                 

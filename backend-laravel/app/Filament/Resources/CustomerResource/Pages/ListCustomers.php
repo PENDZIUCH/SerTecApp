@@ -168,21 +168,10 @@ class ListCustomers extends ListRecords
                                     }
                                 }
                                 
-                                // SMART PARSING: Extract city from address
+                                // SMART PARSING: Extract city from address (DESHABILITADO - causa problemas con formatos internacionales)
                                 $address = $rawAddress;
                                 $city = null;
-                                if ($rawAddress) {
-                                    // Buscar última palabra después de coma, slash o guión
-                                    if (preg_match('/[,\/\-]\s*([A-Za-zÀ-ÿ\s]+)$/u', $rawAddress, $matches)) {
-                                        $possibleCity = trim($matches[1]);
-                                        // Si tiene menos de 30 caracteres, probablemente es ciudad
-                                        if (strlen($possibleCity) < 30 && !preg_match('/\d/', $possibleCity)) {
-                                            $city = $possibleCity;
-                                            // Remover ciudad de la dirección
-                                            $address = trim(preg_replace('/[,\/\-]\s*' . preg_quote($possibleCity, '/') . '$/u', '', $rawAddress));
-                                        }
-                                    }
-                                }
+                                // Dejamos address completo sin parsear ciudad automáticamente
                                 
                                 // Map columns - NOMBRES EXACTOS DEL EXCEL
                                 $customerData = [

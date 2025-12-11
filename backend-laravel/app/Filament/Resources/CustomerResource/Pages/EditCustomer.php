@@ -10,6 +10,16 @@ class EditCustomer extends EditRecord
 {
     protected static string $resource = CustomerResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+    
+    protected function getSavedNotificationTitle(): ?string
+    {
+        return 'Cliente guardado exitosamente';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

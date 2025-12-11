@@ -35,6 +35,25 @@ class CustomerResource extends Resource
                 ->email()
                 ->label('Email')
                 ->unique(ignoreRecord: true)
+                ->rules([
+                    function () {
+                        return function (string $attribute, $value, \Closure $fail) {
+                            if (empty($value)) return;
+                            
+                            // Buscar si el email existe en primary O secondary de otros registros
+                            $exists = \App\Models\Customer::where('id', '!=', request()->route('record') ?? 0)
+                                ->where(function ($query) use ($value) {
+                                    $query->where('email', $value)
+                                          ->orWhere('secondary_email', $value);
+                                })
+                                ->exists();
+                            
+                            if ($exists) {
+                                $fail('Este email ya está registrado en otro cliente (como email principal o secundario).');
+                            }
+                        };
+                    },
+                ])
                 ->validationMessages([
                     'unique' => 'Este email ya está registrado en otro cliente.',
                 ]),
@@ -42,6 +61,25 @@ class CustomerResource extends Resource
                 ->email()
                 ->label('Email Secundario')
                 ->different('email')
+                ->rules([
+                    function () {
+                        return function (string $attribute, $value, \Closure $fail) {
+                            if (empty($value)) return;
+                            
+                            // Buscar si el email existe en primary O secondary de otros registros
+                            $exists = \App\Models\Customer::where('id', '!=', request()->route('record') ?? 0)
+                                ->where(function ($query) use ($value) {
+                                    $query->where('email', $value)
+                                          ->orWhere('secondary_email', $value);
+                                })
+                                ->exists();
+                            
+                            if ($exists) {
+                                $fail('Este email ya está registrado en otro cliente (como email principal o secundario).');
+                            }
+                        };
+                    },
+                ])
                 ->validationMessages([
                     'different' => 'El email secundario debe ser diferente del email principal.',
                 ]),

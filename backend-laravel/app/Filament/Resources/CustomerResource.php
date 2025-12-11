@@ -26,7 +26,26 @@ class CustomerResource extends Resource
                 ->options(['individual' => 'Individual', 'company' => 'Empresa', 'gym' => 'Gimnasio'])
                 ->required(),
             Forms\Components\TextInput::make('business_name')
-                ->label('Razón Social'),
+                ->label('Razón Social')
+                ->live(onBlur: true)
+                ->afterStateUpdated(function ($state, $set, $livewire) {
+                    if (empty($state)) return;
+                    
+                    $recordId = $livewire->record->id ?? null;
+                    
+                    $exists = \App\Models\Customer::where('id', '!=', $recordId)
+                        ->where('business_name', $state)
+                        ->exists();
+                    
+                    if ($exists) {
+                        \Filament\Notifications\Notification::make()
+                            ->warning()
+                            ->title('Razón Social duplicada')
+                            ->body("Ya existe un cliente con la razón social '{$state}'. Verifica que no sea el mismo cliente.")
+                            ->persistent()
+                            ->send();
+                    }
+                }),
             Forms\Components\TextInput::make('first_name')
                 ->label('Nombre'),
             Forms\Components\TextInput::make('last_name')

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # CONFIGURACIÓN
-DOMAIN="dev.pendziuch.com"  # Cambiar según subdominio
+DOMAIN="stage.pendziuch.com"  # STAGE - ambiente de pruebas
 SSH_USER="u283281385"
 SSH_HOST="147.79.103.125"
 SSH_PORT="65002"

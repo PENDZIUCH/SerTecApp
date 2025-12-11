@@ -105,6 +105,7 @@ class ListCustomers extends ListRecords
                                 ->title('Error')
                                 ->body('El archivo está vacío')
                                 ->danger()
+                                ->persistent() // NO se cierra automáticamente
                                 ->send();
                             return;
                         }
@@ -276,6 +277,7 @@ class ListCustomers extends ListRecords
                             ->title('Importación completada')
                             ->body($message)
                             ->{$notificationType}()
+                            ->persistent() // NO se cierra automáticamente
                             ->send();
                             
                     } catch (\Exception $e) {
@@ -283,6 +285,7 @@ class ListCustomers extends ListRecords
                             ->title('Error en la importación')
                             ->body($e->getMessage())
                             ->danger()
+                            ->persistent() // NO se cierra automáticamente
                             ->send();
                     }
                 }),

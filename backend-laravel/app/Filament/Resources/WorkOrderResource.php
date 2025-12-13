@@ -15,42 +15,139 @@ class WorkOrderResource extends Resource
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'Órdenes de Trabajo';
-    protected static ?string $modelLabel = 'Orden de Trabajo';
-    protected static ?string $pluralModelLabel = 'Órdenes de Trabajo';
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('customer_id')->relationship('customer', 'business_name')->label('Cliente')->required()->searchable(),
-            Forms\Components\Select::make('equipment_id')->relationship('equipment', 'serial_number')->label('Equipo')->searchable(),
-            Forms\Components\TextInput::make('title')->label('Título')->required(),
-            Forms\Components\Textarea::make('description')->label('Descripción')->columnSpanFull(),
-            Forms\Components\Select::make('priority')->label('Prioridad')
-                ->options(['low' => 'Baja', 'medium' => 'Media', 'high' => 'Alta', 'urgent' => 'Urgente'])
-                ->required(),
-            Forms\Components\Select::make('status')->label('Estado')
-                ->options(['pending' => 'Pendiente', 'in_progress' => 'En Progreso', 'completed' => 'Completada', 'cancelled' => 'Cancelada'])
-                ->default('pending')->required(),
-            Forms\Components\Select::make('assigned_tech_id')->relationship('assignedTech', 'name')->label('Técnico Asignado')->searchable(),
-            Forms\Components\DatePicker::make('scheduled_date')->label('Fecha Programada'),
-            Forms\Components\TextInput::make('labor_cost')->label('Costo Mano Obra')->numeric()->default(0),
+            Forms\Components\Section::make('Información General')
+                ->schema([
+                    Forms\Components\Select::make('customer_id')
+                        ->label('Cliente')
+                        ->relationship('customer', 'business_name')
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('equipment_id', null)),
+                    
+                    Forms\Components\Select::make('equipment_id')
+                        ->label('Equipo')
+                        ->options(function (Forms\Get $get) {
+                            $customerId = $get('customer_id');
+                            if (!$customerId) return [];
+                            
+                            return \App\Models\Equipment::where('customer_id', $customerId)
+                                ->with(['brand', 'model'])
+                                ->get()
+                                ->mapWithKeys(fn ($eq) => [
+                                    $eq->id => "{$eq->brand->name} {$eq->model->name} - {$eq->serial_number}"
+                                ]);
+                        })
+                        ->searchable()
+                        ->required()
+                        ->disabled(fn (Forms\Get $get) => !$get('customer_id')),
+                    
+                    Forms\Components\Textarea::make('description')
+                        ->label('Descripción del Problema')
+                        ->required()
+                        ->columnSpanFull(),
+                    
+                    Forms\Components\Select::make('status')
+                        ->label('Estado')
+                        ->options([
+                            'open' => 'Abierta',
+                            'closed' => 'Cerrada',
+                        ])
+                        ->default('open')
+                        ->required(),
+                ])->columns(2),
+            
+            Forms\Components\Section::make('Repuestos Utilizados')
+                ->schema([
+                    Forms\Components\Repeater::make('partsUsed')
+                        ->relationship('partsUsed')
+                        ->schema([
+                            Forms\Components\Select::make('part_id')
+                                ->label('Repuesto')
+                                ->relationship('part', 'name')
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                    if ($state) {
+                                        $part = \App\Models\Part::find($state);
+                                        $set('unit_price', $part->sale_price_usd ?? 0);
+                                    }
+                                }),
+                            
+                            Forms\Components\TextInput::make('quantity')
+                                ->label('Cantidad')
+                                ->numeric()
+                                ->default(1)
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                    $unitPrice = $get('unit_price') ?? 0;
+                                    $set('subtotal', $state * $unitPrice);
+                                }),
+                            
+                            Forms\Components\TextInput::make('unit_price')
+                                ->label('Precio Unit.')
+                                ->numeric()
+                                ->prefix('$')
+                                ->disabled()
+                                ->dehydrated(),
+                            
+                            Forms\Components\TextInput::make('subtotal')
+                                ->label('Subtotal')
+                                ->numeric()
+                                ->prefix('$')
+                                ->disabled()
+                                ->dehydrated(),
+                        ])
+                        ->columns(4)
+                        ->defaultItems(0)
+                        ->addActionLabel('Agregar repuesto')
+                        ->collapsible(),
+                ]),
         ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
-            Tables\Columns\TextColumn::make('wo_number')->label('N° Orden')->searchable(),
-            Tables\Columns\TextColumn::make('customer.business_name')->label('Cliente')->searchable(),
-            Tables\Columns\TextColumn::make('title')->label('Título')->searchable(),
-            Tables\Columns\BadgeColumn::make('priority')->label('Prioridad')
-                ->colors(['success' => 'low', 'warning' => 'medium', 'danger' => 'high', 'primary' => 'urgent']),
-            Tables\Columns\BadgeColumn::make('status')->label('Estado')
-                ->colors(['secondary' => 'pending', 'warning' => 'in_progress', 'success' => 'completed', 'danger' => 'cancelled']),
-            Tables\Columns\TextColumn::make('assignedTech.name')->label('Técnico'),
-        ])
-        ->actions([Tables\Actions\EditAction::make()])
-        ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('id')
+                    ->label('N° OT')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('customer.business_name')
+                    ->label('Cliente')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('equipment.serial_number')
+                    ->label('Equipo')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->label('Descripción')
+                    ->limit(50),
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Estado')
+                    ->formatStateUsing(fn ($state) => $state === 'open' ? 'Abierta' : 'Cerrada')
+                    ->colors([
+                        'warning' => 'open',
+                        'success' => 'closed',
+                    ]),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Fecha')
+                    ->date('d/m/Y')
+                    ->sortable(),
+            ])
+            ->defaultSort('created_at', 'desc')
+            ->filters([])
+            ->actions([Tables\Actions\EditAction::make()])
+            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 
     public static function getPages(): array

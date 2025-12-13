@@ -10,6 +10,11 @@ class EditEquipment extends EditRecord
 {
     protected static string $resource = EquipmentResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

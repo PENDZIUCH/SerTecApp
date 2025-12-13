@@ -10,6 +10,11 @@ class EditWorkOrder extends EditRecord
 {
     protected static string $resource = WorkOrderResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -60,8 +60,8 @@ class ListParts extends ListRecords
                             $partNumber = $this->getColumnValue($rowData, ['n° de parte', 'nº de parte']);
                             $description = $this->getColumnValue($rowData, ['español']);
                             $location = $this->getColumnValue($rowData, ['estante']);
-                            $stock = $this->getColumnValue($rowData, ['stock']) ?? 0;
-                            $fobPrice = $this->getColumnValue($rowData, ['unid. fob u$s']);
+                            $stock = (int)($this->getColumnValue($rowData, ['stock']) ?? 0);
+                            $fobPrice = (float)($this->getColumnValue($rowData, ['unid. fob u$s']) ?? 0);
                             
                             if (empty($partNumber)) continue;
                             

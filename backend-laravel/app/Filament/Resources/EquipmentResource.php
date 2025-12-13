@@ -22,9 +22,14 @@ class EquipmentResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('customer_id')
                 ->label('Cliente')
-                ->relationship('customer', 'business_name', fn ($query) => $query->whereNotNull('business_name'))
+                ->options(function () {
+                    return \App\Models\Customer::query()
+                        ->get()
+                        ->mapWithKeys(fn ($customer) => [
+                            $customer->id => $customer->business_name ?: $customer->name
+                        ]);
+                })
                 ->searchable()
-                ->preload()
                 ->required(),
             
             Forms\Components\Select::make('brand_id')

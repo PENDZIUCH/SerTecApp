@@ -121,6 +121,19 @@ class WorkOrder extends Model
             && !in_array($this->status, ['completed', 'cancelled']);
     }
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($workOrder) {
+            if (!$workOrder->wo_number) {
+                $lastWO = static::orderBy('id', 'desc')->first();
+                $nextNumber = $lastWO ? ((int)substr($lastWO->wo_number, 3) + 1) : 1;
+                $workOrder->wo_number = 'WO-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+            }
+        });
+    }
+
     public function calculateTotalCost()
     {
         $this->total_cost = $this->labor_cost + $this->parts_cost;

@@ -9,11 +9,13 @@ use Filament\Resources\Pages\ListRecords;
 class ListBudgets extends ListRecords
 {
     protected static string $resource = BudgetResource::class;
+    protected ?string $heading = 'Presupuestos';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+                ->color('success'),
         ];
     }
 }

@@ -12,12 +12,19 @@ class Part extends Model
 
     protected $fillable = [
         'name',
+        'part_number',
         'sku',
         'description',
         'unit_cost',
+        'stock_quantity',
         'stock_qty',
         'min_stock_level',
         'is_active',
+        'location',
+        'fob_price_usd',
+        'markup_percent',
+        'sale_price_usd',
+        'equipment_model_id',
     ];
 
     protected function casts(): array
@@ -25,9 +32,18 @@ class Part extends Model
         return [
             'unit_cost' => 'decimal:2',
             'stock_qty' => 'integer',
+            'stock_quantity' => 'integer',
             'min_stock_level' => 'integer',
             'is_active' => 'boolean',
+            'fob_price_usd' => 'decimal:2',
+            'markup_percent' => 'decimal:2',
+            'sale_price_usd' => 'decimal:2',
         ];
+    }
+
+    public function equipmentModel()
+    {
+        return $this->belongsTo(EquipmentModel::class);
     }
 
     public function movements()

@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained('customers')->onDelete('cascade');
             $table->foreignId('equipment_id')->nullable()->constrained('equipments')->onDelete('set null');
             $table->string('wo_number', 50)->unique();
-            $table->string('title');
+            $table->string('title')->nullable();
             $table->text('description')->nullable();
             $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
             $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');

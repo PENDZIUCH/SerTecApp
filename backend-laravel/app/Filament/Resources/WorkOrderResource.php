@@ -24,7 +24,7 @@ class WorkOrderResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('customer_id')
                         ->label('Cliente')
-                        ->relationship('customer', 'business_name')
+                        ->relationship('customer', 'business_name', fn ($query) => $query->whereNotNull('business_name'))
                         ->searchable()
                         ->preload()
                         ->required()

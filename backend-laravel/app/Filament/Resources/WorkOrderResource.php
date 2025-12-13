@@ -61,10 +61,12 @@ class WorkOrderResource extends Resource
                     Forms\Components\Select::make('status')
                         ->label('Estado')
                         ->options([
-                            'open' => 'Abierta',
-                            'closed' => 'Cerrada',
+                            'pending' => 'Pendiente',
+                            'in_progress' => 'En Progreso',
+                            'completed' => 'Completada',
+                            'cancelled' => 'Cancelada',
                         ])
-                        ->default('open')
+                        ->default('pending')
                         ->required(),
                 ])->columns(2),
             
@@ -139,10 +141,18 @@ class WorkOrderResource extends Resource
                     ->limit(50),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Estado')
-                    ->formatStateUsing(fn ($state) => $state === 'open' ? 'Abierta' : 'Cerrada')
+                    ->formatStateUsing(fn ($state) => match($state) {
+                        'pending' => 'Pendiente',
+                        'in_progress' => 'En Progreso',
+                        'completed' => 'Completada',
+                        'cancelled' => 'Cancelada',
+                        default => $state,
+                    })
                     ->colors([
-                        'warning' => 'open',
-                        'success' => 'closed',
+                        'warning' => 'pending',
+                        'primary' => 'in_progress',
+                        'success' => 'completed',
+                        'danger' => 'cancelled',
                     ]),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Fecha')

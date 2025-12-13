@@ -9,6 +9,8 @@ class WoPartUsed extends Model
 {
     use HasFactory;
 
+    protected $table = 'wo_parts_used';
+
     protected $fillable = [
         'work_order_id',
         'part_id',

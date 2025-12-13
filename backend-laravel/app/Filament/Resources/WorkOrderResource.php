@@ -82,11 +82,25 @@ class WorkOrderResource extends Resource
                                 ->preload()
                                 ->required()
                                 ->live()
-                                ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                     if ($state) {
                                         $part = \App\Models\Part::find($state);
-                                        $set('unit_price', $part->sale_price_usd ?? 0);
+                                        $unitCost = $part->sale_price_usd ?? 0;
+                                        $set('unit_cost', $unitCost);
+                                        $quantity = $get('quantity') ?? 1;
+                                        $set('total_cost', $unitCost * $quantity);
                                     }
+                                }),
+                            
+                            Forms\Components\TextInput::make('unit_cost')
+                                ->label('Precio Unit.')
+                                ->numeric()
+                                ->prefix('$')
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
+                                    $quantity = $get('quantity') ?? 1;
+                                    $set('total_cost', $state * $quantity);
                                 }),
                             
                             Forms\Components\TextInput::make('quantity')
@@ -96,18 +110,11 @@ class WorkOrderResource extends Resource
                                 ->required()
                                 ->live()
                                 ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
-                                    $unitPrice = $get('unit_price') ?? 0;
-                                    $set('subtotal', $state * $unitPrice);
+                                    $unitCost = $get('unit_cost') ?? 0;
+                                    $set('total_cost', $state * $unitCost);
                                 }),
                             
-                            Forms\Components\TextInput::make('unit_price')
-                                ->label('Precio Unit.')
-                                ->numeric()
-                                ->prefix('$')
-                                ->disabled()
-                                ->dehydrated(),
-                            
-                            Forms\Components\TextInput::make('subtotal')
+                            Forms\Components\TextInput::make('total_cost')
                                 ->label('Subtotal')
                                 ->numeric()
                                 ->prefix('$')

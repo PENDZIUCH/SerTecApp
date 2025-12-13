@@ -1,14 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Models\Budget;
 
 Route::get('/', function () {
     return view('welcome');
 });
-<?php
-
-use Illuminate\Support\Facades\Route;
-use App\Models\Budget;
 
 Route::get('/budgets/{budget}/pdf', function (Budget $budget) {
     $budget->load(['customer', 'items.part']);

@@ -129,7 +129,10 @@ class PartResource extends Resource
             ->defaultSort('name', 'asc')
             ->filters([])
             ->actions([Tables\Actions\EditAction::make()])
-            ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
+            ->bulkActions([
+                Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn () => auth()->user()->hasRole('admin')),
+            ]);
     }
 
     public static function getPages(): array

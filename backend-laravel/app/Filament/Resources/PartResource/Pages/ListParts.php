@@ -27,6 +27,7 @@ class ListParts extends ListRecords
                 ->label('Importar Life Fitness')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('warning')
+                ->visible(fn () => auth()->user()->hasRole('admin'))
                 ->form([
                     FileUpload::make('file')
                         ->label('Archivo Excel')

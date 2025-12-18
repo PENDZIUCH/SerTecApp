@@ -164,8 +164,9 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('customer_type')->label('Tipo')->badge()->sortable(),
                 Tables\Columns\TextColumn::make('business_name')->label('Razón Social')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('first_name')->label('Nombre')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('last_name')->label('Apellido')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('phone')->label('Teléfono')->sortable(),
+                Tables\Columns\TextColumn::make('phone')->label('Teléfono')->searchable()->sortable(),
                 Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean()->sortable(),
             ])
             ->filters([

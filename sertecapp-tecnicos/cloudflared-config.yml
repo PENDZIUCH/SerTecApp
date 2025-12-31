@@ -1,0 +1,9 @@
+tunnel: sertecapp
+credentials-file: C:\Users\Hugo Pendziuch\.cloudflared\3c64e8a8-c0a0-4321-b5e6-30812f4b9a86.json
+
+ingress:
+  - hostname: sertecapp.pendziuch.com
+    service: http://127.0.0.1:8000
+  - hostname: prod.pendziuch.com
+    service: http://127.0.0.1:3001
+  - service: http_status:404

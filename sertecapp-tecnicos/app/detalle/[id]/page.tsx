@@ -133,23 +133,25 @@ export default function DetallePage() {
         </div>
 
         {/* Equipo */}
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <h2 className="text-sm font-semibold text-gray-900 mb-3">Equipo</h2>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Marca:</span>
-              <span className="font-medium text-gray-900">{order.equipment.brand}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Modelo:</span>
-              <span className="font-medium text-gray-900">{order.equipment.model}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Serial:</span>
-              <span className="font-mono text-xs text-gray-900">{order.equipment.serial}</span>
+        {order.equipment && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <h2 className="text-sm font-semibold text-gray-900 mb-3">Equipo</h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Marca:</span>
+                <span className="font-medium text-gray-900">{order.equipment.brand || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Modelo:</span>
+                <span className="font-medium text-gray-900">{order.equipment.model || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Serial:</span>
+                <span className="font-mono text-xs text-gray-900">{order.equipment.serial || 'N/A'}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Acciones */}
         {order.status === 'pendiente' && (

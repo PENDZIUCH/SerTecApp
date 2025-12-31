@@ -17,13 +17,15 @@ class TechnicianController extends Controller
      */
     public function getOrders($tecnicoId)
     {
-        $orders = WorkOrder::with(['customer', 'equipment'])
-            ->where('assigned_technician_id', $tecnicoId)
-            ->whereIn('status', ['pending', 'in_progress'])
-            ->orderBy('priority', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($order) {
+        \Log::info("Buscando órdenes para técnico ID: {$tecnicoId}");
+        
+        $orders = WorkOrder::with(['customer'])
+            ->where('assigned_tech_id', $tecnicoId)
+            ->get();
+            
+        \Log::info("Órdenes encontradas: " . $orders->count());
+        
+        $mapped = $orders->map(function ($order) {
                 return [
                     'id' => $order->id,
                     'clientName' => $order->customer->business_name ?? 'Sin cliente',
@@ -37,18 +39,20 @@ class TechnicianController extends Controller
                         'phone' => $order->customer->phone ?? '',
                         'email' => $order->customer->email ?? '',
                     ],
-                    'equipment' => [
+                    'equipment' => $order->equipment ? [
                         'brand' => $order->equipment->brand ?? 'Sin marca',
                         'model' => $order->equipment->model ?? 'Sin modelo',
                         'serial' => $order->equipment->serial_number ?? 'Sin serial',
-                    ],
+                    ] : null,
                     'notes' => $order->notes,
                 ];
             });
-
+        
+        \Log::info("Órdenes mapeadas: " . $mapped->count());
+        
         return response()->json([
             'success' => true,
-            'data' => $orders,
+            'data' => $mapped,
         ]);
     }
 

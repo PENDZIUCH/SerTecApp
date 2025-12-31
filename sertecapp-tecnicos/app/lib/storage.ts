@@ -36,6 +36,17 @@ export function saveParteLocal(parte: Omit<LocalParte, 'id' | 'created_at' | 'up
   partes.push(newParte);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(partes));
   
+  // NUEVO: Actualizar la orden en cache a completado
+  const cachedOrders = getCachedOrdenes();
+  if (cachedOrders) {
+    const updatedOrders = cachedOrders.map((order: any) => 
+      order.id === parte.orden_id 
+        ? { ...order, status: 'completado' }
+        : order
+    );
+    cacheOrdenes(updatedOrders);
+  }
+  
   return newParte;
 }
 
@@ -123,7 +134,7 @@ export async function syncPendingPartes(apiUrl: string, token: string): Promise<
   
   for (const parte of partes) {
     try {
-      const response = await fetch(`${apiUrl}/api/partes`, {
+      const response = await fetch(`${apiUrl}/api/v1/partes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

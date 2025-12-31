@@ -137,21 +137,69 @@ export default function PartePage() {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       
-      // Guardar localmente (funciona offline)
-      const parte = saveParteLocal({
-        orden_id: parseInt(params.id as string),
-        tecnico_id: user.id || 1,
-        diagnostico,
-        trabajo_realizado: trabajoRealizado,
-        repuestos_usados: repuestos,
-        firma_base64: firma,
-      });
+      // Si hay conexión, enviar directo al backend
+      if (online) {
+        try {
+          const token = localStorage.getItem('token');
+          const apiUrl = 'https://sertecapp.pendziuch.com';
+          const response = await fetch(`${apiUrl}/api/v1/partes`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              orden_id: parseInt(params.id as string),
+              tecnico_id: user.id || 1,
+              diagnostico,
+              trabajo_realizado: trabajoRealizado,
+              repuestos_usados: repuestos,
+              firma_base64: firma,
+            })
+          });
 
-      const message = online 
-        ? 'Parte guardado exitosamente' 
-        : 'Guardado localmente. Se sincronizará cuando vuelva la conexión';
-      
-      showSuccessToast(message);
+          if (response.ok) {
+            // Limpiar cache de órdenes para forzar recarga
+            localStorage.removeItem('sertecapp_ordenes_cache');
+            showSuccessToast('Parte guardado exitosamente');
+          } else {
+            // Si falla el backend, guardar local como backup
+            saveParteLocal({
+              orden_id: parseInt(params.id as string),
+              tecnico_id: user.id || 1,
+              diagnostico,
+              trabajo_realizado: trabajoRealizado,
+              repuestos_usados: repuestos,
+              firma_base64: firma,
+            });
+            showSuccessToast('Guardado localmente. Se sincronizará automáticamente');
+          }
+        } catch (error) {
+          console.error('Error enviando al backend:', error);
+          // Si hay error de red, guardar local
+          saveParteLocal({
+            orden_id: parseInt(params.id as string),
+            tecnico_id: user.id || 1,
+            diagnostico,
+            trabajo_realizado: trabajoRealizado,
+            repuestos_usados: repuestos,
+            firma_base64: firma,
+          });
+          showSuccessToast('Guardado localmente. Se sincronizará cuando vuelva la conexión');
+        }
+      } else {
+        // Sin conexión, guardar local
+        saveParteLocal({
+          orden_id: parseInt(params.id as string),
+          tecnico_id: user.id || 1,
+          diagnostico,
+          trabajo_realizado: trabajoRealizado,
+          repuestos_usados: repuestos,
+          firma_base64: firma,
+        });
+        showSuccessToast('Guardado localmente. Se sincronizará cuando vuelva la conexión');
+      }
       
       setTimeout(() => {
         router.push('/ordenes');

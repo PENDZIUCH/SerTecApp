@@ -21,7 +21,7 @@ export default function LoginPage() {
       if (email === 'tech@demo.com' && pin === '1234') {
         localStorage.setItem('token', 'demo-token-123');
         localStorage.setItem('user', JSON.stringify({ 
-          id: 1, 
+          id: 4, 
           nombre: 'Juan Técnico',
           email: 'tech@demo.com' 
         }));

@@ -15,7 +15,6 @@ interface Order {
   suggestedParts?: Array<{ id: number; name: string; stock: number }>;
 }
 
-// DATOS DEMO - Cuando tengamos backend, esto viene del API
 const DEMO_ORDERS: Order[] = [
   {
     id: 1,
@@ -24,10 +23,6 @@ const DEMO_ORDERS: Order[] = [
     address: 'Av. Libertador 1234, CABA',
     priority: 'urgente',
     status: 'pendiente',
-    suggestedParts: [
-      { id: 1, name: 'Banda PT300', stock: 3 },
-      { id: 2, name: 'Lubricante Silicona', stock: 5 },
-    ],
   },
   {
     id: 2,
@@ -36,9 +31,6 @@ const DEMO_ORDERS: Order[] = [
     address: 'Mitre 567, Avellaneda',
     priority: 'media',
     status: 'pendiente',
-    suggestedParts: [
-      { id: 3, name: 'Rodamiento pedal', stock: 8 },
-    ],
   },
   {
     id: 3,
@@ -73,9 +65,52 @@ export default function OrdenesPage() {
   const [online, setOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const result = await syncPendingPartes(apiUrl, token);
+      
+      console.log('Sync result:', result);
+      setPendingSync(getPartesPendientesSync().length);
+      
+      // Recargar órdenes
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        const apiUrl = 'https://sertecapp.pendziuch.com';
+        const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          },
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && data.data.length > 0) {
+            setOrders(data.data);
+            cacheOrdenes(data.data);
+          }
+        }
+      }
+      
+      alert(`Sincronizado: ${result.success} exitosos, ${result.failed} fallidos`);
+    } catch (error) {
+      console.error('Error en sync:', error);
+      alert('Error al sincronizar');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
-    // Verificar autenticación
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
 
@@ -87,69 +122,65 @@ export default function OrdenesPage() {
     const user = JSON.parse(userData);
     setUser(user);
     
-    // Detectar estado de conexión
     setOnline(isOnline());
     setPendingSync(getPartesPendientesSync().length);
     
-    // Cargar órdenes desde backend o cache
     const loadOrders = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ordenes/tecnico/${user.id}`, {
+        const apiUrl = 'https://sertecapp.pendziuch.com';
+        const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
-          }
+          },
+          cache: 'no-store' // Forzar recarga sin cache
         });
         
         if (response.ok) {
           const data = await response.json();
-          // Si el backend devuelve array vacío, usar datos demo
-          if (data.data && data.data.length > 0) {
-            setOrders(data.data);
-            cacheOrdenes(data.data);
-          } else {
-            // Backend vacío = mostrar datos demo
-            setOrders(DEMO_ORDERS);
-            cacheOrdenes(DEMO_ORDERS);
-          }
+          console.log('API Response:', data);
+          setOrders(data.data || []);
+          cacheOrdenes(data.data || []);
         } else {
-          // Si falla, usar cache
-          const cached = getCachedOrdenes();
-          if (cached) {
-            setOrders(cached);
-          } else {
-            // Fallback a datos demo si no hay cache
-            setOrders(DEMO_ORDERS);
-          }
+          console.error('API Error:', response.status);
+          setOrders([]);
         }
       } catch (error) {
         console.error('Error cargando órdenes:', error);
-        // Usar cache si hay error de red
-        const cached = getCachedOrdenes();
-        if (cached) {
-          setOrders(cached);
-        } else {
-          setOrders(DEMO_ORDERS);
-        }
+        setOrders([]);
       }
     };
     
+    // Cargar órdenes al montar
     loadOrders();
+
+    // Recargar cuando la ventana vuelve a tener foco
+    const handleFocus = () => {
+      console.log('Focus event - reloading orders');
+      loadOrders();
+      setPendingSync(getPartesPendientesSync().length);
+    };
+    window.addEventListener('focus', handleFocus);
     
-    // Setup listeners
+    // Recargar cuando la página se hace visible (para mobile)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Visibility change - reloading orders');
+        loadOrders();
+        setPendingSync(getPartesPendientesSync().length);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     const cleanup = setupConnectionListener(
       async () => {
         setOnline(true);
-        // Auto-sync cuando vuelve conexión
         const token = localStorage.getItem('token');
         if (token) {
-          const result = await syncPendingPartes(
-            process.env.NEXT_PUBLIC_API_URL || '',
-            token
-          );
+          const apiUrl = 'https://sertecapp.pendziuch.com';
+          const result = await syncPendingPartes(apiUrl, token);
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
-            // Recargar órdenes después de sincronizar
             loadOrders();
           }
         }
@@ -157,7 +188,11 @@ export default function OrdenesPage() {
       () => setOnline(false)
     );
 
-    return cleanup;
+    return () => {
+      cleanup();
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [router]);
 
   const handleLogout = () => {
@@ -182,23 +217,22 @@ export default function OrdenesPage() {
     );
   }
 
-  const pendingOrders = orders.filter((o) => o.status === 'pendiente');
+  const pendingOrders = orders.filter((o) => o.status === 'pendiente' || o.status === 'en_progreso');
   const completedOrders = orders.filter((o) => o.status === 'completado');
+  const filteredOrders = filter === 'pending' ? pendingOrders : completedOrders;
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-xl font-bold">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          {/* Top row: Logo + Logout */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
                 S
               </div>
-              <div>
-                <h1 className="text-base font-semibold text-gray-900">Mis Órdenes</h1>
-                <p className="text-sm text-gray-500">{user.nombre}</p>
-              </div>
+              <h1 className="text-base font-semibold text-gray-900">SerTecApp</h1>
             </div>
             <button
               onClick={handleLogout}
@@ -207,89 +241,76 @@ export default function OrdenesPage() {
               Salir
             </button>
           </div>
-          
-          {/* Connection Status */}
-          <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${
+
+          {/* Filters + Status row */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilter('pending')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
+                filter === 'pending'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              Pendientes ({pendingOrders.length})
+            </button>
+            <button
+              onClick={() => setFilter('completed')}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
+                filter === 'completed'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700'
+              }`}
+            >
+              Completadas ({completedOrders.length})
+            </button>
+            
+            {/* Status indicator */}
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative ${
+              online ? 'bg-green-50' : 'bg-red-50'
+            }`}>
+              <div className={`w-3 h-3 rounded-full ${
                 online ? 'bg-green-500' : 'bg-red-500'
               }`} />
-              <span className="text-xs text-gray-600">
-                {online ? 'En línea' : 'Sin conexión'}
-              </span>
+              {pendingSync > 0 && (
+                <>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                    {pendingSync}
+                  </span>
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-blue-600 font-medium"
+                  >
+                    {syncing ? 'Sincronizando...' : 'Sincronizar'}
+                  </button>
+                </>
+              )}
             </div>
-            
-            {pendingSync > 0 && (
-              <div className="flex items-center gap-1.5 bg-orange-50 text-orange-700 px-2 py-1 rounded-full">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span className="text-xs font-medium">{pendingSync} pendiente{pendingSync > 1 ? 's' : ''}</span>
-              </div>
-            )}
           </div>
         </div>
       </header>
 
-      {/* Stats + Filtros */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Botones de filtro */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setFilter('pending')}
-            className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
-              filter === 'pending'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>Pendientes</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                filter === 'pending' ? 'bg-white/20' : 'bg-gray-200'
-              }`}>
-                {pendingOrders.length}
-              </span>
-            </div>
-          </button>
-          <button
-            onClick={() => setFilter('completed')}
-            className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
-              filter === 'completed'
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-white text-gray-700 border border-gray-300'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <span>Completadas</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                filter === 'completed' ? 'bg-white/20' : 'bg-gray-200'
-              }`}>
-                {completedOrders.length}
-              </span>
-            </div>
-          </button>
-        </div>
-
-        {/* Órdenes filtradas */}
-        <div className="space-y-3">
-          {(filter === 'pending' ? pendingOrders : completedOrders).map((order) => (
-            <OrderCard
-              key={order.id}
-              {...order}
-              onStart={() => handleStart(order.id)}
-              onViewDetail={() => handleViewDetail(order.id)}
-            />
-          ))}
-
-          {(filter === 'pending' ? pendingOrders : completedOrders).length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">
-                {filter === 'pending' ? 'No hay órdenes pendientes' : 'No hay órdenes completadas'}
-              </p>
-            </div>
-          )}
-        </div>
+      {/* Orders list */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        {filteredOrders.length > 0 ? (
+          <div className="space-y-3">
+            {filteredOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                {...order}
+                onStart={() => handleStart(order.id)}
+                onViewDetail={() => handleViewDetail(order.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500">
+              {filter === 'pending' ? 'No hay órdenes pendientes' : 'No hay órdenes completadas'}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

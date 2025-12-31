@@ -3,70 +3,6 @@
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// TODO: Traer del backend cuando esté listo
-const DEMO_ORDERS: any = {
-  1: {
-    id: 1,
-    clientName: 'Gym Centro',
-    problem: 'Cinta no enciende',
-    address: 'Av. Libertador 1234, CABA',
-    priority: 'urgente',
-    status: 'pendiente',
-    created_at: '2025-12-30T10:00:00',
-    contact: {
-      name: 'Carlos Pérez',
-      phone: '+54 11 1234-5678',
-      email: 'carlos@gymcentro.com'
-    },
-    equipment: {
-      brand: 'Body Fitness',
-      model: 'PT300',
-      serial: 'BF-PT300-2023-001'
-    },
-    notes: 'Cliente reporta que la cinta no enciende desde ayer. Revisaron el enchufe y funciona.',
-  },
-  2: {
-    id: 2,
-    clientName: 'Club Fitness Sur',
-    problem: 'Bici hace ruido en pedal derecho',
-    address: 'Mitre 567, Avellaneda',
-    priority: 'media',
-    status: 'pendiente',
-    created_at: '2025-12-30T11:30:00',
-    contact: {
-      name: 'Ana García',
-      phone: '+54 11 8765-4321',
-      email: 'ana@fitnesssur.com'
-    },
-    equipment: {
-      brand: 'Schwinn',
-      model: 'IC2',
-      serial: 'SW-IC2-2022-045'
-    },
-    notes: 'Ruido metálico en el pedal derecho al pedalear.',
-  },
-  3: {
-    id: 3,
-    clientName: 'Fitness Company',
-    problem: 'Remo pierde resistencia',
-    address: 'San Martín 890, San Isidro',
-    priority: 'alta',
-    status: 'pendiente',
-    created_at: '2025-12-30T09:15:00',
-    contact: {
-      name: 'Luis Martínez',
-      phone: '+54 11 5555-6666',
-      email: 'luis@fitnesscompany.com'
-    },
-    equipment: {
-      brand: 'Life Fitness',
-      model: 'GX',
-      serial: 'LF-GX-2021-089'
-    },
-    notes: 'La resistencia del remo baja progresivamente durante el uso.',
-  },
-};
-
 export default function DetallePage() {
   const router = useRouter();
   const params = useParams();
@@ -74,14 +10,27 @@ export default function DetallePage() {
 
   useEffect(() => {
     const orderId = params.id as string;
-    const orderData = DEMO_ORDERS[parseInt(orderId)];
     
-    if (orderData) {
-      setOrder(orderData);
-    } else {
-      router.push('/ordenes');
+    // Cargar desde cache
+    const cachedOrders = localStorage.getItem('sertecapp_ordenes_cache');
+    if (cachedOrders) {
+      try {
+        const parsed = JSON.parse(cachedOrders);
+        // El cache puede tener formato {success, data} o ser array directo
+        const orders = Array.isArray(parsed) ? parsed : (parsed.data || []);
+        const foundOrder = orders.find((o: any) => o.id.toString() === orderId);
+        if (foundOrder) {
+          setOrder(foundOrder);
+          return;
+        }
+      } catch (e) {
+        console.error('Error parsing cache:', e);
+      }
     }
-  }, [params, router]);
+    
+    // Si no está en cache, redirigir a órdenes
+    router.push('/ordenes');
+  }, [params.id, router]);
 
   if (!order) {
     return (

@@ -50,8 +50,34 @@ class WorkOrderResource extends Resource
                                 ]);
                         })
                         ->searchable()
-                        ->required()
+                        ->nullable()
+                        ->helperText('Opcional - dejar vacío si el técnico debe identificar el equipo en el lugar')
                         ->disabled(fn (Forms\Get $get) => !$get('customer_id')),
+                    
+                    Forms\Components\Select::make('assigned_tech_id')
+                        ->label('Técnico Asignado')
+                        ->options(function () {
+                            return \App\Models\User::where('role', 'technician')
+                                ->orWhere('email', 'tech@demo.com')
+                                ->get()
+                                ->mapWithKeys(fn ($user) => [
+                                    $user->id => $user->name
+                                ]);
+                        })
+                        ->searchable()
+                        ->nullable()
+                        ->helperText('Opcional - se puede asignar después'),
+                    
+                    Forms\Components\Select::make('priority')
+                        ->label('Prioridad')
+                        ->options([
+                            1 => 'Baja',
+                            2 => 'Media',
+                            3 => 'Alta',
+                            4 => 'Urgente',
+                        ])
+                        ->default(2)
+                        ->required(),
                     
                     Forms\Components\Textarea::make('description')
                         ->label('Descripción del Problema')
@@ -142,7 +168,12 @@ class WorkOrderResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('equipment.serial_number')
                     ->label('Equipo')
-                    ->searchable(),
+                    ->searchable()
+                    ->default('Sin asignar'),
+                Tables\Columns\TextColumn::make('assignedTech.name')
+                    ->label('Técnico')
+                    ->searchable()
+                    ->default('Sin asignar'),
                 Tables\Columns\TextColumn::make('description')
                     ->label('Descripción')
                     ->limit(50),

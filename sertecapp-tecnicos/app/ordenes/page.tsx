@@ -83,21 +83,50 @@ export default function OrdenesPage() {
       return;
     }
 
-    setUser(JSON.parse(userData));
-    
-    // Intentar cargar desde cache primero
-    const cached = getCachedOrdenes();
-    if (cached) {
-      setOrders(cached);
-    }
-    
-    // Cargar datos demo
-    setOrders(DEMO_ORDERS);
-    cacheOrdenes(DEMO_ORDERS);
+    const user = JSON.parse(userData);
+    setUser(user);
     
     // Detectar estado de conexión
     setOnline(isOnline());
     setPendingSync(getPartesPendientesSync().length);
+    
+    // Cargar órdenes desde backend o cache
+    const loadOrders = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ordenes/tecnico/${user.id}`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setOrders(data.data || []);
+          cacheOrdenes(data.data || []);
+        } else {
+          // Si falla, usar cache
+          const cached = getCachedOrdenes();
+          if (cached) {
+            setOrders(cached);
+          } else {
+            // Fallback a datos demo si no hay cache
+            setOrders(DEMO_ORDERS);
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando órdenes:', error);
+        // Usar cache si hay error de red
+        const cached = getCachedOrdenes();
+        if (cached) {
+          setOrders(cached);
+        } else {
+          setOrders(DEMO_ORDERS);
+        }
+      }
+    };
+    
+    loadOrders();
     
     // Setup listeners
     const cleanup = setupConnectionListener(
@@ -112,6 +141,8 @@ export default function OrdenesPage() {
           );
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
+            // Recargar órdenes después de sincronizar
+            loadOrders();
           }
         }
       },
@@ -119,23 +150,6 @@ export default function OrdenesPage() {
     );
 
     return cleanup;
-
-    /* TODO: Cuando el backend esté listo, reemplazar con:
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ordenes/tecnico/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
-        setOrders(data.data);
-        cacheOrdenes(data.data);
-      })
-      .catch(err => {
-        console.error(err);
-        // Usar cache si falla
-        const cached = getCachedOrdenes();
-        if (cached) setOrders(cached);
-      });
-    */
   }, [router]);
 
   const handleLogout = () => {

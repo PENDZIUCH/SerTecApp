@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Api\V1\WorkshopController;
+use App\Http\Controllers\Api\V1\TechnicianController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -48,5 +49,11 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('budgets', BudgetController::class);
         Route::post('budgets/{budget}/approve', [BudgetController::class, 'approve']);
         Route::post('budgets/{budget}/reject', [BudgetController::class, 'reject']);
+        
+        // PWA Endpoints para técnicos
+        Route::get('ordenes/tecnico/{tecnico}', [TechnicianController::class, 'getOrders']);
+        Route::post('partes', [TechnicianController::class, 'saveParte']);
+        Route::get('partes/pendientes', [TechnicianController::class, 'getPendingPartes']);
+        Route::put('partes/{parte}/aprobar', [TechnicianController::class, 'approveParte']);
     });
 });

@@ -18,12 +18,16 @@ export default function PartePage() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [online, setOnline] = useState(true);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     setOnline(isOnline());
   }, []);
 
   const startDrawing = (e: React.TouchEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -32,14 +36,18 @@ export default function PartePage() {
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = ('touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left) * scaleX;
+    const y = ('touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top) * scaleY;
 
     ctx.beginPath();
     ctx.moveTo(x, y);
   };
 
   const draw = (e: React.TouchEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     if (!isDrawing) return;
 
     const canvas = canvasRef.current;
@@ -49,13 +57,17 @@ export default function PartePage() {
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = ('touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left) * scaleX;
+    const y = ('touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top) * scaleY;
 
     ctx.lineTo(x, y);
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.stroke();
   };
 
@@ -93,16 +105,30 @@ export default function PartePage() {
     setRepuestos(repuestos.filter((_, i) => i !== index));
   };
 
+  const showSuccessToast = (message: string) => {
+    setToastMessage(message);
+    setToastType('success');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const showErrorToast = (message: string) => {
+    setToastMessage(message);
+    setToastType('error');
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!diagnostico.trim() || !trabajoRealizado.trim()) {
-      alert('Por favor completá el diagnóstico y el trabajo realizado');
+      showErrorToast('Completá el diagnóstico y el trabajo realizado');
       return;
     }
 
     if (!firma) {
-      alert('Por favor agregá la firma del cliente');
+      showErrorToast('Falta la firma del cliente');
       return;
     }
 
@@ -121,16 +147,18 @@ export default function PartePage() {
         firma_base64: firma,
       });
 
-      alert(
-        online 
-          ? '✅ Parte guardado exitosamente' 
-          : '✅ Parte guardado localmente. Se sincronizará cuando vuelva la conexión.'
-      );
-
-      router.push('/ordenes');
+      const message = online 
+        ? 'Parte guardado exitosamente' 
+        : 'Guardado localmente. Se sincronizará cuando vuelva la conexión';
+      
+      showSuccessToast(message);
+      
+      setTimeout(() => {
+        router.push('/ordenes');
+      }, 1500);
     } catch (error) {
       console.error('Error guardando parte:', error);
-      alert('❌ Error al guardar el parte');
+      showErrorToast('Error al guardar el parte');
     } finally {
       setSaving(false);
     }
@@ -215,28 +243,33 @@ export default function PartePage() {
           )}
 
           {/* Agregar repuesto */}
-          <div className="flex gap-2">
+          <div className="space-y-2">
             <input
               type="text"
               value={nuevoRepuesto}
               onChange={(e) => setNuevoRepuesto(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), agregarRepuesto())}
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Nombre del repuesto"
             />
-            <input
-              type="number"
-              value={cantidadRepuesto}
-              onChange={(e) => setCantidadRepuesto(parseInt(e.target.value) || 1)}
-              min="1"
-              className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center"
-            />
-            <button
-              type="button"
-              onClick={agregarRepuesto}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-            >
-              +
-            </button>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={cantidadRepuesto}
+                onChange={(e) => setCantidadRepuesto(parseInt(e.target.value) || 1)}
+                min="1"
+                className="flex-1 px-3 py-3 border border-gray-300 rounded-lg text-sm text-center text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Cantidad"
+              />
+              <button
+                type="button"
+                onClick={agregarRepuesto}
+                disabled={!nuevoRepuesto.trim()}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Agregar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -245,12 +278,13 @@ export default function PartePage() {
           <label className="block text-sm font-semibold text-gray-900 mb-2">
             Firma del Cliente *
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-gray-50">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
             <canvas
               ref={canvasRef}
-              width={400}
-              height={200}
-              className="w-full touch-none bg-white rounded"
+              width={800}
+              height={400}
+              className="w-full h-48 touch-none bg-white"
+              style={{ maxWidth: '100%', height: 'auto', aspectRatio: '2/1' }}
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
@@ -263,7 +297,7 @@ export default function PartePage() {
           <button
             type="button"
             onClick={clearSignature}
-            className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+            className="mt-3 w-full text-sm text-blue-600 hover:text-blue-700 font-medium py-2 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
           >
             Limpiar firma
           </button>
@@ -280,6 +314,28 @@ export default function PartePage() {
           </button>
         </div>
       </form>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 left-4 right-4 z-50 animate-slide-up">
+          <div className={`rounded-lg shadow-2xl p-4 flex items-center gap-3 ${
+            toastType === 'success' 
+              ? 'bg-green-600 text-white' 
+              : 'bg-red-600 text-white'
+          }`}>
+            {toastType === 'success' ? (
+              <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <p className="font-medium">{toastMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

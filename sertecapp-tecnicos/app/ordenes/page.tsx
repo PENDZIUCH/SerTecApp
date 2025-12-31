@@ -72,6 +72,7 @@ export default function OrdenesPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [online, setOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
+  const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
 
   useEffect(() => {
     // Verificar autenticación
@@ -102,8 +103,15 @@ export default function OrdenesPage() {
         
         if (response.ok) {
           const data = await response.json();
-          setOrders(data.data || []);
-          cacheOrdenes(data.data || []);
+          // Si el backend devuelve array vacío, usar datos demo
+          if (data.data && data.data.length > 0) {
+            setOrders(data.data);
+            cacheOrdenes(data.data);
+          } else {
+            // Backend vacío = mostrar datos demo
+            setOrders(DEMO_ORDERS);
+            cacheOrdenes(DEMO_ORDERS);
+          }
         } else {
           // Si falla, usar cache
           const cached = getCachedOrdenes();
@@ -223,56 +231,65 @@ export default function OrdenesPage() {
         </div>
       </header>
 
-      {/* Stats */}
+      {/* Stats + Filtros */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <p className="text-3xl font-bold text-gray-900 mb-1">{pendingOrders.length}</p>
-            <p className="text-sm text-gray-600 font-medium">Pendientes</p>
-          </div>
-          <div className="bg-white rounded-lg p-4 border border-gray-200">
-            <p className="text-3xl font-bold text-gray-900 mb-1">{completedOrders.length}</p>
-            <p className="text-sm text-gray-600 font-medium">Completadas</p>
-          </div>
+        {/* Botones de filtro */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setFilter('pending')}
+            className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+              filter === 'pending'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white text-gray-700 border border-gray-300'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <span>Pendientes</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                filter === 'pending' ? 'bg-white/20' : 'bg-gray-200'
+              }`}>
+                {pendingOrders.length}
+              </span>
+            </div>
+          </button>
+          <button
+            onClick={() => setFilter('completed')}
+            className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
+              filter === 'completed'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-white text-gray-700 border border-gray-300'
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <span>Completadas</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                filter === 'completed' ? 'bg-white/20' : 'bg-gray-200'
+              }`}>
+                {completedOrders.length}
+              </span>
+            </div>
+          </button>
         </div>
 
-        {/* Pending Orders */}
-        {pendingOrders.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-base font-semibold text-gray-900 mb-3">
-              Pendientes
-            </h2>
-            <div className="space-y-4">
-              {pendingOrders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  {...order}
-                  onStart={() => handleStart(order.id)}
-                  onViewDetail={() => handleViewDetail(order.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Órdenes filtradas */}
+        <div className="space-y-3">
+          {(filter === 'pending' ? pendingOrders : completedOrders).map((order) => (
+            <OrderCard
+              key={order.id}
+              {...order}
+              onStart={() => handleStart(order.id)}
+              onViewDetail={() => handleViewDetail(order.id)}
+            />
+          ))}
 
-        {/* Completed Orders */}
-        {completedOrders.length > 0 && (
-          <div>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">
-              Completadas
-            </h2>
-            <div className="space-y-4">
-              {completedOrders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  {...order}
-                  onStart={() => handleStart(order.id)}
-                  onViewDetail={() => handleViewDetail(order.id)}
-                />
-              ))}
+          {(filter === 'pending' ? pendingOrders : completedOrders).length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">
+                {filter === 'pending' ? 'No hay órdenes pendientes' : 'No hay órdenes completadas'}
+              </p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

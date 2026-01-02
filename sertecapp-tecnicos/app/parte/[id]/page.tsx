@@ -329,10 +329,10 @@ export default function PartePage() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
             <canvas
               ref={canvasRef}
-              width={800}
-              height={400}
-              className="w-full h-48 touch-none bg-white"
-              style={{ maxWidth: '100%', height: 'auto', aspectRatio: '2/1' }}
+              width={600}
+              height={200}
+              className="w-full h-32 touch-none bg-white"
+              style={{ maxWidth: '100%', height: 'auto', aspectRatio: '3/1' }}
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}

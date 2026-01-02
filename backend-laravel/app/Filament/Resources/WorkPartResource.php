@@ -16,9 +16,9 @@ class WorkPartResource extends Resource
 {
     protected static ?string $model = WorkPart::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
-    protected static ?string $navigationLabel = 'Partes de Trabajo';
-    protected static ?int $navigationSort = 2;
-    protected static ?string $navigationGroup = 'Operaciones';
+    protected static ?string $navigationLabel = 'Partes Pendientes';
+    protected static ?int $navigationSort = 1;
+    // Sin grupo - nivel principal
 
     public static function form(Form $form): Form
     {

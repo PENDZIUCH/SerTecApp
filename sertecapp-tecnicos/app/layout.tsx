@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "SerTecApp - Técnicos",
   description: "Aplicación para técnicos de Fitness Company",
   manifest: "/manifest.json",
-  themeColor: "#2563eb",
+  themeColor: "#dc2626",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#2563eb" />
+        <meta name="theme-color" content="#dc2626" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={`${inter.className} antialiased`}>

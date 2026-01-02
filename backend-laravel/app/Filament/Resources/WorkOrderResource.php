@@ -198,8 +198,35 @@ class WorkOrderResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
-            ->filters([])
-            ->actions([Tables\Actions\EditAction::make()])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Estado')
+                    ->options([
+                        'pending' => 'Pendiente',
+                        'in_progress' => 'En Progreso',
+                        'completed' => 'Completada',
+                        'cancelled' => 'Cancelada',
+                    ]),
+                
+                Tables\Filters\SelectFilter::make('assigned_tech_id')
+                    ->label('Técnico')
+                    ->relationship('assignedTech', 'name'),
+            ])
+            ->actions([
+                Tables\Actions\Action::make('ver_parte')
+                    ->label('Ver Parte')
+                    ->icon('heroicon-o-document-text')
+                    ->color('info')
+                    ->visible(fn (WorkOrder $record) => $record->status === 'completed')
+                    ->url(fn (WorkOrder $record) => \App\Models\WorkPart::where('work_order_id', $record->id)->exists() 
+                        ? route('filament.admin.resources.work-parts.view', [
+                            'record' => \App\Models\WorkPart::where('work_order_id', $record->id)->first()->id
+                        ])
+                        : null
+                    ),
+                
+                Tables\Actions\EditAction::make(),
+            ])
             ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 

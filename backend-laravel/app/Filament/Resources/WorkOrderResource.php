@@ -225,6 +225,7 @@ class WorkOrderResource extends Resource
                         : null
                     ),
                 
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
@@ -235,6 +236,7 @@ class WorkOrderResource extends Resource
         return [
             'index' => Pages\ListWorkOrders::route('/'),
             'create' => Pages\CreateWorkOrder::route('/create'),
+            'view' => Pages\ViewWorkOrder::route('/{record}'),
             'edit' => Pages\EditWorkOrder::route('/{record}/edit'),
         ];
     }

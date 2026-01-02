@@ -20,6 +20,7 @@ Route::prefix('v1')->group(function () {
     // PWA Endpoints para técnicos (SIN AUTH para testing)
     Route::get('ordenes/tecnico/{tecnico}', [TechnicianController::class, 'getOrders']);
     Route::post('partes', [TechnicianController::class, 'saveParte']);
+    Route::get('partes/{workOrderId}', [TechnicianController::class, 'getParte']);
 
     Route::middleware('auth:sanctum')->group(function () {
         

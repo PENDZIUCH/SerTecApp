@@ -189,6 +189,43 @@ class TechnicianController extends Controller
     }
 
     /**
+     * Obtener parte por work_order_id
+     */
+    public function getParte($workOrderId)
+    {
+        try {
+            $parte = \App\Models\WorkPart::where('work_order_id', $workOrderId)
+                ->latest()
+                ->first();
+
+            if (!$parte) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Parte no encontrado',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $parte->id,
+                    'diagnosis' => $parte->diagnosis,
+                    'work_done' => $parte->work_done,
+                    'signature' => $parte->signature,
+                    'status' => $parte->status,
+                    'created_at' => $parte->created_at->toISOString(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el parte',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Helper: Mapear prioridad
      */
     private function mapPriority($priority)

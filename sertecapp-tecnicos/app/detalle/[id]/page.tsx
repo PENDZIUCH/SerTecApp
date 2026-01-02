@@ -7,6 +7,7 @@ export default function DetallePage() {
   const router = useRouter();
   const params = useParams();
   const [order, setOrder] = useState<any>(null);
+  const [parte, setParte] = useState<any>(null);
 
   useEffect(() => {
     const orderId = params.id as string;
@@ -21,6 +22,11 @@ export default function DetallePage() {
         const foundOrder = orders.find((o: any) => o.id.toString() === orderId);
         if (foundOrder) {
           setOrder(foundOrder);
+          
+          // Si está completada, cargar el parte
+          if (foundOrder.status === 'completado') {
+            loadParte(foundOrder.id);
+          }
           return;
         }
       } catch (e) {
@@ -31,6 +37,19 @@ export default function DetallePage() {
     // Si no está en cache, redirigir a órdenes
     router.push('/ordenes');
   }, [params.id, router]);
+
+  const loadParte = async (orderId: number) => {
+    try {
+      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const response = await fetch(`${apiUrl}/api/v1/partes/${orderId}`);
+      const data = await response.json();
+      if (data.success && data.data) {
+        setParte(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading parte:', error);
+    }
+  };
 
   if (!order) {
     return (
@@ -154,6 +173,43 @@ export default function DetallePage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Serial:</span>
                 <span className="font-mono text-xs text-gray-900">{order.equipment.serial || 'N/A'}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Parte Completado */}
+        {order.status === 'completado' && parte && (
+          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <h2 className="text-sm font-semibold text-green-900 mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Trabajo Completado
+            </h2>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-1">Diagnóstico:</p>
+                <p className="text-sm text-gray-900">{parte.diagnosis}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-700 mb-1">Trabajo Realizado:</p>
+                <p className="text-sm text-gray-900">{parte.work_done}</p>
+              </div>
+              {parte.signature && (
+                <div>
+                  <p className="text-xs font-medium text-gray-700 mb-2">Firma del Cliente:</p>
+                  <img 
+                    src={parte.signature} 
+                    alt="Firma" 
+                    className="border border-gray-300 rounded-lg max-w-full h-auto"
+                  />
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-gray-600 pt-2 border-t border-green-200">
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full font-medium">
+                  Pendiente de Aprobación
+                </span>
               </div>
             </div>
           </div>

@@ -93,9 +93,11 @@ export default function DetallePage() {
       </header>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-        {/* Cliente */}
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Grid responsive: 1 columna en mobile, 3 en tablet+ */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* Cliente */}
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
           <h2 className="text-sm font-semibold text-gray-900 mb-3">Cliente</h2>
           <div className="space-y-2">
             <div>
@@ -156,7 +158,11 @@ export default function DetallePage() {
             )}
           </div>
         </div>
+        </div>
+        {/* Fin del grid de 3 columnas */}
 
+        {/* Secciones full-width debajo */}
+        <div className="space-y-4">
         {/* Equipo */}
         {order.equipment && (
           <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -214,6 +220,8 @@ export default function DetallePage() {
             </div>
           </div>
         )}
+        </div>
+        {/* Fin secciones full-width */}
 
         {/* Acciones */}
         {order.status === 'pendiente' && (

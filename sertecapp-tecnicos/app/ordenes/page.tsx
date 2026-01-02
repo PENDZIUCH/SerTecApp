@@ -15,49 +15,6 @@ interface Order {
   suggestedParts?: Array<{ id: number; name: string; stock: number }>;
 }
 
-const DEMO_ORDERS: Order[] = [
-  {
-    id: 1,
-    clientName: 'Gym Centro',
-    problem: 'Cinta no enciende',
-    address: 'Av. Libertador 1234, CABA',
-    priority: 'urgente',
-    status: 'pendiente',
-  },
-  {
-    id: 2,
-    clientName: 'Club Fitness Sur',
-    problem: 'Bici hace ruido en pedal derecho',
-    address: 'Mitre 567, Avellaneda',
-    priority: 'media',
-    status: 'pendiente',
-  },
-  {
-    id: 3,
-    clientName: 'Fitness Company',
-    problem: 'Remo pierde resistencia',
-    address: 'San Martín 890, San Isidro',
-    priority: 'alta',
-    status: 'pendiente',
-  },
-  {
-    id: 4,
-    clientName: 'Ateneo Gym',
-    problem: 'Revisión mensual programada',
-    address: 'Belgrano 445, Vicente López',
-    priority: 'baja',
-    status: 'completado',
-  },
-  {
-    id: 5,
-    clientName: 'PowerGym',
-    problem: 'Tablero LCD sin imagen',
-    address: 'Rivadavia 2100, CABA',
-    priority: 'alta',
-    status: 'completado',
-  },
-];
-
 export default function OrdenesPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -79,27 +36,8 @@ export default function OrdenesPage() {
       console.log('Sync result:', result);
       setPendingSync(getPartesPendientesSync().length);
       
-      // Recargar órdenes
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        const apiUrl = 'https://sertecapp.pendziuch.com';
-        const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          },
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data && data.data.length > 0) {
-            setOrders(data.data);
-            cacheOrdenes(data.data);
-          }
-        }
-      }
+      // Solo recargar pendientes después de sincronizar
+      await loadPendingOrders();
       
       alert(`Sincronizado: ${result.success} exitosos, ${result.failed} fallidos`);
     } catch (error) {
@@ -107,6 +45,62 @@ export default function OrdenesPage() {
       alert('Error al sincronizar');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const loadPendingOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+      if (!token || !userData) return;
+
+      const user = JSON.parse(userData);
+      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const newOrders = data.data || [];
+        
+        // Separar pendientes y completadas
+        const pending = newOrders.filter((o: Order) => o.status === 'pendiente' || o.status === 'en_progreso');
+        const completed = newOrders.filter((o: Order) => o.status === 'completado');
+        
+        // Obtener completadas del cache
+        const cached = getCachedOrdenes() || [];
+        const cachedCompleted = cached.filter((o: Order) => o.status === 'completado');
+        
+        // Merge: nuevas completadas + viejas completadas (sin duplicados)
+        const completedIds = new Set(completed.map((o: Order) => o.id));
+        const mergedCompleted = [
+          ...completed,
+          ...cachedCompleted.filter((o: Order) => !completedIds.has(o.id))
+        ];
+        
+        // Combinar pendientes (frescas) + completadas (cache + nuevas)
+        const finalOrders = [...pending, ...mergedCompleted];
+        
+        setOrders(finalOrders);
+        cacheOrdenes(finalOrders);
+        
+        console.log(`Loaded: ${pending.length} pending, ${mergedCompleted.length} completed (${completed.length} new + ${cachedCompleted.length - completed.length} cached)`);
+      } else {
+        console.error('API Error:', response.status);
+        // Cargar desde cache si falla
+        const cached = getCachedOrdenes() || [];
+        setOrders(cached);
+      }
+    } catch (error) {
+      console.error('Error cargando órdenes:', error);
+      // Cargar desde cache si falla
+      const cached = getCachedOrdenes() || [];
+      setOrders(cached);
     }
   };
 
@@ -125,39 +119,19 @@ export default function OrdenesPage() {
     setOnline(isOnline());
     setPendingSync(getPartesPendientesSync().length);
     
-    const loadOrders = async () => {
-      try {
-        const apiUrl = 'https://sertecapp.pendziuch.com';
-        const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          },
-          cache: 'no-store' // Forzar recarga sin cache
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('API Response:', data);
-          setOrders(data.data || []);
-          cacheOrdenes(data.data || []);
-        } else {
-          console.error('API Error:', response.status);
-          setOrders([]);
-        }
-      } catch (error) {
-        console.error('Error cargando órdenes:', error);
-        setOrders([]);
-      }
-    };
+    // Cargar desde cache primero (instantáneo)
+    const cached = getCachedOrdenes() || [];
+    if (cached.length > 0) {
+      setOrders(cached);
+    }
     
-    // Cargar órdenes al montar
-    loadOrders();
+    // Luego actualizar pendientes desde servidor
+    loadPendingOrders();
 
-    // Recargar cuando la ventana vuelve a tener foco
+    // Recargar SOLO PENDIENTES cuando la ventana vuelve a tener foco
     const handleFocus = () => {
-      console.log('Focus event - reloading orders');
-      loadOrders();
+      console.log('Focus event - reloading pending orders only');
+      loadPendingOrders();
       setPendingSync(getPartesPendientesSync().length);
     };
     window.addEventListener('focus', handleFocus);
@@ -165,8 +139,8 @@ export default function OrdenesPage() {
     // Recargar cuando la página se hace visible (para mobile)
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('Visibility change - reloading orders');
-        loadOrders();
+        console.log('Visibility change - reloading pending orders only');
+        loadPendingOrders();
         setPendingSync(getPartesPendientesSync().length);
       }
     };
@@ -181,7 +155,7 @@ export default function OrdenesPage() {
           const result = await syncPendingPartes(apiUrl, token);
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
-            loadOrders();
+            await loadPendingOrders();
           }
         }
       },

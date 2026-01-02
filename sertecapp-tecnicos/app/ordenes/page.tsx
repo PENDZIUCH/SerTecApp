@@ -231,7 +231,7 @@ export default function OrdenesPage() {
               onClick={() => setFilter('pending')}
               className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
                 filter === 'pending'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-red-600 text-white'
                   : 'bg-gray-100 text-gray-700'
               }`}
             >

@@ -203,10 +203,7 @@ export default function OrdenesPage() {
           {/* Top row: Logo + Logout */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                S
-              </div>
-              <h1 className="text-base font-semibold text-gray-900">SerTecApp</h1>
+              <img src="/fitness-logo.png" alt="Fitness Company" className="h-8 w-auto" />
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">

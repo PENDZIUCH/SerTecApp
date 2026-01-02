@@ -1,6 +1,6 @@
 {
-  "name": "SerTecApp Técnicos",
-  "short_name": "SerTecApp",
+  "name": "Fitness Company Técnicos",
+  "short_name": "FitnessCo",
   "description": "Aplicación para técnicos de Fitness Company",
   "start_url": "/",
   "display": "standalone",

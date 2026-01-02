@@ -8,14 +8,17 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SerTecApp - Técnicos",
+  title: "Fitness Company - Técnicos",
   description: "Aplicación para técnicos de Fitness Company",
   manifest: "/manifest.json",
   themeColor: "#dc2626",
+  icons: {
+    icon: '/icon.svg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "SerTecApp",
+    title: "Fitness Company",
   },
 };
 
@@ -27,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#dc2626" />
         <link rel="apple-touch-icon" href="/icon.svg" />

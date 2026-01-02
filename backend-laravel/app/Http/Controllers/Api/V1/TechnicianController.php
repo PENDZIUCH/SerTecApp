@@ -98,6 +98,27 @@ class TechnicianController extends Controller
             $order->status = 'completed';
             $order->save();
 
+            // Crear notificación para supervisores
+            $technician = \App\Models\User::find($request->tecnico_id);
+            $supervisors = \App\Models\User::where('role', 'supervisor')
+                ->orWhere('email', 'admin@demo.com')
+                ->get();
+            
+            foreach ($supervisors as $supervisor) {
+                \Filament\Notifications\Notification::make()
+                    ->title('Nuevo parte pendiente de aprobación')
+                    ->body("Orden #{$order->id} - {$order->customer->business_name} completada por {$technician->name}")
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->iconColor('warning')
+                    ->actions([
+                        \Filament\Notifications\Actions\Action::make('ver')
+                            ->label('Ver Parte')
+                            ->url(route('filament.admin.resources.work-parts.view', ['record' => $parte->id]))
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($supervisor);
+            }
+
             DB::commit();
 
             return response()->json([

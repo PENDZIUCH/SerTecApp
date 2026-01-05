@@ -22,7 +22,7 @@ export default function LoginPage() {
         localStorage.setItem('token', 'demo-token-123');
         localStorage.setItem('user', JSON.stringify({ 
           id: 4, 
-          nombre: 'Juan Técnico',
+          name: 'Juan Técnico',
           email: 'tech@demo.com' 
         }));
         

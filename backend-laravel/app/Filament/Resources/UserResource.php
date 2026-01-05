@@ -172,11 +172,22 @@ class UserResource extends Resource
                         // Limpiar el telefono dejando solo numeros
                         $phone = preg_replace('/[^0-9]/', '', $record->phone);
                         
-                        // Si empieza con 54, ya esta bien
-                        // Si empieza con 11, agregar 54
+                        // Formato Argentina:
+                        // Fijos CABA/GBA: 5411 + numero (ej: 541112345678)
+                        // Celulares: 549 + codigo area + numero (ej: 5491112345678)
+                        
                         if (!str_starts_with($phone, '54')) {
-                            if (str_starts_with($phone, '11') || str_starts_with($phone, '9')) {
+                            // Si empieza con 11 (fijo CABA)
+                            if (str_starts_with($phone, '11')) {
                                 $phone = '54' . $phone;
+                            }
+                            // Si empieza con 9 (celular con 9 adelante)
+                            elseif (str_starts_with($phone, '9')) {
+                                $phone = '54' . $phone;
+                            }
+                            // Otros casos (asumir celular sin 9)
+                            else {
+                                $phone = '549' . $phone;
                             }
                         }
                         

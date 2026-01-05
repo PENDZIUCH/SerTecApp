@@ -47,10 +47,12 @@ class UserResource extends Resource
                     Forms\Components\TextInput::make('password')
                         ->label('Contraseña')
                         ->password()
+                        ->revealable()
                         ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                         ->dehydrated(fn ($state) => filled($state))
                         ->required(fn (string $context): bool => $context === 'create')
-                        ->helperText('Dejar vacío para mantener la contraseña actual'),
+                        ->default(fn () => \Illuminate\Support\Str::random(12))
+                        ->helperText('Contraseña generada automáticamente. Puedes cambiarla.'),
                 ])->columns(2),
 
             Forms\Components\Section::make('Rol y Permisos')
@@ -133,6 +135,34 @@ class UserResource extends Resource
                     ->native(false),
             ])
             ->actions([
+                Tables\Actions\Action::make('reset_password')
+                    ->label('Nueva Clave')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Generar Nueva Contraseña')
+                    ->modalDescription('Se generará una contraseña aleatoria. Copíala y envíasela al usuario.')
+                    ->action(function (User $record) {
+                        $newPassword = \Illuminate\Support\Str::random(12);
+                        $record->password = \Illuminate\Support\Facades\Hash::make($newPassword);
+                        $record->save();
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Contraseña actualizada')
+                            ->body("Nueva contraseña: **{$newPassword}**")
+                            ->success()
+                            ->persistent()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('copy')
+                                    ->label('Copiar')
+                                    ->button()
+                                    ->close()
+                                    ->extraAttributes([
+                                        'x-on:click' => "navigator.clipboard.writeText('{$newPassword}'); \$tooltip('Copiado!', { timeout: 2000 })"
+                                    ]),
+                            ])
+                            ->send();
+                    }),
                 Tables\Actions\Action::make('whatsapp')
                     ->label('WhatsApp')
                     ->icon('heroicon-o-chat-bubble-left-right')

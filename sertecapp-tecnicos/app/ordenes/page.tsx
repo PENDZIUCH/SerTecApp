@@ -114,6 +114,7 @@ export default function OrdenesPage() {
     }
 
     const user = JSON.parse(userData);
+    console.log('USER DATA:', user);
     setUser(user);
     
     setOnline(isOnline());

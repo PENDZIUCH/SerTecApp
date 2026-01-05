@@ -38,6 +38,12 @@ class UserResource extends Resource
                         ->required()
                         ->unique(ignoreRecord: true)
                         ->maxLength(255),
+                    Forms\Components\TextInput::make('phone')
+                        ->label('Teléfono')
+                        ->tel()
+                        ->placeholder('+54 11 1234-5678')
+                        ->maxLength(20)
+                        ->helperText('Formato: +54 11 xxxx-xxxx'),
                     Forms\Components\TextInput::make('password')
                         ->label('Contraseña')
                         ->password()
@@ -80,7 +86,14 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email')
                     ->label('Email')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->copyable()
+                    ->copyMessage('Email copiado'),
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Teléfono')
+                    ->searchable()
+                    ->toggleable()
+                    ->formatStateUsing(fn ($state) => $state ?? '-'),
                 Tables\Columns\TextColumn::make('roles.name')
                     ->label('Rol')
                     ->badge()
@@ -120,9 +133,26 @@ class UserResource extends Resource
                     ->native(false),
             ])
             ->actions([
+                Tables\Actions\Action::make('whatsapp')
+                    ->label('WhatsApp')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->color('success')
+                    ->visible(fn (User $record) => !empty($record->phone))
+                    ->url(function (User $record) {
+                        $phone = preg_replace('/[^0-9]/', '', $record->phone);
+                        $message = urlencode(
+                            "Hola {$record->name},\n\n" .
+                            "Tus credenciales para SerTecApp:\n\n" .
+                            "Email: {$record->email}\n" .
+                            "Contrasena: [Solicitar al supervisor]\n\n" .
+                            "Descarga la app: https://pro.pendziuch.com"
+                        );
+                        return "https://wa.me/{$phone}?text={$message}";
+                    })
+                    ->openUrlInNewTab(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn (User $record) => $record->id !== 1) // Proteger super admin
+                    ->visible(fn (User $record) => $record->id !== 1)
                     ->requiresConfirmation(),
             ])
             ->bulkActions([

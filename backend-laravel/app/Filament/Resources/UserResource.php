@@ -169,7 +169,17 @@ class UserResource extends Resource
                     ->color('success')
                     ->visible(fn (User $record) => !empty($record->phone))
                     ->url(function (User $record) {
+                        // Limpiar el telefono dejando solo numeros
                         $phone = preg_replace('/[^0-9]/', '', $record->phone);
+                        
+                        // Si empieza con 54, ya esta bien
+                        // Si empieza con 11, agregar 54
+                        if (!str_starts_with($phone, '54')) {
+                            if (str_starts_with($phone, '11') || str_starts_with($phone, '9')) {
+                                $phone = '54' . $phone;
+                            }
+                        }
+                        
                         $message = urlencode(
                             "Hola {$record->name},\n\n" .
                             "Tus credenciales para SerTecApp:\n\n" .

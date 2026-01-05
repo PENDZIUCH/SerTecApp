@@ -147,6 +147,11 @@ class UserResource extends Resource
                         $record->password = \Illuminate\Support\Facades\Hash::make($newPassword);
                         $record->save();
                         
+                        // Generar token Base64 para auto-login
+                        $credentials = "{$record->email}:{$newPassword}";
+                        $token = base64_encode($credentials);
+                        $autoLoginUrl = "https://pro.pendziuch.com/l?t={$token}";
+                        
                         // Preparar WhatsApp link
                         $phone = preg_replace('/[^0-9]/', '', $record->phone);
                         if (!str_starts_with($phone, '54')) {
@@ -161,25 +166,24 @@ class UserResource extends Resource
                         
                         $whatsappMessage = urlencode(
                             "Hola {$record->name}!\n\n" .
-                            "Tu nueva contrasena para la app de Fitness Company:\n\n" .
-                            "Password: {$newPassword}\n\n" .
-                            "Usuario: {$record->email}\n" .
-                            "App: https://pro.pendziuch.com"
+                            "Tu acceso a la app de Fitness Company:\n\n" .
+                            "{$autoLoginUrl}\n\n" .
+                            "(Guarda este link para acceder siempre)"
                         );
                         $whatsappUrl = "https://wa.me/{$phone}?text={$whatsappMessage}";
                         
                         \Filament\Notifications\Notification::make()
                             ->title('Contraseña actualizada')
-                            ->body("Nueva contraseña: **{$newPassword}**")
+                            ->body("Nueva contraseña: **{$newPassword}**\n\nLink de acceso: {$autoLoginUrl}")
                             ->success()
                             ->persistent()
                             ->actions([
                                 \Filament\Notifications\Actions\Action::make('copy')
-                                    ->label('Copiar')
+                                    ->label('Copiar Link')
                                     ->button()
                                     ->color('gray')
                                     ->extraAttributes([
-                                        'x-on:click' => "navigator.clipboard.writeText('{$newPassword}'); \$tooltip('Copiado!', { timeout: 2000 })"
+                                        'x-on:click' => "navigator.clipboard.writeText('{$autoLoginUrl}'); \$tooltip('Link copiado!', { timeout: 2000 })"
                                     ]),
                                 \Filament\Notifications\Actions\Action::make('whatsapp')
                                     ->label('Enviar WhatsApp')

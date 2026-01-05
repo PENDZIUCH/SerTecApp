@@ -161,8 +161,8 @@ class UserResource extends Resource
                         
                         $whatsappMessage = urlencode(
                             "Hola {$record->name}!\n\n" .
-                            "Tu nueva contraseña para la app de Fitness Company:\n\n" .
-                            "🔑 {$newPassword}\n\n" .
+                            "Tu nueva contrasena para la app de Fitness Company:\n\n" .
+                            "Password: {$newPassword}\n\n" .
                             "Usuario: {$record->email}\n" .
                             "App: https://pro.pendziuch.com"
                         );

@@ -141,11 +141,32 @@ class UserResource extends Resource
                     ->color('warning')
                     ->requiresConfirmation()
                     ->modalHeading('Generar Nueva Contraseña')
-                    ->modalDescription('Se generará una contraseña aleatoria. Copíala y envíasela al usuario.')
+                    ->modalDescription('Se generará una contraseña aleatoria.')
                     ->action(function (User $record) {
                         $newPassword = \Illuminate\Support\Str::random(12);
                         $record->password = \Illuminate\Support\Facades\Hash::make($newPassword);
                         $record->save();
+                        
+                        // Preparar WhatsApp link
+                        $phone = preg_replace('/[^0-9]/', '', $record->phone);
+                        if (!str_starts_with($phone, '54')) {
+                            if (str_starts_with($phone, '11')) {
+                                $phone = '54' . $phone;
+                            } elseif (str_starts_with($phone, '9')) {
+                                $phone = '54' . $phone;
+                            } else {
+                                $phone = '549' . $phone;
+                            }
+                        }
+                        
+                        $whatsappMessage = urlencode(
+                            "Hola {$record->name}!\n\n" .
+                            "Tu nueva contraseña para la app de Fitness Company:\n\n" .
+                            "🔑 {$newPassword}\n\n" .
+                            "Usuario: {$record->email}\n" .
+                            "App: https://pro.pendziuch.com"
+                        );
+                        $whatsappUrl = "https://wa.me/{$phone}?text={$whatsappMessage}";
                         
                         \Filament\Notifications\Notification::make()
                             ->title('Contraseña actualizada')
@@ -156,10 +177,17 @@ class UserResource extends Resource
                                 \Filament\Notifications\Actions\Action::make('copy')
                                     ->label('Copiar')
                                     ->button()
-                                    ->close()
+                                    ->color('gray')
                                     ->extraAttributes([
                                         'x-on:click' => "navigator.clipboard.writeText('{$newPassword}'); \$tooltip('Copiado!', { timeout: 2000 })"
                                     ]),
+                                \Filament\Notifications\Actions\Action::make('whatsapp')
+                                    ->label('Enviar WhatsApp')
+                                    ->button()
+                                    ->color('success')
+                                    ->url($whatsappUrl)
+                                    ->openUrlInNewTab()
+                                    ->visible(!empty($record->phone)),
                             ])
                             ->send();
                     }),
@@ -192,11 +220,11 @@ class UserResource extends Resource
                         }
                         
                         $message = urlencode(
-                            "Hola {$record->name},\n\n" .
-                            "Tus credenciales para SerTecApp:\n\n" .
-                            "Email: {$record->email}\n" .
-                            "Contrasena: [Solicitar al supervisor]\n\n" .
-                            "Descarga la app: https://pro.pendziuch.com"
+                            "Hola {$record->name}!\n\n" .
+                            "Tu acceso a la app de Fitness Company:\n\n" .
+                            "Usuario: {$record->email}\n" .
+                            "Contrasena: (solicitar al supervisor)\n\n" .
+                            "Descargar app: https://pro.pendziuch.com"
                         );
                         return "https://wa.me/{$phone}?text={$message}";
                     })

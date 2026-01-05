@@ -64,7 +64,7 @@ class UserResource extends Resource
                         ->searchable()
                         ->preload()
                         ->required()
-                        ->helperText('Selecciona el rol del usuario (admin, technician, viewer)'),
+                        ->helperText('Selecciona el rol del usuario (administrador, técnico, supervisor, cliente)'),
                 ]),
 
             Forms\Components\Section::make('Estado')
@@ -100,10 +100,10 @@ class UserResource extends Resource
                     ->label('Rol')
                     ->badge()
                     ->colors([
-                        'danger' => 'admin',
+                        'danger' => 'administrador',
                         'warning' => 'supervisor',
-                        'success' => 'technician',
-                        'info' => 'viewer',
+                        'success' => 'técnico',
+                        'info' => 'cliente',
                     ])
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_active')

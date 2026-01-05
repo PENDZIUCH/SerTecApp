@@ -57,7 +57,7 @@ class WorkOrderResource extends Resource
                     Forms\Components\Select::make('assigned_tech_id')
                         ->label('Técnico Asignado')
                         ->options(function () {
-                            return \App\Models\User::where('role', 'technician')
+                            return \App\Models\User::role('técnico')
                                 ->orWhere('email', 'tech@demo.com')
                                 ->get()
                                 ->mapWithKeys(fn ($user) => [

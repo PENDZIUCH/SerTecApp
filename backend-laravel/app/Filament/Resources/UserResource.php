@@ -227,17 +227,17 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->hasRole('admin');
+        return auth()->user()->hasRole('administrador');
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()->hasRole('admin');
+        return auth()->user()->hasRole('administrador');
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()->hasRole('admin');
+        return auth()->user()->hasRole('administrador');
     }
 
     public static function canDelete($record): bool
@@ -246,6 +246,6 @@ class UserResource extends Resource
         if ($record->id === 1) {
             return false;
         }
-        return auth()->user()->hasRole('admin');
+        return auth()->user()->hasRole('administrador');
     }
 }

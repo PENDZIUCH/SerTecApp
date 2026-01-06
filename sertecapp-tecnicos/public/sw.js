@@ -1,30 +1,28 @@
+// Service Worker for offline functionality
 const CACHE_NAME = 'sertecapp-v1';
-const OFFLINE_CACHE = 'sertecapp-offline-v1';
-
-// Archivos críticos para funcionar offline
-const STATIC_ASSETS = [
+const urlsToCache = [
   '/',
   '/ordenes',
-  '/manifest.json',
+  '/offline',
 ];
 
-// Install: cachear assets estáticos
+// Install - cache resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(urlsToCache);
     })
   );
   self.skipWaiting();
 });
 
-// Activate: limpiar caches viejos
+// Activate - clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== OFFLINE_CACHE) {
+          if (cacheName !== CACHE_NAME) {
             return caches.delete(cacheName);
           }
         })
@@ -34,53 +32,32 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: estrategia Network-First con fallback a cache
+// Fetch - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-  // Solo cachear GET requests
-  if (event.request.method !== 'GET') return;
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Clonar response para guardar en cache
-        const responseClone = response.clone();
-        
+        // Clone response to cache it
+        const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
+          cache.put(event.request, responseToCache);
         });
-
         return response;
       })
       .catch(() => {
-        // Si falla red, buscar en cache
+        // Network failed, try cache
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-
-          // Si no hay cache, página offline
-          return new Response(
-            JSON.stringify({
-              error: 'Sin conexión',
-              message: 'Los datos se guardarán localmente y se sincronizarán cuando vuelva la conexión'
-            }),
-            {
-              headers: { 'Content-Type': 'application/json' }
-            }
-          );
+          // No cache, return offline page
+          return caches.match('/offline');
         });
       })
   );
 });
-
-// Background Sync: cuando vuelve conexión
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-partes') {
-    event.waitUntil(syncPendingParts());
-  }
-});
-
-async function syncPendingParts() {
-  // TODO: Implementar sync de partes guardados localmente
-  console.log('Sincronizando partes pendientes...');
-}

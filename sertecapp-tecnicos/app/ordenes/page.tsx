@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderCard } from '../components/OrderCard';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 interface Order {
   id: number;
@@ -19,11 +20,13 @@ export default function OrdenesPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const { isOnline: effectiveOnline, forceOffline, toggleForceOffline, realOnline } = useOnlineStatus();
   const [online, setOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
   const [syncing, setSyncing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
 
   const handleClearCache = () => {
     if (confirm('¿Limpiar caché y datos locales? Deberás volver a iniciar sesión.')) {
@@ -215,6 +218,89 @@ export default function OrdenesPage() {
               <img src="/fitness-logo.png" alt="Fitness Company" className="h-8 w-auto" />
             </div>
             <div className="flex items-center gap-3 relative">
+              {/* Status Button with Toggle */}
+              <button
+                onClick={() => setStatusMenuOpen(!statusMenuOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className={`w-2 h-2 rounded-full ${
+                  effectiveOnline ? 'bg-green-500' : 'bg-red-500'
+                }`} />
+                <span className="text-xs font-medium text-gray-700">
+                  {effectiveOnline ? 'Online' : 'Offline'}
+                </span>
+                <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Status Dropdown */}
+              {statusMenuOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-10" 
+                    onClick={() => setStatusMenuOpen(false)}
+                  />
+                  <div className="absolute right-24 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-20">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Estado Conexión</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            realOnline ? 'bg-green-500' : 'bg-red-500'
+                          }`} />
+                          <span className="text-sm text-gray-700">
+                            {forceOffline ? 'Modo Offline' : (realOnline ? 'Conectado' : 'Sin conexión')}
+                          </span>
+                        </div>
+                        {/* Toggle Switch */}
+                        <button
+                          onClick={toggleForceOffline}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            forceOffline ? 'bg-gray-400' : 'bg-green-500'
+                          }`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            forceOffline ? 'translate-x-1' : 'translate-x-6'
+                          }`} />
+                        </button>
+                      </div>
+                      {forceOffline && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          🛠️ Modo offline manual activado
+                        </p>
+                      )}
+                    </div>
+                    <div className="py-2">
+                      <button
+                        onClick={() => {
+                          handleSync();
+                          setStatusMenuOpen(false);
+                        }}
+                        disabled={syncing || !effectiveOnline}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3 disabled:opacity-50"
+                      >
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {syncing ? 'Sincronizando...' : `Sincronizar${pendingSync > 0 ? ` (${pendingSync})` : ''}`}
+                      </button>
+                      <button
+                        onClick={() => {
+                          window.location.reload();
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                      >
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Refrescar App
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* User Menu Button */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -302,29 +388,6 @@ export default function OrdenesPage() {
             >
               Completadas ({completedOrders.length})
             </button>
-            
-            {/* Status indicator */}
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center relative ${
-              online ? 'bg-green-50' : 'bg-red-50'
-            }`}>
-              <div className={`w-3 h-3 rounded-full ${
-                online ? 'bg-green-500' : 'bg-red-500'
-              }`} />
-              {pendingSync > 0 && (
-                <>
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {pendingSync}
-                  </span>
-                  <button
-                    onClick={handleSync}
-                    disabled={syncing}
-                    className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-blue-600 font-medium"
-                  >
-                    {syncing ? 'Sincronizando...' : 'Sincronizar'}
-                  </button>
-                </>
-              )}
-            </div>
           </div>
         </div>
       </header>

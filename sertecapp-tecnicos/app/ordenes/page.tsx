@@ -9,6 +9,8 @@ import { getGreeting } from '../../lib/utils';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../components/ui/Toast';
 import { useDarkMode } from '../../hooks/useDarkMode';
+import { Modal } from '../components/ui/Modal';
+import { OrderDetail } from '../components/OrderDetail';
 
 interface Order {
   id: number;
@@ -32,6 +34,8 @@ export default function OrdenesPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { toasts, showToast, hideToast, updateToast } = useToast();
   const { theme, changeTheme } = useDarkMode();
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
   const handleClearCache = () => {
     if (confirm('¿Limpiar caché y datos locales? Deberás volver a iniciar sesión.')) {
@@ -209,7 +213,8 @@ export default function OrdenesPage() {
   };
 
   const handleViewDetail = (orderId: number) => {
-    router.push(`/detalle/${orderId}`);
+    setSelectedOrderId(orderId);
+    setDetailModalOpen(true);
   };
 
   if (!user) {
@@ -472,6 +477,15 @@ export default function OrdenesPage() {
           />
         ))}
       </div>
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        title="Detalle de la orden"
+      >
+        {selectedOrderId && <OrderDetail orderId={selectedOrderId} />}
+      </Modal>
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { OrderCard } from '../components/OrderCard';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { getGreeting } from '../../lib/utils';
+import { useToast } from '../../hooks/useToast';
+import { Toast } from '../components/ui/Toast';
 
 interface Order {
   id: number;
@@ -27,6 +29,7 @@ export default function OrdenesPage() {
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
   const [syncing, setSyncing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { toasts, showToast, hideToast, updateToast } = useToast();
 
   const handleClearCache = () => {
     if (confirm('¿Limpiar caché y datos locales? Deberás volver a iniciar sesión.')) {
@@ -36,6 +39,7 @@ export default function OrdenesPage() {
   };
 
   const handleSync = async () => {
+    const toastId = showToast('🔄 Sincronizando partes guardados...', 'loading');
     setSyncing(true);
     try {
       const token = localStorage.getItem('token');
@@ -50,10 +54,17 @@ export default function OrdenesPage() {
       // Solo recargar pendientes después de sincronizar
       await loadPendingOrders();
       
-      alert(`Sincronizado: ${result.success} exitosos, ${result.failed} fallidos`);
+      // Actualizar toast con resultado
+      updateToast(toastId, `✅ Se actualizaron ${result.success} parte${result.success !== 1 ? 's' : ''}`, 'success');
+      
+      if (result.failed > 0) {
+        setTimeout(() => {
+          showToast(`⚠️ ${result.failed} parte${result.failed !== 1 ? 's' : ''} no se pudieron sincronizar`, 'error');
+        }, 500);
+      }
     } catch (error) {
       console.error('Error en sync:', error);
-      alert('Error al sincronizar');
+      updateToast(toastId, '❌ Error al sincronizar', 'error');
     } finally {
       setSyncing(false);
     }
@@ -163,11 +174,15 @@ export default function OrdenesPage() {
         setOnline(true);
         const token = localStorage.getItem('token');
         if (token) {
+          const toastId = showToast('🔄 Sincronizando partes guardados...', 'loading');
           const apiUrl = 'https://sertecapp.pendziuch.com';
           const result = await syncPendingPartes(apiUrl, token);
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
             await loadPendingOrders();
+            updateToast(toastId, `✅ Se actualizaron ${result.success} parte${result.success !== 1 ? 's' : ''}`, 'success');
+          } else {
+            hideToast(toastId);
           }
         }
       },
@@ -405,6 +420,18 @@ export default function OrdenesPage() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            message={toast.message}
+            type={toast.type}
+            onClose={() => hideToast(toast.id)}
+          />
+        ))}
       </div>
     </div>
   );

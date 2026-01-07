@@ -263,12 +263,12 @@ export default function OrdenesPage() {
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
-                            realOnline ? 'bg-green-500' : 'bg-red-500'
-                          }`} />
-                          <span className="text-sm text-gray-700">
-                            {forceOffline ? 'Modo Offline' : (realOnline ? 'Conectado' : 'Sin conexión')}
-                          </span>
+                        <div className={`w-2 h-2 rounded-full ${
+                        effectiveOnline ? 'bg-green-500' : 'bg-red-500'
+                        }`} />
+                        <span className="text-sm text-gray-700">
+                        {forceOffline ? 'Modo Offline' : (effectiveOnline ? 'Conectado' : 'Sin conexión')}
+                        </span>
                         </div>
                         {/* Toggle Switch */}
                         <button

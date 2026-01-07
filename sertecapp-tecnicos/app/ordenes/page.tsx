@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { OrderCard } from '../components/OrderCard';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
-import { getGreeting } from '../../lib/utils';
 
 interface Order {
   id: number;
@@ -223,18 +222,11 @@ export default function OrdenesPage() {
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                {/* Status indicator with glow */}
-                <div className="relative">
-                  <div className={`w-2 h-2 rounded-full ${
-                    effectiveOnline ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  {/* Glow effect */}
-                  <div className={`absolute inset-0 w-2 h-2 rounded-full animate-ping opacity-75 ${
-                    effectiveOnline ? 'bg-green-400' : 'bg-red-400'
-                  }`} />
-                </div>
+                <div className={`w-2 h-2 rounded-full ${
+                  effectiveOnline ? 'bg-green-500' : 'bg-red-500'
+                }`} />
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">{getGreeting()},</p>
+                  <p className="text-xs text-gray-500">Hola,</p>
                   <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
                 </div>
                 <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -252,21 +244,21 @@ export default function OrdenesPage() {
                   />
                   
                   {/* Menu */}
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white  rounded-lg shadow-xl border border-gray-200  z-20">
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-20">
                     {/* User Info */}
-                    <div className="px-4 py-3 border-b border-gray-100 ">
-                      <p className="text-sm font-semibold text-gray-900 ">{user.name || 'Técnico'}</p>
-                      <p className="text-xs text-gray-500 ">{user.email}</p>
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
 
                     {/* Connection Status Toggle */}
-                    <div className="px-4 py-3 border-b border-gray-100 ">
+                    <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${
                             realOnline ? 'bg-green-500' : 'bg-red-500'
                           }`} />
-                          <span className="text-sm text-gray-700 ">
+                          <span className="text-sm text-gray-700">
                             {forceOffline ? 'Modo Offline' : (realOnline ? 'Conectado' : 'Sin conexión')}
                           </span>
                         </div>
@@ -292,45 +284,6 @@ export default function OrdenesPage() {
                       )}
                     </div>
 
-                    {/* Dark Mode Toggle */}
-                    <div className="px-4 py-3 border-b border-gray-100 ">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700 ">Tema</span>
-                        <div className="flex gap-1 bg-gray-100  rounded-lg p-1">
-                          <button
-                            onClick={() => setTheme('light')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              theme === 'light'
-                                ? 'bg-white  text-gray-900  shadow'
-                                : 'text-gray-600 '
-                            }`}
-                          >
-                            ☀️
-                          </button>
-                          <button
-                            onClick={() => setTheme('system')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              theme === 'system'
-                                ? 'bg-white  text-gray-900  shadow'
-                                : 'text-gray-600 '
-                            }`}
-                          >
-                            💻
-                          </button>
-                          <button
-                            onClick={() => setTheme('dark')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              theme === 'dark'
-                                ? 'bg-white  text-gray-900  shadow'
-                                : 'text-gray-600 '
-                            }`}
-                          >
-                            🌙
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Menu Items */}
                     <div className="py-2">
                       <button
@@ -339,7 +292,7 @@ export default function OrdenesPage() {
                           setMenuOpen(false);
                         }}
                         disabled={syncing || !effectiveOnline}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700  hover:bg-gray-100  flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="flex items-center gap-3">
                           <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -358,7 +311,7 @@ export default function OrdenesPage() {
                         onClick={() => {
                           window.location.reload();
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700  hover:bg-gray-100  flex items-center gap-3"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
                       >
                         <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -371,7 +324,7 @@ export default function OrdenesPage() {
                           handleClearCache();
                           setMenuOpen(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700  hover:bg-gray-100  flex items-center gap-3"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
                       >
                         <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -384,7 +337,7 @@ export default function OrdenesPage() {
                           handleLogout();
                           setMenuOpen(false);
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600  hover:bg-red-50  flex items-center gap-3 border-t border-gray-100 "
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100"
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -405,7 +358,7 @@ export default function OrdenesPage() {
               className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
                 filter === 'pending'
                   ? 'bg-red-600 text-white'
-                  : 'bg-gray-100  text-gray-700 '
+                  : 'bg-gray-100 text-gray-700'
               }`}
             >
               Pendientes ({pendingOrders.length})
@@ -415,7 +368,7 @@ export default function OrdenesPage() {
               className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
                 filter === 'completed'
                   ? 'bg-green-600 text-white'
-                  : 'bg-gray-100  text-gray-700 '
+                  : 'bg-gray-100 text-gray-700'
               }`}
             >
               Completadas ({completedOrders.length})

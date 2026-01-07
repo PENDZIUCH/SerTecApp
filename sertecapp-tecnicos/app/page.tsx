@@ -113,11 +113,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Demo Credentials Helper */}
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm" suppressHydrationWarning>
-              <strong>DEMO:</strong> tech@demo.com / FitnessTech2025!
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"

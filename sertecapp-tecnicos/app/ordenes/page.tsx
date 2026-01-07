@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { OrderCard } from '../components/OrderCard';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { getGreeting } from '../../lib/utils';
 
 interface Order {
   id: number;
@@ -222,11 +223,18 @@ export default function OrdenesPage() {
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <div className={`w-2 h-2 rounded-full ${
-                  effectiveOnline ? 'bg-green-500' : 'bg-red-500'
-                }`} />
+                {/* Status indicator with animated glow */}
+                <div className="relative">
+                  <div className={`w-2 h-2 rounded-full ${
+                    effectiveOnline ? 'bg-green-500' : 'bg-red-500'
+                  }`} />
+                  {/* Animated pulse effect */}
+                  <div className={`absolute inset-0 w-2 h-2 rounded-full animate-ping opacity-75 ${
+                    effectiveOnline ? 'bg-green-400' : 'bg-red-400'
+                  }`} />
+                </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">Hola,</p>
+                  <p className="text-xs text-gray-500">{getGreeting()},</p>
                   <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
                 </div>
                 <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -225,9 +225,9 @@ export default function OrdenesPage() {
   const filteredOrders = filter === 'pending' ? pendingOrders : completedOrders;
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-900 dark:bg-gray-950">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           {/* Top row: Logo + Logout */}
           <div className="flex items-center justify-between mb-3">
@@ -251,8 +251,8 @@ export default function OrdenesPage() {
                   }`} />
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">{getGreeting()},</p>
-                  <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{getGreeting()},</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name || 'Técnico'}</p>
                 </div>
                 <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -269,11 +269,11 @@ export default function OrdenesPage() {
                   />
                   
                   {/* Menu */}
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-20">
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-20">
                     {/* User Info */}
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name || 'Técnico'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                     </div>
 
                     {/* Connection Status Toggle */}
@@ -317,7 +317,7 @@ export default function OrdenesPage() {
                           setMenuOpen(false);
                         }}
                         disabled={syncing || !effectiveOnline}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="flex items-center gap-3">
                           <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -6,8 +6,10 @@ type Theme = 'light' | 'dark' | 'system';
 
 export const useDarkMode = () => {
   const [theme, setTheme] = useState<Theme>('system');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Cargar preferencia guardada
     const saved = localStorage.getItem('theme') as Theme;
     if (saved) {
@@ -16,6 +18,16 @@ export const useDarkMode = () => {
     } else {
       applyTheme('system');
     }
+
+    // Listener para cambios de preferencia del sistema
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (localStorage.getItem('theme') === 'system') {
+        applyTheme('system');
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   const applyTheme = (newTheme: Theme) => {
@@ -42,5 +54,5 @@ export const useDarkMode = () => {
     applyTheme(newTheme);
   };
 
-  return { theme, changeTheme };
+  return { theme, changeTheme, mounted };
 };

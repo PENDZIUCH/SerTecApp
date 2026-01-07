@@ -1,33 +1,22 @@
 @import "tailwindcss";
 
-@theme inline {
-  --color-*: initial;
-  --color-background: oklch(from white calc(l * 0.02) c h);
-  --color-foreground: oklch(from white calc(l * 0.98) c h);
-}
-
-@media (prefers-color-scheme: dark) {
-  @theme inline {
-    --color-background: oklch(from black calc(l + 0.02) c h);
-    --color-foreground: oklch(from black calc(l + 0.98) c h);
-  }
-}
-
-html.dark {
-  @theme inline {
-    --color-background: oklch(from black calc(l + 0.02) c h);
-    --color-foreground: oklch(from black calc(l + 0.98) c h);
-  }
-}
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
 }
 
 body {

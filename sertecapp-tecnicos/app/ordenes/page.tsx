@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { OrderCard } from '../components/OrderCard';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
-import { useDarkMode } from '../../hooks/useDarkMode';
-import { getGreeting } from '../../lib/utils';
 
 interface Order {
   id: number;
@@ -23,7 +21,6 @@ export default function OrdenesPage() {
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const { isOnline: effectiveOnline, forceOffline, toggleForceOffline, realOnline } = useOnlineStatus();
-  const { theme, setTheme, isDark } = useDarkMode();
   const [online, setOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
@@ -210,9 +207,9 @@ export default function OrdenesPage() {
   const filteredOrders = filter === 'pending' ? pendingOrders : completedOrders;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           {/* Top row: Logo + Logout */}
           <div className="flex items-center justify-between mb-3">
@@ -223,23 +220,16 @@ export default function OrdenesPage() {
               {/* User Menu Button with Status Indicator */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                {/* Status indicator with glow */}
-                <div className="relative">
-                  <div className={`w-2 h-2 rounded-full ${
-                    effectiveOnline ? 'bg-green-500' : 'bg-red-500'
-                  }`} />
-                  {/* Glow effect */}
-                  <div className={`absolute inset-0 w-2 h-2 rounded-full animate-ping opacity-75 ${
-                    effectiveOnline ? 'bg-green-400' : 'bg-red-400'
-                  }`} />
-                </div>
+                <div className={`w-2 h-2 rounded-full ${
+                  effectiveOnline ? 'bg-green-500' : 'bg-red-500'
+                }`} />
                 <div className="text-right">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{getGreeting()},</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name || 'Técnico'}</p>
+                  <p className="text-xs text-gray-500">Hola,</p>
+                  <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
                 </div>
-                <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -254,11 +244,11 @@ export default function OrdenesPage() {
                   />
                   
                   {/* Menu */}
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-20">
+                  <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 z-20">
                     {/* User Info */}
-                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name || 'Técnico'}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-semibold text-gray-900">{user.name || 'Técnico'}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
 
                     {/* Connection Status Toggle */}
@@ -292,45 +282,6 @@ export default function OrdenesPage() {
                           Modo offline manual para testing
                         </p>
                       )}
-                    </div>
-
-                    {/* Dark Mode Toggle */}
-                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Tema</span>
-                        <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                          <button
-                            onClick={() => setTheme('light')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              theme === 'light'
-                                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
-                                : 'text-gray-600 dark:text-gray-400'
-                            }`}
-                          >
-                            ☀️
-                          </button>
-                          <button
-                            onClick={() => setTheme('system')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              theme === 'system'
-                                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
-                                : 'text-gray-600 dark:text-gray-400'
-                            }`}
-                          >
-                            💻
-                          </button>
-                          <button
-                            onClick={() => setTheme('dark')}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                              theme === 'dark'
-                                ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow'
-                                : 'text-gray-600 dark:text-gray-400'
-                            }`}
-                          >
-                            🌙
-                          </button>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Menu Items */}

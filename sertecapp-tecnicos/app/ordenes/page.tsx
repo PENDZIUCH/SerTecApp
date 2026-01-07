@@ -8,6 +8,7 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { getGreeting } from '../../lib/utils';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../components/ui/Toast';
+import { useDarkMode } from '../../hooks/useDarkMode';
 
 interface Order {
   id: number;
@@ -30,6 +31,7 @@ export default function OrdenesPage() {
   const [syncing, setSyncing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { toasts, showToast, hideToast, updateToast } = useToast();
+  const { theme, changeTheme } = useDarkMode();
 
   const handleClearCache = () => {
     if (confirm('¿Limpiar caché y datos locales? Deberás volver a iniciar sesión.')) {
@@ -330,6 +332,43 @@ export default function OrdenesPage() {
                         )}
                       </button>
                       
+                      {/* Dark Mode Toggle */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-xs font-medium text-gray-500 mb-2">Tema</p>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => changeTheme('light')}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm transition-colors ${
+                              theme === 'light'
+                                ? 'bg-yellow-100 text-yellow-700 font-medium'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            ☀️
+                          </button>
+                          <button
+                            onClick={() => changeTheme('system')}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm transition-colors ${
+                              theme === 'system'
+                                ? 'bg-blue-100 text-blue-700 font-medium'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            💻
+                          </button>
+                          <button
+                            onClick={() => changeTheme('dark')}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm transition-colors ${
+                              theme === 'dark'
+                                ? 'bg-gray-800 text-white font-medium'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            🌙
+                          </button>
+                        </div>
+                      </div>
+
                       <button
                         onClick={() => {
                           window.location.reload();

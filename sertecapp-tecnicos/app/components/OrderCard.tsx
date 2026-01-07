@@ -129,7 +129,7 @@ export const OrderCard: FC<OrderCardProps> = ({
         )}
         <button
           onClick={onViewDetail}
-          className="flex-1 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 active:bg-gray-100 dark:active:bg-gray-500 text-gray-700 dark:text-gray-200 text-sm font-medium py-2.5 px-4 rounded-md border border-gray-300 dark:border-gray-600 transition-colors"
+          className="flex-1 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 active:bg-gray-50 dark:active:bg-gray-500 text-gray-700 dark:text-gray-200 text-sm font-medium py-2.5 px-4 rounded-md border border-gray-300 dark:border-gray-600 transition-all shadow-sm hover:shadow-md"
         >
           Ver detalle
         </button>

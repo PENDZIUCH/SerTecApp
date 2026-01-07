@@ -1,58 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 interface OrderDetailProps {
-  orderId: number;
+  order: {
+    id: number;
+    clientName: string;
+    problem: string;
+    address: string;
+    priority: 'urgente' | 'alta' | 'media' | 'baja';
+    status: 'pendiente' | 'en_progreso' | 'completado';
+    suggestedParts?: Array<{ id: number; name: string; stock: number }>;
+  };
 }
 
-export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId }) => {
-  const [order, setOrder] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const apiUrl = 'https://sertecapp.pendziuch.com';
-        const response = await fetch(`${apiUrl}/api/v1/ordenes/${orderId}`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setOrder(data.data);
-        }
-      } catch (error) {
-        console.error('Error loading order:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrder();
-  }, [orderId]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-        No se encontró la orden
-      </div>
-    );
-  }
+export const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
 
   const priorityColors = {
     urgente: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400',

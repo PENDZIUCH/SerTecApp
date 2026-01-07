@@ -425,20 +425,20 @@ export default function OrdenesPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFilter('pending')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
                 filter === 'pending'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                  ? 'bg-red-600/90 text-white shadow-md backdrop-blur-sm'
+                  : 'bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-600'
               }`}
             >
               Pendientes ({pendingOrders.length})
             </button>
             <button
               onClick={() => setFilter('completed')}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
                 filter === 'completed'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700'
+                  ? 'bg-green-600/90 text-white shadow-md backdrop-blur-sm'
+                  : 'bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-300 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-600'
               }`}
             >
               Completadas ({completedOrders.length})
@@ -487,7 +487,15 @@ export default function OrdenesPage() {
         onClose={() => setDetailModalOpen(false)}
         title="Detalle de la orden"
       >
-        {selectedOrder && <OrderDetail order={selectedOrder} />}
+        {selectedOrder && (
+          <OrderDetail 
+            order={selectedOrder} 
+            onStart={() => {
+              setDetailModalOpen(false);
+              handleStart(selectedOrder.id);
+            }}
+          />
+        )}
       </Modal>
     </div>
   );

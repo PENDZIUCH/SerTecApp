@@ -10,9 +10,10 @@ interface OrderDetailProps {
     status: 'pendiente' | 'en_progreso' | 'completado';
     suggestedParts?: Array<{ id: number; name: string; stock: number }>;
   };
+  onStart?: () => void;
 }
 
-export const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
+export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
 
   const priorityColors = {
     urgente: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400',
@@ -82,6 +83,23 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order }) => {
         }`}>
           {order.status === 'completado' ? 'Completado' : 'Pendiente'}
         </span>
+      </div>
+
+      {/* Botón Iniciar trabajo */}
+      {order.status !== 'completado' && onStart && (
+        <button
+          onClick={onStart}
+          className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
+        >
+          Iniciar trabajo
+        </button>
+      )}
+
+      {/* Número de orden */}
+      <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-right">
+          Orden #{order.id.toString().padStart(4, '0')}
+        </p>
       </div>
     </div>
   );

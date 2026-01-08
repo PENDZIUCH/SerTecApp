@@ -142,10 +142,22 @@ class UserResource extends Resource
                         $record->password = \Illuminate\Support\Facades\Hash::make($newPassword);
                         $record->save();
                         
-                        // Generar token Base64 para auto-login
-                        $credentials = "{$record->email}:{$newPassword}";
-                        $token = base64_encode($credentials);
-                        $autoLoginUrl = "https://pro.pendziuch.com/l?t={$token}";
+                        // Generar token JWT REAL desde el backend
+                        $response = \Illuminate\Support\Facades\Http::post('https://sertecapp.pendziuch.com/api/v1/magic-link/generate', [
+                            'user_id' => $record->id
+                        ]);
+                        
+                        if (!$response->successful()) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Error')
+                                ->body('No se pudo generar el link de acceso')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+                        
+                        $data = $response->json();
+                        $autoLoginUrl = $data['url'];
                         
                         // Preparar WhatsApp link
                         $phone = preg_replace('/[^0-9]/', '', $record->phone);
@@ -168,8 +180,8 @@ class UserResource extends Resource
                         $whatsappUrl = "https://wa.me/{$phone}?text={$whatsappMessage}";
                         
                         \Filament\Notifications\Notification::make()
-                            ->title('Contraseña actualizada')
-                            ->body("Nueva contraseña: **{$newPassword}**\n\nLink de acceso: {$autoLoginUrl}")
+                            ->title('Link generado')
+                            ->body("Link: {$autoLoginUrl}")
                             ->success()
                             ->persistent()
                             ->actions([

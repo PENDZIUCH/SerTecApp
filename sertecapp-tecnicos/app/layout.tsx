@@ -27,9 +27,9 @@ export const metadata: Metadata = {
     siteName: "SerTecApp",
     images: [
       {
-        url: '/icon.svg',
-        width: 512,
-        height: 512,
+        url: '/icon-192.png',
+        width: 192,
+        height: 192,
         alt: 'SerTecApp Logo',
       },
     ],

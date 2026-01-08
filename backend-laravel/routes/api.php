@@ -11,11 +11,14 @@ use App\Http\Controllers\Api\V1\VisitController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Api\V1\WorkshopController;
 use App\Http\Controllers\Api\V1\TechnicianController;
+use App\Http\Controllers\Api\V1\MagicLinkController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('magic-link/generate', [MagicLinkController::class, 'generate']);
+    Route::get('magic-link/verify', [MagicLinkController::class, 'verify'])->middleware('auth:sanctum');
     
     // PWA Endpoints para técnicos (SIN AUTH para testing)
     Route::get('ordenes/tecnico/{tecnico}', [TechnicianController::class, 'getOrders']);

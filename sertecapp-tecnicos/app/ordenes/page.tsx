@@ -202,6 +202,40 @@ export default function OrdenesPage() {
     };
   }, [router]);
 
+  // Sincronizar cuando effectiveOnline cambia de false a true
+  useEffect(() => {
+    const handleOnlineChange = async () => {
+      const pending = getPartesPendientesSync().length;
+      if (effectiveOnline && pending > 0) {
+        console.log('effectiveOnline changed to true - syncing', pending, 'partes');
+        const toastId = showToast('🔄 Sincronizando partes guardados...', 'loading');
+        try {
+          const token = localStorage.getItem('token');
+          if (token) {
+            const apiUrl = 'https://sertecapp.pendziuch.com';
+            const result = await syncPendingPartes(apiUrl, token);
+            setPendingSync(getPartesPendientesSync().length);
+            await loadPendingOrders();
+            updateToast(toastId, `✅ Se actualizaron ${result.success} parte${result.success !== 1 ? 's' : ''}`, 'success');
+            
+            if (result.failed > 0) {
+              setTimeout(() => {
+                showToast(`⚠️ ${result.failed} parte${result.failed !== 1 ? 's' : ''} no se pudieron sincronizar`, 'error');
+              }, 500);
+            }
+          } else {
+            hideToast(toastId);
+          }
+        } catch (error) {
+          console.error('Error syncing:', error);
+          updateToast(toastId, '❌ Error al sincronizar', 'error');
+        }
+      }
+    };
+
+    handleOnlineChange();
+  }, [effectiveOnline]);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

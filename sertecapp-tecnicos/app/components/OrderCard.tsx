@@ -116,7 +116,7 @@ export const OrderCard: FC<OrderCardProps> = ({
             onClick={onStart}
             className="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium py-2.5 px-4 rounded-md transition-colors"
           >
-            Iniciar
+            Crear Parte
           </button>
         )}
         {status === 'en_progreso' && (
@@ -124,7 +124,7 @@ export const OrderCard: FC<OrderCardProps> = ({
             onClick={onStart}
             className="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium py-2.5 px-4 rounded-md transition-colors"
           >
-            Completar
+            Continuar Parte
           </button>
         )}
         <button

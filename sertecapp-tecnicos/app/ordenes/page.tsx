@@ -120,15 +120,13 @@ export default function OrdenesPage() {
         console.log(`Loaded: ${pending.length} pending, ${mergedCompleted.length} completed (${completed.length} new + ${cachedCompleted.length - completed.length} cached)`);
       } else {
         console.error('API Error:', response.status);
-        // Cargar desde cache si falla
-        const cached = getCachedOrdenes() || [];
-        setOrders(cached);
+        // NO cargar cache de otro usuario si falla API
+        setOrders([]);
       }
     } catch (error) {
       console.error('Error cargando órdenes:', error);
-      // Cargar desde cache si falla
-      const cached = getCachedOrdenes() || [];
-      setOrders(cached);
+      // NO cargar cache de otro usuario si falla API
+      setOrders([]);
     }
   };
 
@@ -164,10 +162,13 @@ export default function OrdenesPage() {
     setOnline(isOnline());
     setPendingSync(getPartesPendientesSync().length);
     
-    // Cargar desde cache primero (instantáneo)
-    const cached = getCachedOrdenes() || [];
-    if (cached.length > 0) {
-      setOrders(cached);
+    // Cargar desde cache primero (instantáneo) - SOLO si es el mismo usuario
+    const cachedUserId = localStorage.getItem('cached_user_id');
+    if (cachedUserId === user.id.toString()) {
+      const cached = getCachedOrdenes() || [];
+      if (cached.length > 0) {
+        setOrders(cached);
+      }
     }
     
     // Luego actualizar pendientes desde servidor

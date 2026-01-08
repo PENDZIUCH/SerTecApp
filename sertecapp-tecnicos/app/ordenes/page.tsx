@@ -144,12 +144,18 @@ export default function OrdenesPage() {
     const user = JSON.parse(userData);
     console.log('USER DATA:', user);
     
-    // Limpiar cache si cambió el usuario
+    // Limpiar cache si cambió el usuario O es primera vez
     const cachedUserId = localStorage.getItem('cached_user_id');
-    if (cachedUserId && cachedUserId !== user.id.toString()) {
-      console.log('Usuario cambió, limpiando cache');
+    const userChanged = cachedUserId && cachedUserId !== user.id.toString();
+    const isFirstLoad = !cachedUserId;
+    
+    if (userChanged || isFirstLoad) {
+      if (userChanged) {
+        console.log('Usuario cambió, limpiando cache');
+      }
       localStorage.removeItem('ordenes_cache');
       localStorage.removeItem('partes_pendientes');
+      setOrders([]); // Limpiar estado de órdenes
     }
     localStorage.setItem('cached_user_id', user.id.toString());
     

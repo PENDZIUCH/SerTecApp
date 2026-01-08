@@ -20,6 +20,28 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Fitness Company",
   },
+  openGraph: {
+    title: "SerTecApp - Técnicos",
+    description: "Aplicación para técnicos de Fitness Company",
+    url: "https://pro.pendziuch.com",
+    siteName: "SerTecApp",
+    images: [
+      {
+        url: '/icon.svg',
+        width: 512,
+        height: 512,
+        alt: 'SerTecApp Logo',
+      },
+    ],
+    locale: 'es_AR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: "SerTecApp - Técnicos",
+    description: "Aplicación para técnicos de Fitness Company",
+    images: ['/icon.svg'],
+  },
 };
 
 export default function RootLayout({

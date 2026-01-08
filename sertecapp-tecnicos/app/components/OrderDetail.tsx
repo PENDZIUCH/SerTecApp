@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 interface OrderDetailProps {
   order: {
     id: number;
@@ -13,13 +15,52 @@ interface OrderDetailProps {
   onStart?: () => void;
 }
 
+interface Parte {
+  diagnosis: string;
+  work_done: string;
+  signature: string;
+  status: string;
+  created_at: string;
+}
+
 export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
+  const [parte, setParte] = useState<Parte | null>(null);
+  const [loadingParte, setLoadingParte] = useState(false);
 
   const priorityColors = {
     urgente: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400',
     alta: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400',
     media: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400',
     baja: 'text-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-400',
+  };
+
+  useEffect(() => {
+    if (order.status === 'completado') {
+      loadParte();
+    }
+  }, [order.id, order.status]);
+
+  const loadParte = async () => {
+    setLoadingParte(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const response = await fetch(`${apiUrl}/api/v1/partes/${order.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setParte(data.data);
+      }
+    } catch (error) {
+      console.error('Error loading parte:', error);
+    } finally {
+      setLoadingParte(false);
+    }
   };
 
   return (
@@ -85,13 +126,59 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
         </span>
       </div>
 
-      {/* Botón Iniciar trabajo */}
+      {/* PARTE COMPLETADO */}
+      {order.status === 'completado' && (
+        <>
+          {loadingParte ? (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            </div>
+          ) : parte ? (
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Parte de Trabajo</h3>
+              
+              {/* Diagnóstico */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Diagnóstico</h4>
+                <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{parte.diagnosis}</p>
+              </div>
+
+              {/* Trabajo Realizado */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Trabajo Realizado</h4>
+                <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{parte.work_done}</p>
+              </div>
+
+              {/* Firma */}
+              {parte.signature && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Firma del Cliente</h4>
+                  <img src={parte.signature} alt="Firma" className="border border-gray-300 dark:border-gray-600 rounded-lg max-w-full h-auto" />
+                </div>
+              )}
+
+              {/* Fecha */}
+              <div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Completado: {new Date(parte.created_at).toLocaleString('es-AR')}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+              No se pudo cargar el parte
+            </p>
+          )}
+        </>
+      )}
+
+      {/* Botón Crear/Continuar parte */}
       {order.status !== 'completado' && onStart && (
         <button
           onClick={onStart}
           className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
         >
-          Crear parte
+          {order.status === 'en_progreso' ? 'Continuar Parte' : 'Crear Parte'}
         </button>
       )}
 

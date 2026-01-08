@@ -247,8 +247,8 @@ export default function OrdenesPage() {
   }, [effectiveOnline]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Limpiar TODO el localStorage al cerrar sesión
+    localStorage.clear();
     router.push('/');
   };
 

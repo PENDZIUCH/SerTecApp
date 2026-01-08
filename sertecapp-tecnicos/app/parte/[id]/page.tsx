@@ -355,7 +355,7 @@ export default function PartePage() {
             disabled={saving}
             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-4 rounded-lg shadow-lg transition-colors"
           >
-            {saving ? 'Guardando...' : online ? 'Guardar Parte' : 'Guardar Localmente'}
+            {saving ? 'Guardando...' : effectiveOnline ? 'Guardar Parte' : 'Guardar Localmente'}
           </button>
         </div>
       </form>

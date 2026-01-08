@@ -11,6 +11,9 @@ interface OrderCardProps {
   priority: Priority;
   status: Status;
   suggestedParts?: Array<{ id: number; name: string; stock: number }>;
+  created_at?: string;
+  completed_at?: string;
+  scheduled_date?: string;
   onStart: () => void;
   onViewDetail: () => void;
 }
@@ -56,6 +59,9 @@ export const OrderCard: FC<OrderCardProps> = ({
   priority,
   status,
   suggestedParts = [],
+  created_at,
+  completed_at,
+  scheduled_date,
   onStart,
   onViewDetail,
 }) => {
@@ -136,9 +142,18 @@ export const OrderCard: FC<OrderCardProps> = ({
       </div>
 
       {/* Order ID */}
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-right">
-        #{id.toString().padStart(4, '0')}
-      </p>
+      <div className="text-xs text-gray-400 dark:text-gray-500 mt-3 space-y-1">
+        <p className="text-right">#{id.toString().padStart(4, '0')}</p>
+        {created_at && (
+          <p className="text-right">Creada: {new Date(created_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+        )}
+        {completed_at && (
+          <p className="text-right">Completada: {new Date(completed_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+        )}
+        {scheduled_date && (
+          <p className="text-right">Programada: {new Date(scheduled_date).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+        )}
+      </div>
     </div>
   );
 };

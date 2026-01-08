@@ -34,6 +34,9 @@ class TechnicianController extends Controller
                     'priority' => $this->mapPriority($order->priority),
                     'status' => $this->mapStatus($order->status),
                     'created_at' => $order->created_at->toISOString(),
+                    'completed_at' => $order->completed_at?->toISOString(),
+                    'scheduled_date' => $order->scheduled_date?->toISOString(),
+                    'scheduled_time' => $order->scheduled_time,
                     'contact' => [
                         'name' => $order->customer->contact_name ?? 'Sin contacto',
                         'phone' => $order->customer->phone ?? '',

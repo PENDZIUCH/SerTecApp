@@ -129,6 +129,12 @@ export default function PartePage() {
       return;
     }
 
+    // PREVENIR DOUBLE SUBMIT
+    if (saving) {
+      console.log('Ya se está guardando, ignorando');
+      return;
+    }
+
     setSaving(true);
 
     try {

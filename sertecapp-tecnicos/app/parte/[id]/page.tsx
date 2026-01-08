@@ -3,11 +3,13 @@
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { saveParteLocal, isOnline } from '../../lib/storage';
+import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
 
 export default function PartePage() {
   const router = useRouter();
   const params = useParams();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { isOnline: effectiveOnline } = useOnlineStatus();
   
   const [diagnostico, setDiagnostico] = useState('');
   const [trabajoRealizado, setTrabajoRealizado] = useState('');
@@ -17,14 +19,9 @@ export default function PartePage() {
   const [firma, setFirma] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [online, setOnline] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
-
-  useEffect(() => {
-    setOnline(isOnline());
-  }, []);
 
   const startDrawing = (e: React.TouchEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -138,7 +135,7 @@ export default function PartePage() {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       
       // Si hay conexión, enviar directo al backend
-      if (online) {
+      if (effectiveOnline) {
         try {
           const token = localStorage.getItem('token');
           const apiUrl = 'https://sertecapp.pendziuch.com';

@@ -91,7 +91,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
           onClick={onStart}
           className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
         >
-          Iniciar trabajo
+          Crear parte
         </button>
       )}
 

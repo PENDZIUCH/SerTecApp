@@ -100,24 +100,13 @@ export default function OrdenesPage() {
         const pending = newOrders.filter((o: Order) => o.status === 'pendiente' || o.status === 'en_progreso');
         const completed = newOrders.filter((o: Order) => o.status === 'completado');
         
-        // Obtener completadas del cache
-        const cached = getCachedOrdenes() || [];
-        const cachedCompleted = cached.filter((o: Order) => o.status === 'completado');
-        
-        // Merge: nuevas completadas + viejas completadas (sin duplicados)
-        const completedIds = new Set(completed.map((o: Order) => o.id));
-        const mergedCompleted = [
-          ...completed,
-          ...cachedCompleted.filter((o: Order) => !completedIds.has(o.id))
-        ];
-        
-        // Combinar pendientes (frescas) + completadas (cache + nuevas)
-        const finalOrders = [...pending, ...mergedCompleted];
+        // SOLO usar datos del servidor - NUNCA merge con cache viejo
+        const finalOrders = [...pending, ...completed];
         
         setOrders(finalOrders);
         cacheOrdenes(finalOrders);
         
-        console.log(`Loaded: ${pending.length} pending, ${mergedCompleted.length} completed (${completed.length} new + ${cachedCompleted.length - completed.length} cached)`);
+        console.log(`Loaded: ${pending.length} pending, ${completed.length} completed`);
       } else {
         console.error('API Error:', response.status);
         // NO cargar cache de otro usuario si falla API

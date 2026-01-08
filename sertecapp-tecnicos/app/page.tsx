@@ -40,6 +40,23 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error('Login error:', err);
+      
+      // FALLBACK OFFLINE: Si hay error de red, intentar con credenciales guardadas
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('token');
+      
+      if (savedUser && savedToken) {
+        const user = JSON.parse(savedUser);
+        // Validar que el email coincida
+        if (user.email === email) {
+          setError('Sin conexión. Entrando con datos guardados...');
+          setTimeout(() => {
+            router.push('/ordenes');
+          }, 1000);
+          return;
+        }
+      }
+      
       setError('Error de conexión. Verifica tu internet.');
     } finally {
       setLoading(false);

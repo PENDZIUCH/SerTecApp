@@ -143,6 +143,16 @@ export default function OrdenesPage() {
 
     const user = JSON.parse(userData);
     console.log('USER DATA:', user);
+    
+    // Limpiar cache si cambió el usuario
+    const cachedUserId = localStorage.getItem('cached_user_id');
+    if (cachedUserId && cachedUserId !== user.id.toString()) {
+      console.log('Usuario cambió, limpiando cache');
+      localStorage.removeItem('ordenes_cache');
+      localStorage.removeItem('partes_pendientes');
+    }
+    localStorage.setItem('cached_user_id', user.id.toString());
+    
     setUser(user);
     
     setOnline(isOnline());

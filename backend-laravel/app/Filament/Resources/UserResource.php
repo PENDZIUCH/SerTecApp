@@ -115,11 +115,6 @@ class UserResource extends Resource
                     ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('last_login_at')
-                    ->label('Último Login')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

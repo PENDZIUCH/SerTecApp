@@ -114,8 +114,14 @@ export default function OrdenesPage() {
       }
     } catch (error) {
       console.error('Error cargando órdenes:', error);
-      // NO cargar cache de otro usuario si falla API
-      setOrders([]);
+      // FALLBACK: Usar cache si falla la API
+      const cached = getCachedOrdenes() || [];
+      if (cached.length > 0) {
+        console.log('Usando cache offline:', cached.length, 'órdenes');
+        setOrders(cached);
+      } else {
+        setOrders([]);
+      }
     }
   };
 

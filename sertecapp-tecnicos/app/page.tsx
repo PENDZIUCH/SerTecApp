@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('tech@demo.com');
-  const [pin, setPin] = useState('FitnessTech2025!');
+  const [email, setEmail] = useState('');
+  const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,48 +15,35 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // DEMO MODE - Simular login exitoso
-    setTimeout(() => {
-      // Credenciales demo
-      if (email === 'tech@demo.com' && pin === 'FitnessTech2025!') {
-        localStorage.setItem('token', 'demo-token-123');
-        localStorage.setItem('user', JSON.stringify({ 
-          id: 4, 
-          name: 'Juan Técnico',
-          email: 'tech@demo.com' 
-        }));
-        
-        // Redirigir a órdenes
-        router.push('/ordenes');
-      } else {
-        setError('Credenciales incorrectas. Demo: tech@demo.com / FitnessTech2025!');
-        setLoading(false);
-      }
-    }, 1000);
-
-    /* TODO: Cuando el backend esté listo, reemplazar con esto:
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const response = await fetch(`${apiUrl}/api/v1/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pin }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          email, 
+          password: pin 
+        }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.token) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         router.push('/ordenes');
       } else {
-        setError(data.message || 'Error al iniciar sesión');
+        setError(data.message || 'Credenciales incorrectas');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Error de conexión. Verifica tu internet.');
     } finally {
       setLoading(false);
     }
-    */
   };
 
   return (

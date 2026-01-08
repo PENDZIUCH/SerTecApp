@@ -163,7 +163,6 @@ export default function OrdenesPage() {
     setPendingSync(getPartesPendientesSync().length);
     
     // Cargar desde cache primero (instantáneo) - SOLO si es el mismo usuario
-    const cachedUserId = localStorage.getItem('cached_user_id');
     if (cachedUserId === user.id.toString()) {
       const cached = getCachedOrdenes() || [];
       if (cached.length > 0) {

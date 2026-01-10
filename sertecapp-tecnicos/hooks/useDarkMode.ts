@@ -31,20 +31,18 @@ export const useDarkMode = () => {
   }, []);
 
   const applyTheme = (newTheme: Theme) => {
-    const html = document.documentElement;
+    const root = document.documentElement;
+    
+    // Limpiar todas las clases primero
+    root.classList.remove('light', 'dark');
     
     if (newTheme === 'dark') {
-      html.classList.add('dark');
+      root.classList.add('dark');
     } else if (newTheme === 'light') {
-      html.classList.remove('dark');
+      root.classList.add('light');
     } else {
-      // System preference
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (isDark) {
-        html.classList.add('dark');
-      } else {
-        html.classList.remove('dark');
-      }
+      // System preference - no agregar ninguna clase
+      // El CSS usa @media (prefers-color-scheme: dark)
     }
   };
 

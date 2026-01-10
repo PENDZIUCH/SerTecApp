@@ -390,10 +390,7 @@ export default function OrdenesPage() {
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Tema</p>
                         <div className="flex gap-1">
                           <button
-                            onClick={() => {
-                              changeTheme('light');
-                              setMenuOpen(false);
-                            }}
+                            onClick={() => changeTheme('light')}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               theme === 'light'
                                 ? 'bg-yellow-500 text-white shadow-md'
@@ -403,10 +400,7 @@ export default function OrdenesPage() {
                             ☀️ Claro
                           </button>
                           <button
-                            onClick={() => {
-                              changeTheme('system');
-                              setMenuOpen(false);
-                            }}
+                            onClick={() => changeTheme('system')}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               theme === 'system'
                                 ? 'bg-blue-500 text-white shadow-md'
@@ -416,10 +410,7 @@ export default function OrdenesPage() {
                             💻 Auto
                           </button>
                           <button
-                            onClick={() => {
-                              changeTheme('dark');
-                              setMenuOpen(false);
-                            }}
+                            onClick={() => changeTheme('dark')}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               theme === 'dark'
                                 ? 'bg-gray-900 text-white shadow-md'

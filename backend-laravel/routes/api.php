@@ -14,6 +14,11 @@ use App\Http\Controllers\Api\V1\TechnicianController;
 use App\Http\Controllers\Api\V1\MagicLinkController;
 use Illuminate\Support\Facades\Route;
 
+// Health check endpoint (sin autenticación)
+Route::get('health', function () {
+    return response()->json(['status' => 'ok', 'timestamp' => now()]);
+});
+
 Route::prefix('v1')->group(function () {
     
     Route::post('login', [AuthController::class, 'login']);

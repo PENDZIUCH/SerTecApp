@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { saveParteLocal, isOnline } from '../../lib/storage';
 import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
+import { OfflineModal } from '../../components/ui/OfflineModal';
 
 export default function PartePage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function PartePage() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
+  const [showOfflineModal, setShowOfflineModal] = useState(false);
 
   const startDrawing = (e: React.TouchEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -176,7 +178,7 @@ export default function PartePage() {
               repuestos_usados: repuestos,
               firma_base64: firma,
             });
-            showSuccessToast('Guardado localmente. Se sincronizará automáticamente');
+            setShowOfflineModal(true);
           }
         } catch (error) {
           console.error('Error enviando al backend:', error);
@@ -189,7 +191,7 @@ export default function PartePage() {
             repuestos_usados: repuestos,
             firma_base64: firma,
           });
-          showSuccessToast('Guardado localmente. Se sincronizará cuando vuelva la conexión');
+          setShowOfflineModal(true);
         }
       } else {
         // Sin conexión, guardar local
@@ -201,7 +203,7 @@ export default function PartePage() {
           repuestos_usados: repuestos,
           firma_base64: firma,
         });
-        showSuccessToast('Guardado localmente. Se sincronizará cuando vuelva la conexión');
+        setShowOfflineModal(true);
       }
       
       setTimeout(() => {
@@ -387,6 +389,15 @@ export default function PartePage() {
           </div>
         </div>
       )}
+
+      {/* Offline Modal */}
+      <OfflineModal 
+        isOpen={showOfflineModal} 
+        onClose={() => {
+          setShowOfflineModal(false);
+          router.push('/ordenes');
+        }}
+      />
     </div>
   );
 }

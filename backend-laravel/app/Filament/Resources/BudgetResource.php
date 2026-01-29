@@ -173,7 +173,7 @@ class BudgetResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
-                    ->visible(fn () => auth()->user()->hasRole('admin')),
+                    ->visible(fn () => auth()->user()->hasRole('administrador')),
             ]);
     }
 

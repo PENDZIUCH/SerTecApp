@@ -33,7 +33,7 @@ class ListCustomers extends ListRecords
                 ->label('Exportar Excel')
                 ->icon('heroicon-o-arrow-down-tray')
                 ->color('info')
-                ->visible(fn () => auth()->user()->hasRole('admin'))
+                ->visible(fn () => auth()->user()->hasRole('administrador'))
                 ->action(function () {
                     $fileName = 'clientes_' . now()->format('Y-m-d_His') . '.xlsx';
                     
@@ -80,7 +80,7 @@ class ListCustomers extends ListRecords
                 ->label('Importar Excel/CSV')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('warning')
-                ->visible(fn () => auth()->user()->hasRole('admin'))
+                ->visible(fn () => auth()->user()->hasRole('administrador'))
                 ->form([
                     FileUpload::make('file')
                         ->label('Archivo Excel o CSV')
@@ -312,7 +312,7 @@ class ListCustomers extends ListRecords
                 ->label('Eliminar Todos')
                 ->icon('heroicon-o-trash')
                 ->color('danger')
-                ->visible(fn () => auth()->user()->hasRole('admin'))
+                ->visible(fn () => auth()->user()->hasRole('administrador'))
                 ->requiresConfirmation()
                 ->modalHeading('⚠️ ¿Eliminar TODOS los clientes?')
                 ->modalDescription('PELIGRO: Esta acción NO se puede deshacer. Se eliminarán PERMANENTEMENTE todos los clientes de la base de datos (incluyendo borrados). Solo usar en caso de reset completo.')

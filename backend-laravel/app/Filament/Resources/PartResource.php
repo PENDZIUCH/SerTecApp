@@ -131,7 +131,7 @@ class PartResource extends Resource
             ->actions([Tables\Actions\EditAction::make()])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
-                    ->visible(fn () => auth()->user()->hasRole('admin')),
+                    ->visible(fn () => auth()->user()->hasRole('administrador')),
             ]);
     }
 

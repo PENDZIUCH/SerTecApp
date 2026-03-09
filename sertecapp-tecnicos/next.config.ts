@@ -5,15 +5,18 @@ const withPWA = require("next-pwa")({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
+  fallbacks: {
+    document: "/offline.html",
+  },
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/sertecapp\.pendziuch\.com\/api\/.*/i,
+      urlPattern: /^https:\/\/st\.fitnesscompany\.com\.ar\/api\/.*/i,
       handler: "NetworkFirst",
       options: {
         cacheName: "api-cache",
         expiration: {
           maxEntries: 200,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+          maxAgeSeconds: 24 * 60 * 60,
         },
         networkTimeoutSeconds: 10,
       },
@@ -25,7 +28,18 @@ const withPWA = require("next-pwa")({
         cacheName: "image-cache",
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+        },
+      },
+    },
+    {
+      urlPattern: /^https?:\/\/.*/i,
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "pages-cache",
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 24 * 60 * 60,
         },
       },
     },
@@ -33,7 +47,7 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {},
 };
 
 module.exports = withPWA(nextConfig);

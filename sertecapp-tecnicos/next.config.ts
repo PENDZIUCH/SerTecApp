@@ -10,7 +10,7 @@ const withPWA = require("next-pwa")({
   },
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/st\.fitnesscompany\.com\.ar\/api\/.*/i,
+      urlPattern: /^https:\/\/sertecapp\.pendziuch\.com\/api\/.*/i,
       handler: "NetworkFirst",
       options: {
         cacheName: "api-cache",
@@ -47,6 +47,7 @@ const withPWA = require("next-pwa")({
 });
 
 const nextConfig: NextConfig = {
+  output: 'export', // Para Cloudflare Pages - genera build estático
   turbopack: {},
 };
 

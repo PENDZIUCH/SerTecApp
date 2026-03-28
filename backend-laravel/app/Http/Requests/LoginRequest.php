@@ -15,7 +15,17 @@ class LoginRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', 'min:4'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.required' => 'El email es obligatorio',
+            'email.email' => 'Ingrese un email válido',
+            'password.required' => 'El PIN es obligatorio',
+            'password.min' => 'El PIN debe tener al menos 4 caracteres',
         ];
     }
 }

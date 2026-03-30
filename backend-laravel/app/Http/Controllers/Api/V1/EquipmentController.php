@@ -18,9 +18,18 @@ class EquipmentController extends Controller
 
     public function index()
     {
-        $equipment = Equipment::with(['customer', 'brand', 'model'])
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = Equipment::with(['customer', 'brand', 'model']);
+
+        if (request('customer_id')) {
+            $query->where('customer_id', request('customer_id'));
+        }
+        if (request('search')) {
+            $query->where(function($q) {
+                $q->where('serial_number', 'like', '%' . request('search') . '%');
+            });
+        }
+
+        $equipment = $query->paginate(request('per_page', 15));
 
         return EquipmentResource::collection($equipment);
     }

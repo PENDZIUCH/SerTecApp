@@ -18,9 +18,16 @@ class UserController extends Controller
 
     public function index()
     {
-        $users = User::with('roles')
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = User::with('roles');
+
+        if (request('search')) {
+            $query->where('name', 'like', '%' . request('search') . '%');
+        }
+        if (request('role')) {
+            $query->role(request('role'));
+        }
+
+        $users = $query->paginate(request('per_page', 15));
 
         return UserResource::collection($users);
     }

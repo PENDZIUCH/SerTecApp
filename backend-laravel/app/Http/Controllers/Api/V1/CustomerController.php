@@ -18,9 +18,13 @@ class CustomerController extends Controller
 
     public function index()
     {
-        $customers = Customer::with(['contacts', 'addresses'])
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = Customer::with(['contacts', 'addresses']);
+
+        if (request('search')) {
+            $query->where('name', 'like', '%' . request('search') . '%');
+        }
+
+        $customers = $query->orderBy('name')->paginate(request('per_page', 15));
 
         return CustomerResource::collection($customers);
     }

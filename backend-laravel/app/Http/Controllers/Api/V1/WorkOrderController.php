@@ -18,8 +18,22 @@ class WorkOrderController extends Controller
 
     public function index()
     {
-        $workOrders = WorkOrder::with(['customer', 'equipment', 'assignedTech'])
-            ->applyFilters(request()->all())
+        $query = WorkOrder::with(['customer', 'equipment', 'assignedTech']);
+
+        if (request('status')) {
+            $query->where('status', request('status'));
+        }
+        if (request('customer_id')) {
+            $query->where('customer_id', request('customer_id'));
+        }
+        if (request('assigned_tech_id')) {
+            $query->where('assigned_tech_id', request('assigned_tech_id'));
+        }
+        if (request('search')) {
+            $query->where('title', 'like', '%' . request('search') . '%');
+        }
+
+        $workOrders = $query->orderBy('created_at', 'desc')
             ->paginate(request('per_page', 15));
 
         return WorkOrderResource::collection($workOrders);

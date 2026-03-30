@@ -6,77 +6,103 @@
 
 ## ESTADO ACTUAL
 
-### ✅ Frontend — Cloudflare Pages (SIN depender de la PC)
+### ✅ Frontend técnicos — Cloudflare Pages (SIN depender de la PC)
 - **URL producción:** https://sertecapp-tecnicos.pages.dev
 - **Login:** tech@demo.com / PIN 1234
 - **Proyecto Cloudflare:** `sertecapp-tecnicos`
-- Deployado con `npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true`
+- Deploy: `npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true`
+- Script rápido: doble click en `deploy.bat`
 
 ### ⚠️ Backend — Laravel via Cloudflare Tunnel (REQUIERE PC encendida)
 - **URL:** https://sertecapp.pendziuch.com/admin
 - **Login admin:** admin@sertecapp.local / password
 - **Tunnel:** cloudflared tunnel run sertecapp-tunnel
-- **Backend path:** C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\backend-laravel
-- Pendiente: deploy del backend a hosting externo para eliminar dependencia de la PC
+- **Path:** C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\backend-laravel
+- **DB actual:** SQLite con datos reales (5 usuarios, 394 repuestos, 311 clientes, 13 órdenes)
 
 ### ❌ pro.pendziuch.com — DESACTIVADO
-- Apuntaba al frontend local (puerto 3002) via túnel
-- El proceso Next.js dev fue terminado — ese dominio ya no sirve nada
-- Cuando se quiera usar, apuntarlo a Cloudflare Pages (cambio DNS en Cloudflare)
+- Apuntaba al frontend local (puerto 3002) — proceso Next.js terminado
+- Para reactivar: apuntar DNS a sertecapp-tecnicos.pages.dev
 
 ---
 
-## ARQUITECTURA OFFLINE — YA IMPLEMENTADA
+## PRÓXIMA FASE — PROYECTO "STA" (SerTecApp Unificada)
 
-La app tiene soporte offline completo en `app/lib/storage.ts`:
-- `saveParteLocal()` — guarda partes en localStorage sin red
-- `syncPendingPartes()` — sincroniza automáticamente al volver la conexión
-- `cacheOrdenes()` — órdenes disponibles 24hs sin red
-- `setupConnectionListener()` — detecta cambios de conectividad
-- `useOnlineStatus()` hook — ping al backend cada 10s, modo force-offline
+### Concepto
+Nueva app unificada para admins Y técnicos, 100% en Cloudflare sin PHP ni servidor propio.
 
-**Limitación conocida:** el técnico debe estar logueado ANTES de quedarse sin red.
-Una vez logueado, puede trabajar offline y los partes se sincronizan solos al volver la conexión.
+**Nombre del proyecto:** `sta` (o `sertecapp-sta`)
+**Stack:** Next.js + Cloudflare Pages + Cloudflare Workers + Cloudflare D1 (SQLite)
+
+### Arquitectura objetivo
+```
+sta.pendziuch.com (o sta.pages.dev)
+        ↓
+Login → detecta rol del usuario
+        ↓
+Admin → dashboard completo (clientes, equipos, órdenes, repuestos, presupuestos)
+Técnico → solo sus órdenes asignadas (cargar partes, firmas, fotos)
+        ↓
+Cloudflare Workers (API — reemplaza Laravel)
+        ↓
+Cloudflare D1 (SQLite serverless — reemplaza MySQL/SQLite local)
+```
+
+### Por qué este stack
+- ✅ 100% gratis (Cloudflare Free tier)
+- ✅ Sin PC, sin túnel, sin servidor propio
+- ✅ SQLite actual se migra directo a D1
+- ✅ Deploy con wrangler igual que el frontend
+- ✅ Un solo lugar para admins y técnicos
+- ✅ Escalable si el negocio crece
+
+### Datos a migrar de SQLite actual a D1
+- 5 usuarios (conservar credenciales)
+- 394 repuestos (importados de Excel Life Fitness)
+- 311 clientes
+- 13 órdenes de trabajo
+
+### Lo que reemplaza a Laravel
+- Login/auth → Worker con JWT
+- API de órdenes → Worker
+- API de repuestos → Worker
+- API de clientes → Worker
+- API de partes técnicos → Worker
+- Presupuestos PDF → Worker (o librería JS)
+
+### Plan de desarrollo "STA"
+1. Crear proyecto Next.js nuevo en `sta/` dentro del repo
+2. Crear Worker de Cloudflare para la API
+3. Crear base D1 y migrar datos del SQLite actual
+4. Implementar login con roles (admin/técnico)
+5. Construir vistas: admin dashboard + técnico dashboard
+6. Deploy en Cloudflare Pages como `sta`
+
+### Mientras tanto
+- `sertecapp-tecnicos` sigue funcionando para Luis
+- Backend Laravel sigue en túnel para el admin
+- No se rompe nada existente
 
 ---
 
-## CÓMO DEPLOYAR (PROCESO SIMPLIFICADO)
+## CÓMO DEPLOYAR EL FRONTEND ACTUAL (proceso simplificado)
 
-Cada vez que se hagan cambios al frontend y se quiera deployar:
-
-### Paso 1 — Build
 ```cmd
-:: Abrir terminal y ejecutar:
+:: Doble click en deploy.bat, o manualmente:
 pushd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos"
 rmdir /s /q .next
 npx next build --webpack
-```
-
-### Paso 2 — Deploy
-```cmd
 npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true
 ```
-
-### Paso 3 — Verificar
-Abrir https://sertecapp-tecnicos.pages.dev y probar login.
-
-**Nota:** wrangler ya está autenticado. Si falla auth, correr `npx wrangler login` primero.
 
 ---
 
 ## ESTRUCTURA DE RUTAS DINÁMICAS — IMPORTANTE
 
 Next.js con `output: export` requiere patrón server/client para rutas dinámicas:
-
-### app/detalle/[id]/
-- `page.tsx` — wrapper server con `generateStaticParams` y `dynamic = 'force-static'`
-- `_client.tsx` — código real con `'use client'`
-
-### app/parte/[id]/
-- `page.tsx` — wrapper server con `generateStaticParams` y `dynamic = 'force-static'`
-- `_client.tsx` — código real con `'use client'`
-
-**NO crear archivos `page-client.tsx`** en estas carpetas — Next.js los trata como páginas y rompe el build.
+- `page.tsx` → wrapper server con `generateStaticParams`, `dynamic = 'force-static'`, `dynamicParams = false`
+- `_client.tsx` → código real con `'use client'`
+- **NO crear `page-client.tsx`** — Next.js lo trata como página y rompe el build
 
 ---
 
@@ -84,15 +110,6 @@ Next.js con `output: export` requiere patrón server/client para rutas dinámica
 
 - Node v24.11.0, npm 11.6.1, wrangler 4.56.0
 - `output: 'export'` + `trailingSlash: true` en `next.config.ts`
-- `npx next build --webpack` — SIEMPRE con --webpack (next-pwa no es compatible con Turbopack)
-- API URL hardcodeada en la app: `https://sertecapp.pendziuch.com`
-- Para ejecutar comandos: **Desktop Commander:start_process con shell="cmd"**
-- NUNCA usar Windows-MCP:PowerShell — siempre falla
-
----
-
-## PRÓXIMOS PASOS (cuando se retome)
-
-1. **Apuntar `pro.pendziuch.com` a Cloudflare Pages** — cambio DNS simple, 2 minutos
-2. **Deploy backend Laravel** a hosting externo para eliminar dependencia del túnel
-3. **Verificar sincronización offline** — probar flujo completo: guardar parte sin red, volver a conectar, confirmar sync
+- `npx next build --webpack` — SIEMPRE con --webpack (next-pwa incompatible con Turbopack)
+- API URL hardcodeada: `https://sertecapp.pendziuch.com`
+- Comandos: **Desktop Commander:start_process con shell="cmd"** — NUNCA Windows-MCP:PowerShell

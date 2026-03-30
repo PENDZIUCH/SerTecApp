@@ -14,13 +14,13 @@ class AuthService
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => ['Las credenciales ingresadas son incorrectas.'],
             ]);
         }
 
         if (!$user->is_active) {
             throw ValidationException::withMessages([
-                'email' => ['Your account is inactive.'],
+                'email' => ['Tu cuenta está inactiva. Contactá al administrador.'],
             ]);
         }
 

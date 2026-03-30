@@ -17,7 +17,7 @@ class UserResource extends JsonResource
             'job_title' => $this->job_title,
             'is_active' => $this->is_active,
             'last_login_at' => $this->last_login_at,
-            'roles' => $this->whenLoaded('roles', fn() => $this->roles->pluck('name')),
+            'roles' => $this->getRoleNames(),
             'permissions' => $this->whenLoaded('permissions', fn() => $this->permissions->pluck('name')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

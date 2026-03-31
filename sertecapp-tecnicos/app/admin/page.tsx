@@ -164,7 +164,7 @@ export default function AdminPage() {
             : <div className="divide-y divide-gray-50">
               {ordenes.map((o) => (
                 <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer"
-                  onClick={() => router.push(`/detalle/${o.id}`)}>
+                  onClick={() => { router.push('/admin/orden?id=' + String(o.id)); }}>
                   <div>
                     <p className="font-medium text-gray-800 text-sm">#{o.id} — {o.customer?.business_name || o.customer?.full_name || 'Sin cliente'}</p>
                     <p className="text-xs text-gray-500">{o.title}</p>

@@ -179,7 +179,7 @@ export default function DetallePage() {
 
         {order.status === 'pendiente' && (
           <div className="sticky bottom-4 mt-4">
-            <button onClick={() => router.push(`/parte/${order.id}`)}
+            <button onClick={() => router.push(`/parte?id=${order.id}`)}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-lg shadow-lg transition-colors">
               Completar Parte de Trabajo
             </button>

@@ -18,8 +18,17 @@ class PartController extends Controller
 
     public function index()
     {
-        $parts = Part::applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = Part::query();
+
+        if (request('search')) {
+            $query->where('name', 'like', '%' . request('search') . '%')
+                  ->orWhere('sku', 'like', '%' . request('search') . '%');
+        }
+        if (request('category')) {
+            $query->where('category', request('category'));
+        }
+
+        $parts = $query->paginate(request('per_page', 15));
 
         return PartResource::collection($parts);
     }

@@ -254,7 +254,7 @@ export default function OrdenesPage() {
   };
 
   const handleStart = (orderId: number) => {
-    router.push(`/parte/${orderId}`);
+    router.push(`/parte?id=${orderId}`);
   };
 
   const handleViewDetail = (orderId: number) => {

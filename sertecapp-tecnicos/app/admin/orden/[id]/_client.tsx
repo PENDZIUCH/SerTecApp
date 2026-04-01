@@ -7,19 +7,31 @@ const API = 'https://sertecapp.pendziuch.com';
 const sel = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500";
 const inp = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500";
 
+// Normaliza status inglés → español (el backend a veces devuelve "completed", "in_progress", "pending")
+const normalizeStatus = (s: string) => {
+  const map: Record<string, string> = {
+    completed: 'completado',
+    in_progress: 'en_progreso',
+    pending: 'pendiente',
+    cancelled: 'cancelado',
+  };
+  return map[s] ?? s;
+};
+
 const prioridades = [
   { value: 'low', label: 'Baja' },
   { value: 'medium', label: 'Media' },
   { value: 'high', label: 'Alta' },
   { value: 'urgent', label: 'Urgente' },
 ];
+
 const estados = [
   { value: 'pendiente', label: 'Pendiente' },
   { value: 'en_progreso', label: 'En Progreso' },
   { value: 'completado', label: 'Completado' },
-  { value: 'completed', label: 'Completado (completed)' },
   { value: 'cancelado', label: 'Cancelado' },
 ];
+
 const statusColor: Record<string, string> = {
   pendiente: 'bg-yellow-100 text-yellow-800',
   en_progreso: 'bg-blue-100 text-blue-800',
@@ -90,8 +102,6 @@ function OrdenEditContent() {
         const o = d.data || d;
         setOrden(o);
 
-        // La API devuelve objetos anidados: customer.id, assigned_tech.id, equipment.id
-        // NO devuelve customer_id directamente en el root
         const customerId = String(o.customer?.id || o.customer_id || '');
         const equipmentId = String(o.equipment?.id || o.equipment_id || '');
         const techId = String(o.assigned_tech?.id || o.assigned_tech_id || '');
@@ -102,10 +112,10 @@ function OrdenEditContent() {
           title: o.title || '',
           description: o.description || '',
           priority: o.priority || 'medium',
-          status: o.status || 'pendiente',
+          status: normalizeStatus(o.status || 'pendiente'),
           assigned_tech_id: techId,
           scheduled_date: o.scheduled_date ? o.scheduled_date.substring(0, 10) : '',
-          requires_signature: o.requires_signature || false,
+          requires_signature: !!o.requires_signature,
         });
       } else {
         setError('No se pudo cargar la orden');
@@ -143,13 +153,15 @@ function OrdenEditContent() {
       const res = await fetch(API + '/api/v1/work-orders/' + orderId, {
         method: 'PUT', headers: hd(token), body: JSON.stringify(body),
       });
-      if (form.status !== orden?.status) {
+
+      if (form.status !== normalizeStatus(orden?.status || 'pendiente')) {
         await fetch(API + '/api/v1/work-orders/' + orderId + '/change-status', {
           method: 'POST', headers: hd(token), body: JSON.stringify({ status: form.status }),
         });
       }
+
       if (res.ok) {
-        setSuccess('Orden actualizada');
+        setSuccess('Orden actualizada ✓');
         setTimeout(() => router.push('/admin'), 1500);
       } else {
         const d = await res.json();
@@ -180,7 +192,7 @@ function OrdenEditContent() {
         </div>
         {orden?.status && (
           <span className={'ml-auto text-xs px-3 py-1 rounded-full font-medium ' + (statusColor[orden.status] || 'bg-gray-100 text-gray-600')}>
-            {orden.status}
+            {normalizeStatus(orden.status)}
           </span>
         )}
       </header>
@@ -207,17 +219,17 @@ function OrdenEditContent() {
             <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
             <select value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))} disabled={!form.customer_id} style={{color:'#111827'}} className={sel + ' disabled:bg-gray-50'}>
               <option value="">{form.customer_id ? (equiposFiltrados.length === 0 ? 'Sin equipos' : 'Seleccionar...') : 'Primero selecciona cliente'}</option>
-              {equiposFiltrados.map(e => <option key={e.id} value={e.id} style={{color:'#111827'}}>{e.brand} {e.model}</option>)}
+              {equiposFiltrados.map(e => <option key={e.id} value={e.id} style={{color:'#111827'}}>{e.brand?.name || e.brand} {e.model?.name || e.model}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Titulo *</label>
-            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={{color:'#111827'}} className={inp} placeholder="Titulo de la orden" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={{color:'#111827'}} className={inp} placeholder="Título de la orden" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripcion</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{color:'#111827'}} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500 resize-none" placeholder="Detalles..." />
           </div>
 
@@ -229,7 +241,7 @@ function OrdenEditContent() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tecnico</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Técnico</label>
               <select value={form.assigned_tech_id} onChange={e => setForm(f => ({ ...f, assigned_tech_id: e.target.value }))} style={{color:'#111827'}} className={sel}>
                 <option value="">Sin asignar</option>
                 {tecnicos.map(t => <option key={t.id} value={t.id} style={{color:'#111827'}}>{t.name}</option>)}
@@ -250,10 +262,10 @@ function OrdenEditContent() {
           {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
           {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}
 
-          <button onClick={guardar} disabled={saving} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl disabled:opacity-50">
+          <button onClick={guardar} disabled={saving} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl disabled:opacity-50 transition-colors">
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
-          <button onClick={() => router.push('/admin')} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl">
+          <button onClick={() => router.push('/admin')} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl transition-colors">
             Cancelar
           </button>
         </div>

@@ -6,13 +6,15 @@ import { saveParteLocal } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineModal } from '../components/ui/OfflineModal';
 
+const API = 'https://sertecapp.pendziuch.com';
+
 function ParteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('id') || '';
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { isOnline: effectiveOnline } = useOnlineStatus();
-  
+
   const [diagnostico, setDiagnostico] = useState('');
   const [trabajoRealizado, setTrabajoRealizado] = useState('');
   const [repuestos, setRepuestos] = useState<Array<{nombre: string; cantidad: number}>>([]);
@@ -84,7 +86,7 @@ function ParteContent() {
 
   const showErrorToast = (message: string) => {
     setToastMessage(message); setToastType('error'); setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    setTimeout(() => setShowToast(false), 4000);
   };
 
   const agregarRepuesto = () => {
@@ -99,36 +101,59 @@ function ParteContent() {
     e.preventDefault();
     if (!diagnostico.trim() || !trabajoRealizado.trim()) { showErrorToast('Completá el diagnóstico y el trabajo realizado'); return; }
     if (!firma) { showErrorToast('Falta la firma del cliente'); return; }
+    if (!orderId) { showErrorToast('Error: no hay ID de orden'); return; }
     if (saving) return;
     setSaving(true);
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (effectiveOnline) {
-        try {
-          const token = localStorage.getItem('token');
-          const response = await fetch('https://sertecapp.pendziuch.com/api/v1/partes', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ orden_id: parseInt(orderId), tecnico_id: user.id || 1, diagnostico, trabajo_realizado: trabajoRealizado, repuestos_usados: repuestos, firma_base64: firma })
-          });
-          if (response.ok) {
-            localStorage.removeItem('sertecapp_ordenes_cache');
-            showSuccessToast('Parte guardado exitosamente');
-          } else {
-            saveParteLocal({ orden_id: parseInt(orderId), tecnico_id: user.id || 1, diagnostico, trabajo_realizado: trabajoRealizado, repuestos_usados: repuestos, firma_base64: firma });
-            setShowOfflineModal(true);
-          }
-        } catch {
-          saveParteLocal({ orden_id: parseInt(orderId), tecnico_id: user.id || 1, diagnostico, trabajo_realizado: trabajoRealizado, repuestos_usados: repuestos, firma_base64: firma });
+
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const parteData = {
+      orden_id: parseInt(orderId),
+      tecnico_id: user.id || 1,
+      diagnostico,
+      trabajo_realizado: trabajoRealizado,
+      repuestos_usados: repuestos,
+      firma_base64: firma,
+    };
+
+    if (effectiveOnline) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API}/api/v1/partes`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(parteData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          localStorage.removeItem('sertecapp_ordenes_cache');
+          showSuccessToast('Parte guardado exitosamente ✓');
+          setTimeout(() => router.push('/ordenes'), 1500);
+        } else {
+          // Error del servidor — mostrar detalle y guardar local
+          const errMsg = data.errors
+            ? Object.values(data.errors).flat().join(', ')
+            : data.message || `Error ${response.status}`;
+          console.error('Error del servidor al guardar parte:', errMsg, data);
+          saveParteLocal(parteData);
           setShowOfflineModal(true);
         }
-      } else {
-        saveParteLocal({ orden_id: parseInt(orderId), tecnico_id: user.id || 1, diagnostico, trabajo_realizado: trabajoRealizado, repuestos_usados: repuestos, firma_base64: firma });
+      } catch (err) {
+        console.error('Error de red al guardar parte:', err);
+        saveParteLocal(parteData);
         setShowOfflineModal(true);
       }
-      setTimeout(() => router.push('/ordenes'), 1500);
-    } catch { showErrorToast('Error al guardar el parte'); }
-    finally { setSaving(false); }
+    } else {
+      saveParteLocal(parteData);
+      setShowOfflineModal(true);
+    }
+
+    setSaving(false);
   };
 
   return (

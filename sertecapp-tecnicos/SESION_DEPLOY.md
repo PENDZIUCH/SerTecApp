@@ -1,34 +1,40 @@
 # SESIÓN DEPLOY — sertecapp-tecnicos
-**Última actualización:** 2026-03-31
-**Estado:** ✅ LOCAL FUNCIONANDO — ⏳ DEPLOY PENDIENTE PARA MAÑANA
+**Última actualización:** 2026-04-01
+**Estado:** ✅ FUNCIONAL EN PRODUCCIÓN — técnico puede crear partes
 
 ---
 
-## ESTADO ACTUAL HOY
+## ESTADO ACTUAL
 
-### ✅ Lo que funciona en localhost:3002
+### ✅ Funciona en https://sertecapp-tecnicos.pages.dev
 - Login con detección de rol (admin → /admin, técnico → /ordenes)
-- Dashboard admin con stats (órdenes, clientes, repuestos)
-- Crear orden desde admin con selects dinámicos (cliente → equipo filtrado)
-- Editar orden con datos precargados (cliente, técnico, estado, prioridad)
-- Crear parte técnico desde /parte?id=X con firma y offline support
-- Vista técnico con órdenes asignadas
-- Mensajes de error en español
+- Técnico ve sus órdenes asignadas
+- Técnico crea parte con firma → guardado en backend Laravel
+- Admin crea órdenes (modal inline)
+- Admin edita órdenes (/admin/orden?id=X) — status normalizado inglés→español
+- Vista Técnico desde /admin sin navegar fuera (SPA, botón volver)
+- Service worker con auto-update: detecta nueva versión y recarga solo
 
 ### ✅ Backend Laravel (requiere PC encendida + túnel)
 - URL: https://sertecapp.pendziuch.com
-- Tunnel: cloudflared en sertecapp-tunnel
-- DB: SQLite con 5 usuarios, 394 repuestos, 311 clientes, 13+ órdenes
-- Todos los controllers arreglados (sin applyFilters)
+- DB: SQLite con 5 usuarios, 394 repuestos, 311 clientes, órdenes reales
 
-### ⏳ Deploy pendiente para mañana
-- Frontend en Cloudflare Pages: sertecapp-tecnicos.pages.dev
-- Usar deploy.bat — hace todo automático
-- NO deployar hasta probar bien local
+### ✅ Build/Deploy
+- next.config.dev.ts.bak y next.config.production.ts.bak — renombrados (causaban error TS)
+- Siempre: set NEXT_EXPORT=1 PRIMERO (comando separado), luego npx next build --webpack
+- Deploy: npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true
 
-### ❌ pro.pendziuch.com
-- Desactivado — apuntaba al frontend local (puerto 3002)
-- Para reactivar: apuntar DNS a sertecapp-tecnicos.pages.dev
+---
+
+## BUGS RESUELTOS HOY
+
+| Bug | Causa | Fix |
+|-----|-------|-----|
+| /parte/19 → 404 | Carpetas [id] en out/ del build viejo | Borradas parte/[id] y detalle/[id], nuevo build |
+| Status "completed" en select admin | Backend devuelve inglés | normalizeStatus() en _client.tsx |
+| Vista Técnico → sin vuelta atrás | router.push('/ordenes') navegaba fuera | Estado `vista` en admin/page.tsx, SPA puro |
+| SW no se actualizaba en PWA instalada | Cache names iguales, 0 files subidos | Cache names v2, borrar out/ fuerza rebuild total |
+| Build falla TS | next.config.dev.ts y .production.ts en raíz | Renombrados a .bak |
 
 ---
 
@@ -50,137 +56,39 @@ cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\backend-laravel"
 php artisan serve --host=127.0.0.1 --port=8000
 
 :: Terminal 2 — Túnel Cloudflare
-cd "C:\Users\Hugo Pendziuch\AppData\Local\Microsoft\WinGet\Packages\Cloudflare.cloudflared_Microsoft.Winget.Source_8wekyb3d8bbwe"
-cloudflared.exe tunnel run sertecapp-tunnel
+"C:\Users\Hugo Pendziuch\AppData\Local\Microsoft\WinGet\Packages\Cloudflare.cloudflared_Microsoft.Winget.Source_8wekyb3d8bbwe\cloudflared.exe" tunnel run sertecapp-tunnel
 
-:: Terminal 3 — Frontend Next.js
+:: Terminal 3 — Frontend (dev, sin flags extra)
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos"
 npx next dev --port 3002
 ```
 
-**IMPORTANTE:** next.config.ts NO debe tener output:export ni next-pwa en dev.
-El config correcto para dev es simplemente: `module.exports = {}`
-
----
-
-## CÓMO DEPLOYAR (cuando esté listo)
+## CÓMO DEPLOYAR
 
 ```cmd
-:: Doble click en:
-C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos\deploy.bat
+cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos"
+set NEXT_EXPORT=1
+rmdir /s /q .next
+rmdir /s /q out
+npx next build --webpack
+npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true
 ```
 
-El deploy.bat hace:
-1. Limpia .next
-2. Build con NEXT_EXPORT=1 y --webpack (activa output:export y next-pwa)
-3. Deploy a Cloudflare Pages sertecapp-tecnicos
-
 ---
 
-## RUTAS DE LA APP
+## PRÓXIMAS SESIONES
 
-| Ruta | Descripción |
-|------|-------------|
-| / | Login |
-| /ordenes | Vista técnico (sus órdenes) |
-| /parte?id=X | Crear parte técnico |
-| /detalle?id=X | Ver detalle de orden |
-| /admin | Dashboard admin |
-| /admin/orden?id=X | Editar orden |
+### Prioridad 1 — Worker + D1 (independizarse del túnel)
+Ver SESION_WORKER_S1.md — código 100% listo, falta:
+1. npx wrangler d1 create sertecapp-db → obtener database_id real
+2. Exportar SQLite → limpiar → importar a D1
+3. Probar Worker local → deploy → conectar frontend
 
-**REGLA:** Rutas dinámicas usan SIEMPRE query params (?id=X), nunca /ruta/[id]
+### Prioridad 2 — UX mejoras
+- Admin ver el parte completado (diagnóstico, firma) desde /admin
+- Mejor feedback cuando parte se guarda offline
+- Indicador visual de sincronización pendiente
 
----
-
-## BUGS CONOCIDOS / PENDIENTES
-
-- [ ] Status "completed" vs "completado" — el backend a veces devuelve "completed" en inglés
-- [ ] pro.pendziuch.com apuntar a Pages después del deploy
-- [ ] Migración backend a independiente del túnel (plan abajo)
-
----
-
-## PLAN MIGRACIÓN — INDEPENDIZARSE DEL BACKEND (próximas sesiones)
-
-### Objetivo
-Eliminar dependencia de la PC encendida. Todo en Cloudflare, gratis, siempre online.
-
-### Stack objetivo
-```
-sertecapp-tecnicos.pages.dev
-         ↓
-Cloudflare Workers (API — reemplaza Laravel)
-         ↓
-Cloudflare D1 (SQLite serverless — reemplaza SQLite local)
-```
-
-### Fases
-
-#### Fase 1 — Crear infraestructura Cloudflare (1 sesión)
-1. Crear base D1 en Cloudflare: `npx wrangler d1 create sertecapp-db`
-2. Exportar SQLite actual a SQL: `sqlite3 database.sqlite .dump > export.sql`
-3. Limpiar el SQL (quitar triggers incompatibles con D1)
-4. Importar a D1: `npx wrangler d1 execute sertecapp-db --file=export.sql`
-5. Verificar que los 311 clientes, 394 repuestos, 5 usuarios estén en D1
-
-#### Fase 2 — Crear Worker API (2-3 sesiones)
-Endpoints a implementar en Workers (JS/TypeScript):
-
-**Auth:**
-- POST /api/login → verificar usuario en D1, devolver JWT
-- GET /api/me → datos del usuario logueado
-
-**Órdenes:**
-- GET /api/work-orders → lista paginada con filtros
-- POST /api/work-orders → crear orden
-- PUT /api/work-orders/:id → editar orden
-- POST /api/work-orders/:id/change-status → cambiar estado
-
-**Clientes:**
-- GET /api/customers → lista paginada
-
-**Equipos:**
-- GET /api/equipments → lista, filtrable por customer_id
-
-**Usuarios/Técnicos:**
-- GET /api/users → lista con roles
-
-**Repuestos:**
-- GET /api/parts → lista paginada
-
-**Partes técnicos:**
-- POST /api/partes → guardar parte
-- GET /api/partes/:orden_id → obtener parte de una orden
-
-#### Fase 3 — Conectar frontend al Worker (1 sesión)
-- Cambiar API_URL de `https://sertecapp.pendziuch.com` al Worker URL
-- Probar todos los flujos
-- Deploy final
-
-#### Fase 4 — Dominio (30 minutos)
-- Apuntar pro.pendziuch.com a Cloudflare Pages
-- Apuntar api.pendziuch.com al Worker
-
-### Datos a migrar
-- 5 usuarios (con passwords hasheadas — necesitan rehash o reset)
-- 394 repuestos (importados de Excel Life Fitness)
-- 311 clientes
-- Equipos y órdenes existentes
-
-### Consideraciones
-- Los passwords en SQLite son bcrypt de Laravel — hay que reimplementar bcrypt en el Worker o resetearlos todos
-- JWT en Workers es simple con la librería jose
-- D1 tiene limitaciones: no soporta algunos tipos de SQLite (pero el schema de Laravel es compatible)
-
----
-
-## NOTAS TÉCNICAS
-
-- Node v24.11.0, npm 11.6.1, wrangler 4.56.0
-- next-pwa@5.6.0 — solo se usa en BUILD de producción
-- Build producción: NEXT_EXPORT=1 npx next build --webpack
-- Dev local: npx next dev --port 3002 (sin flags)
-- Comandos: Desktop Commander:start_process con shell="cmd"
-- NUNCA Windows-MCP:PowerShell
-- Windows-MCP:FileSystem para leer/escribir archivos
-- Para strings con template literals usar node fix.js en vez de Windows-MCP (escapa backslashes)
+### Prioridad 3 — Offline más robusto
+- Cachear lista de clientes/equipos para crear partes offline
+- Queue de órdenes pendientes visible para el técnico

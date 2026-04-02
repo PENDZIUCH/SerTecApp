@@ -2,6 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '../lib/config';
+
+// Pedir permiso de geolocalización silenciosamente
+// Si el usuario acepta, queda guardado para siempre en el browser/PWA
+function requestGeoPermission() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    () => { /* permiso otorgado, coordenadas descartadas */ },
+    () => { /* permiso denegado, no pasa nada */ },
+    { timeout: 5000, maximumAge: 0 }
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,8 +28,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
-      const response = await fetch(`${apiUrl}/api/v1/login`, {
+      const response = await fetch(`${API_URL}/api/v1/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -32,10 +43,13 @@ export default function LoginPage() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        // Detectar rol y redirigir
+        // Pedir permiso de geolocalización al loguearse
+        // El browser lo pide una sola vez y queda guardado para siempre
+        requestGeoPermission();
+
         const roles: string[] = data.user?.roles || [];
         const isAdmin = roles.includes('administrador') || roles.includes('admin');
-        router.push(isAdmin ? '/admin' : '/ordenes');
+        setTimeout(() => router.push(isAdmin ? '/admin' : '/ordenes'), 300);
       } else {
         setError(data.message || 'Credenciales incorrectas');
       }
@@ -74,41 +88,26 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-gray-900"
-                placeholder="usuario@demo.com"
-              />
+                placeholder="usuario@demo.com" />
             </div>
             <div>
               <label htmlFor="pin" className="block text-sm font-medium text-gray-700 mb-2">PIN</label>
-              <input
-                id="pin"
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                required
+              <input id="pin" type="password" value={pin} onChange={(e) => setPin(e.target.value)} required
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all text-gray-900"
-                placeholder="••••"
-              />
+                placeholder="••••" />
             </div>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl transition-all shadow-lg disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl transition-all shadow-lg disabled:opacity-50">
               {loading ? 'Ingresando...' : 'INGRESAR'}
             </button>
           </form>
         </div>
-        <p className="text-center text-red-100 text-sm mt-6">v1.1.0 - Fitness Company © 2025</p>
+        <p className="text-center text-red-100 text-sm mt-6">v2.0.0 - Fitness Company © 2026</p>
       </div>
     </div>
   );

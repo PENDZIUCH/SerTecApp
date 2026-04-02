@@ -6,7 +6,7 @@ import { saveParteLocal } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineModal } from '../components/ui/OfflineModal';
 
-const API = 'https://sertecapp.pendziuch.com';
+const API = 'https://sertecapp-worker.pendziuch.workers.dev';
 
 function ParteContent() {
   const router = useRouter();

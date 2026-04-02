@@ -10,17 +10,17 @@ import { handlePartesTecnicos } from './routes/partesTecnicos';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // CORS preflight
     if (request.method === 'OPTIONS') return cors();
 
     const url = new URL(request.url);
-    const path = url.pathname;
+    // Normalizar: acepta /api/v1/... y /api/... indistintamente
+    const path = url.pathname.replace(/^\/api\/v1\//, '/api/');
 
     // Auth
     if (path === '/api/login' && request.method === 'POST') return handleLogin(request, env);
     if (path === '/api/me') return handleMe(request, env);
 
-    // Work orders + partes de órdenes
+    // Work orders + ordenes técnico
     if (path.startsWith('/api/work-orders') || path.startsWith('/api/ordenes')) {
       return handleWorkOrders(request, env, path);
     }

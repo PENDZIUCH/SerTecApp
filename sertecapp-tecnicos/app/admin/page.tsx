@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API = 'https://sertecapp.pendziuch.com';
+const API = 'https://sertecapp-worker.pendziuch.workers.dev';
 
 interface Order { id: number; title: string; status: string; priority?: string; customer?: any; equipment?: any; assigned_tech?: any; }
 interface Customer { id: number; full_name: string; business_name: string; }
@@ -229,7 +229,7 @@ export default function AdminPage() {
 
         {/* Accesos rápidos */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <a href="https://sertecapp.pendziuch.com/admin" target="_blank"
+          <a href="https://sertecapp-worker.pendziuch.workers.dev/admin" target="_blank"
             className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all">
             <span className="text-2xl">🖥️</span>
             <div><p className="font-semibold text-gray-800 text-sm">Panel Filament</p><p className="text-xs text-gray-400">Admin completo</p></div>

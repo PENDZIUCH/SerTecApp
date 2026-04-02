@@ -27,7 +27,7 @@ export function useOnlineStatus() {
     // Ping al backend cada 10 segundos para verificar si está vivo
     const checkBackend = async () => {
       try {
-        const apiUrl = 'https://sertecapp.pendziuch.com';
+        const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         

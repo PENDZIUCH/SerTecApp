@@ -16,7 +16,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
       const response = await fetch(`${apiUrl}/api/v1/login`, {
         method: 'POST',
         headers: { 

@@ -1,53 +1,59 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { API_URL } from '../lib/config';
 
 export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const [backendOnline, setBackendOnline] = useState(true);
   const [forceOffline, setForceOffline] = useState(false);
+  const failCount = useRef(0);
 
   useEffect(() => {
-    // Leer estado guardado
-    const saved = localStorage.getItem('forceOffline');
-    if (saved === 'true') {
-      setForceOffline(true);
-    }
+    // forceOffline solo dura la sesión — NO persiste entre recargas
+    const saved = sessionStorage.getItem('forceOffline');
+    if (saved === 'true') setForceOffline(true);
+    // Limpiar el viejo localStorage si quedó
+    localStorage.removeItem('forceOffline');
 
-    // Detectar conexión real del navegador
-    const updateOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-    };
-
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     updateOnlineStatus();
-
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 
-    // Ping al backend cada 10 segundos para verificar si está vivo
     const checkBackend = async () => {
-      try {
-        const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
-        const response = await fetch(`${apiUrl}/api/health`, {
-          signal: controller.signal,
-          cache: 'no-store'
-        });
-        
-        clearTimeout(timeoutId);
-        setBackendOnline(response.ok);
-      } catch (error) {
+      // Si el browser dice offline, no intentamos ping
+      if (!navigator.onLine) {
         setBackendOnline(false);
+        failCount.current = 0;
+        return;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(`${API_URL}/api/health`, {
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          failCount.current = 0;
+          setBackendOnline(true);
+        } else {
+          failCount.current++;
+          if (failCount.current >= 3) setBackendOnline(false);
+        }
+      } catch {
+        failCount.current++;
+        // Solo marcar offline después de 3 fallos consecutivos
+        if (failCount.current >= 3) {
+          setBackendOnline(false);
+        }
       }
     };
 
-    // Check inmediato
     checkBackend();
-    
-    // Check periódico
-    const interval = setInterval(checkBackend, 10000);
+    const interval = setInterval(checkBackend, 20000);
 
     return () => {
       window.removeEventListener('online', updateOnlineStatus);
@@ -59,10 +65,9 @@ export function useOnlineStatus() {
   const toggleForceOffline = () => {
     const newState = !forceOffline;
     setForceOffline(newState);
-    localStorage.setItem('forceOffline', newState.toString());
+    sessionStorage.setItem('forceOffline', newState.toString());
   };
 
-  // Efectivamente online = navegador online Y backend online (a menos que force offline esté activo)
   const effectiveOnline = forceOffline ? false : (isOnline && backendOnline);
 
   return {

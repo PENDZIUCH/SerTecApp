@@ -8,32 +8,26 @@ export function ServiceWorkerRegistration() {
 
     navigator.serviceWorker.register('/sw.js').then((registration) => {
       console.log('SW registrado:', registration.scope);
-
-      // Forzar chequeo de actualización cada vez que carga la app
+      // Chequear actualizaciones al abrir la app
       registration.update();
 
-      // Cuando hay un nuevo SW esperando, tomarlo inmediatamente
+      // Cuando hay un nuevo SW listo, lo activamos silenciosamente
+      // SIN recargar la página — evita deslogueos inesperados
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (!newWorker) return;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('Nueva versión disponible — recargando...');
-            // Avisar al SW que tome control ya
+            // Activar el nuevo SW en silencio — se usará en la próxima carga normal
             newWorker.postMessage({ type: 'SKIP_WAITING' });
+            console.log('SW actualizado silenciosamente');
           }
         });
       });
     }).catch((e) => console.error('SW registration failed:', e));
 
-    // Cuando el SW toma control, recargar la página para usar la versión nueva
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!refreshing) {
-        refreshing = true;
-        window.location.reload();
-      }
-    });
+    // ELIMINADO: el controllerchange que hacía window.location.reload()
+    // Ese reload forzado causaba deslogueos inesperados al reconectar
   }, []);
 
   return null;

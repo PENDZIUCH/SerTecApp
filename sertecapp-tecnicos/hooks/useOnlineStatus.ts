@@ -10,10 +10,9 @@ export function useOnlineStatus() {
   const failCount = useRef(0);
 
   useEffect(() => {
-    // forceOffline solo dura la sesión — NO persiste entre recargas
+    // forceOffline solo dura la sesión actual
     const saved = sessionStorage.getItem('forceOffline');
     if (saved === 'true') setForceOffline(true);
-    // Limpiar el viejo localStorage si quedó
     localStorage.removeItem('forceOffline');
 
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -22,7 +21,6 @@ export function useOnlineStatus() {
     window.addEventListener('offline', updateOnlineStatus);
 
     const checkBackend = async () => {
-      // Si el browser dice offline, no intentamos ping
       if (!navigator.onLine) {
         setBackendOnline(false);
         failCount.current = 0;
@@ -30,7 +28,7 @@ export function useOnlineStatus() {
       }
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
         const response = await fetch(`${API_URL}/api/health`, {
           signal: controller.signal,
           cache: 'no-store',
@@ -45,17 +43,17 @@ export function useOnlineStatus() {
         }
       } catch {
         failCount.current++;
-        // Solo marcar offline después de 3 fallos consecutivos
-        if (failCount.current >= 3) {
-          setBackendOnline(false);
-        }
+        if (failCount.current >= 3) setBackendOnline(false);
       }
     };
 
-    checkBackend();
-    const interval = setInterval(checkBackend, 20000);
+    // Primer check con delay de 3s — deja que la app cargue primero
+    const firstCheck = setTimeout(checkBackend, 3000);
+    // Checks periódicos cada 30s — menos agresivo
+    const interval = setInterval(checkBackend, 30000);
 
     return () => {
+      clearTimeout(firstCheck);
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
       clearInterval(interval);
@@ -68,6 +66,7 @@ export function useOnlineStatus() {
     sessionStorage.setItem('forceOffline', newState.toString());
   };
 
+  // Online efectivo = navegador online Y backend online Y no forzado offline
   const effectiveOnline = forceOffline ? false : (isOnline && backendOnline);
 
   return {

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '../../lib/config';
 
-const API = 'https://sertecapp-worker.pendziuch.workers.dev';
+const API = API_URL;
 
 interface Order { id: number; title: string; status: string; priority?: string; customer?: any; equipment?: any; assigned_tech?: any; }
 interface Customer { id: number; full_name: string; business_name: string; }
@@ -11,10 +12,8 @@ interface Tech { id: number; name: string; }
 interface Equipment { id: number; brand: string; model: string; customer_id: number; }
 
 const statusColor: Record<string, string> = {
-  pendiente: 'bg-yellow-100 text-yellow-800',
-  en_progreso: 'bg-blue-100 text-blue-800',
-  completado: 'bg-green-100 text-green-800',
-  completed: 'bg-green-100 text-green-800',
+  pendiente: 'bg-yellow-100 text-yellow-800', en_progreso: 'bg-blue-100 text-blue-800',
+  completado: 'bg-green-100 text-green-800', completed: 'bg-green-100 text-green-800',
   cancelado: 'bg-red-100 text-red-800',
 };
 const prioColor: Record<string, string> = {
@@ -81,8 +80,7 @@ export default function AdminPage() {
   };
 
   const verVistasTecnico = async (userId: number) => {
-    setVista('tecnico');
-    setLoadingTecnico(true);
+    setVista('tecnico'); setLoadingTecnico(true);
     try {
       const res = await fetch(`${API}/api/v1/ordenes/tecnico/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
@@ -122,7 +120,6 @@ export default function AdminPage() {
 
   const logout = () => { localStorage.clear(); router.push('/'); };
 
-  // ── VISTA TÉCNICO (panel inline, sin navegar) ──────────────────────────────
   if (vista === 'tecnico') {
     const pendientes = ordenesTecnico.filter(o => o.status === 'pendiente' || o.status === 'en_progreso');
     const completadas = ordenesTecnico.filter(o => o.status === 'completado');
@@ -130,26 +127,19 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-900">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-            <button onClick={() => setVista('admin')}
-              className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+            <button onClick={() => setVista('admin')} className="flex items-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
               ← Volver al Admin
             </button>
-            <div>
-              <p className="font-semibold text-gray-900 text-sm">Vista Técnico</p>
-              <p className="text-xs text-gray-400">Como lo ve {user?.name}</p>
-            </div>
+            <p className="font-semibold text-gray-900 text-sm">Vista Técnico — {user?.name}</p>
           </div>
         </header>
         <div className="max-w-4xl mx-auto px-4 py-4">
           {loadingTecnico ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin h-10 w-10 border-4 border-red-500 border-t-transparent rounded-full" />
-            </div>
+            <div className="flex justify-center py-12"><div className="animate-spin h-10 w-10 border-4 border-red-500 border-t-transparent rounded-full" /></div>
           ) : ordenesTecnico.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center text-gray-400 mt-4">
               <p className="text-4xl mb-3">📋</p>
-              <p className="font-medium">No hay órdenes asignadas a este usuario</p>
-              <p className="text-sm mt-1">Asigná una orden a {user?.name} desde el panel admin</p>
+              <p className="font-medium">No hay órdenes asignadas</p>
             </div>
           ) : (
             <>
@@ -165,8 +155,7 @@ export default function AdminPage() {
                         </div>
                         <p className="text-sm text-gray-600 mb-2">{o.problem || o.title}</p>
                         {o.address && <p className="text-xs text-gray-400">📍 {o.address}</p>}
-                        <button onClick={() => router.push(`/parte?id=${o.id}`)}
-                          className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
+                        <button onClick={() => router.push(`/parte?id=${o.id}`)} className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-lg transition-colors">
                           Crear Parte →
                         </button>
                       </div>
@@ -194,61 +183,46 @@ export default function AdminPage() {
     );
   }
 
-  // ── VISTA ADMIN ────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-red-600 text-white px-4 py-4 flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-3">
           <img src="/icon.svg" alt="Logo" className="w-8 h-8 bg-white rounded-lg p-1" />
-          <div>
-            <h1 className="font-bold text-lg leading-tight">SerTecApp Admin</h1>
-            <p className="text-red-100 text-xs">{user?.name}</p>
-          </div>
+          <div><h1 className="font-bold text-lg leading-tight">SerTecApp Admin</h1><p className="text-red-100 text-xs">{user?.name}</p></div>
         </div>
         <button onClick={logout} className="text-red-100 hover:text-white text-sm font-medium">Salir</button>
       </header>
 
       <main className="p-4 max-w-4xl mx-auto">
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-3 mb-4 mt-4">
-          {[
-            { label: 'Órdenes', value: stats.ordenes, icon: '📋' },
-            { label: 'Clientes', value: stats.clientes, icon: '👥' },
-            { label: 'Repuestos', value: stats.repuestos, icon: '🔩' },
-            { label: 'Sistema', value: '✓', icon: '🟢' },
-          ].map((s) => (
+          {[{ label: 'Órdenes', value: stats.ordenes, icon: '📋' }, { label: 'Clientes', value: stats.clientes, icon: '👥' },
+            { label: 'Repuestos', value: stats.repuestos, icon: '🔩' }, { label: 'Sistema', value: '✓', icon: '🟢' }].map((s) => (
             <div key={s.label} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
               <span className="text-2xl">{s.icon}</span>
-              <div>
-                <p className="text-2xl font-bold text-gray-800">{loading ? '...' : s.value}</p>
-                <p className="text-xs text-gray-500">{s.label}</p>
-              </div>
+              <div><p className="text-2xl font-bold text-gray-800">{loading ? '...' : s.value}</p><p className="text-xs text-gray-500">{s.label}</p></div>
             </div>
           ))}
         </div>
 
-        {/* Accesos rápidos */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <a href="https://sertecapp-worker.pendziuch.workers.dev/admin" target="_blank"
-            className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all">
-            <span className="text-2xl">🖥️</span>
-            <div><p className="font-semibold text-gray-800 text-sm">Panel Filament</p><p className="text-xs text-gray-400">Admin completo</p></div>
-          </a>
-          <button onClick={() => verVistasTecnico(user?.id)}
-            className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
+        {/* Accesos principales */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <button onClick={() => verVistasTecnico(user?.id)} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
             <span className="text-2xl">👷</span>
-            <div><p className="font-semibold text-gray-800 text-sm">Vista Técnico</p><p className="text-xs text-gray-400">Sin salir del panel</p></div>
+            <div><p className="font-semibold text-gray-800 text-sm">Vista Técnico</p><p className="text-xs text-gray-400">Ver mis órdenes</p></div>
+          </button>
+          <button onClick={() => router.push('/admin/gestion')} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
+            <span className="text-2xl">👤</span>
+            <div><p className="font-semibold text-gray-800 text-sm">Usuarios</p><p className="text-xs text-gray-400">Gestionar técnicos</p></div>
           </button>
         </div>
 
-        {/* Técnicos rápidos */}
+        {/* Ver como técnico específico */}
         {tecnicos.length > 0 && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-1">Ver como técnico</p>
             <div className="flex gap-2 flex-wrap">
               {tecnicos.map(t => (
-                <button key={t.id} onClick={() => verVistasTecnico(t.id)}
-                  className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all shadow-sm">
+                <button key={t.id} onClick={() => verVistasTecnico(t.id)} className="bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:border-red-300 hover:text-red-700 transition-all shadow-sm">
                   👷 {t.name}
                 </button>
               ))}
@@ -256,35 +230,29 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Lista de órdenes */}
+        {/* Lista órdenes */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h2 className="font-semibold text-gray-800">Órdenes de Trabajo</h2>
-            <button onClick={abrirModal} className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all">
-              + Nueva Orden
-            </button>
+            <button onClick={abrirModal} className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all">+ Nueva</button>
           </div>
           {loading ? <div className="p-8 text-center text-gray-400">Cargando...</div>
             : ordenes.length === 0 ? <div className="p-8 text-center text-gray-400">No hay órdenes</div>
             : <div className="divide-y divide-gray-50">
               {ordenes.map((o) => (
-                <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer"
-                  onClick={() => router.push('/admin/orden?id=' + String(o.id))}>
+                <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer" onClick={() => router.push('/admin/orden?id=' + String(o.id))}>
                   <div>
                     <p className="font-medium text-gray-800 text-sm">#{o.id} — {o.customer?.business_name || o.customer?.full_name || 'Sin cliente'}</p>
                     <p className="text-xs text-gray-500">{o.title}</p>
                     {o.assigned_tech && <p className="text-xs text-blue-500">👷 {o.assigned_tech.name}</p>}
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[o.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {normalizeStatus(o.status)}
-                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[o.status] || 'bg-gray-100 text-gray-600'}`}>{normalizeStatus(o.status)}</span>
                 </div>
               ))}
             </div>}
         </div>
       </main>
 
-      {/* Modal nueva orden */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -302,9 +270,8 @@ export default function AdminPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
-                <select value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))}
-                  disabled={!form.customer_id} style={{color:'#111827'}} className={`${selectClass} disabled:bg-gray-50 disabled:text-gray-400`}>
-                  <option value="">{form.customer_id ? (equiposFiltrados.length === 0 ? 'Sin equipos registrados' : 'Seleccionar equipo...') : 'Primero seleccioná un cliente'}</option>
+                <select value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))} disabled={!form.customer_id} style={{color:'#111827'}} className={`${selectClass} disabled:bg-gray-50 disabled:text-gray-400`}>
+                  <option value="">{form.customer_id ? (equiposFiltrados.length === 0 ? 'Sin equipos' : 'Seleccionar equipo...') : 'Primero seleccioná un cliente'}</option>
                   {equiposFiltrados.map(e => <option key={e.id} value={e.id} style={{color:'#111827'}}>{e.brand} {e.model}</option>)}
                 </select>
               </div>

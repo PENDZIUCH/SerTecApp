@@ -1,5 +1,5 @@
 # SESIÓN DEPLOY — sertecapp-tecnicos
-**Última actualización:** 2026-04-01
+**Última actualización:** 2026-04-02
 **Estado:** ✅ PRODUCCIÓN EN CLOUDFLARE — sin túnel, sin Laravel, sin PC encendida
 
 ---
@@ -14,11 +14,8 @@
 | Túnel Laravel | sertecapp.pendziuch.com | ❌ APAGADO (no necesario) |
 
 ### Datos en D1 producción
-- 311 clientes
-- 394 repuestos
-- 5 usuarios con roles
-- 6 órdenes (las 19 originales tenían FK issues, solo 6 migraron limpio)
-- Marcas, modelos, equipos
+- 311 clientes, 394 repuestos, 5 usuarios con roles, 6 órdenes
+- Status de órdenes normalizados en español (pendiente/completado/en_progreso)
 
 ---
 
@@ -34,77 +31,76 @@
 
 ## FLUJO DE TRABAJO PARA NUEVOS CAMBIOS
 
-### Desarrollo local seguro
+### Desarrollo local
 ```cmd
-:: 1. Apuntar frontend al Worker local
+:: 1. Apuntar al Worker local
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\backend-laravel"
 php switch_api.php local
 
-:: 2. Levantar Worker local
+:: 2. Worker local
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-worker"
-npm install  (si es primera vez)
 npx wrangler dev --local --port 8787
 
-:: 3. Levantar frontend local
+:: 3. Frontend local
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos"
 npx next dev --port 3002
-
-:: 4. Probar en http://localhost:3002
 ```
 
-### Deploy a producción (solo cuando está testeado)
+### Deploy a producción (solo cuando está testeado local)
 ```cmd
-:: 1. Apuntar a Worker producción
+:: Worker
 php backend-laravel\switch_api.php worker
-
-:: 2. Deploy Worker (si cambió)
 cd sertecapp-worker && npx wrangler deploy
 
-:: 3. Deploy frontend
+:: Frontend
 cd sertecapp-tecnicos
 set NEXT_EXPORT=1
-rmdir /s /q .next
-rmdir /s /q out
+rmdir /s /q .next & rmdir /s /q out
 npx next build --webpack
 npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true
 ```
 
-### Rollback a Laravel (emergencia)
+### Rollback de emergencia a Laravel
 ```cmd
 php backend-laravel\switch_api.php laravel
-:: + deploy frontend → vuelve a Laravel en 5 minutos
-:: (requiere encender túnel: cloudflared tunnel run sertecapp-tunnel)
+:: + deploy frontend (5 min) → vuelve a Laravel
+:: Encender túnel: cloudflared tunnel run sertecapp-tunnel
 ```
 
 ---
 
-## NOTAS TÉCNICAS IMPORTANTES
+## BUGS RESUELTOS HOY
 
-- `set NEXT_EXPORT=1` debe ir en comando SEPARADO antes del build
-- `next.config.dev.ts.bak` y `next.config.production.ts.bak` — NO renombrar, causaban error TS
-- `switch_api.php local` → apunta a localhost:8787 (Worker dev)
-- `switch_api.php worker` → apunta al Worker de Cloudflare (producción)
-- `switch_api.php laravel` → apunta a sertecapp.pendziuch.com (fallback)
-- Worker acepta /api/v1/... y /api/... indistintamente (normalizado en index.ts)
-- JWT_SECRET configurado en Wrangler Secrets (producción)
-- `.dev.vars` tiene JWT_SECRET para desarrollo local
+| Bug | Causa | Fix |
+|-----|-------|-----|
+| "Application error" en prod | `config.ts` fallback era localhost:8787 | Fallback al Worker de producción |
+| Técnico no veía sus órdenes | Worker devolvía formato admin (customer anidado) | `fmtTecnico()` con clientName, problem, address planos |
+| Status "completed"/"pending" en inglés | D1 tenía valores de Laravel sin normalizar | UPDATE masivo en D1 local y remota |
+| POST partes fallaba | Worker esperaba `work_order_id`, frontend mandaba `orden_id` | Acepta ambos + campos en español |
+
+---
+
+## NOTAS TÉCNICAS
+
+- `set NEXT_EXPORT=1` va en comando SEPARADO antes del build (no con &&)
+- `switch_api.php local` → localhost:8787 (Worker dev)
+- `switch_api.php worker` → Worker Cloudflare (producción)
+- `switch_api.php laravel` → sertecapp.pendziuch.com (fallback)
+- Worker acepta /api/v1/... y /api/... indistintamente
+- Worker acepta `orden_id` y `work_order_id` en POST /api/partes
+- `config.ts` tiene fallback al Worker de producción (NUNCA localhost)
 - NUNCA usar Windows-MCP:PowerShell para comandos
 - SIEMPRE usar Desktop Commander:start_process con shell="cmd"
 
 ---
 
-## PRÓXIMAS SESIONES — MVP_CLOUDFLARE.md
+## PRÓXIMAS SESIONES
 
-### Sesión 5 — Admin mínimo en PWA (pendiente)
-- Gestión usuarios (crear técnicos, editar, desactivar)
-- Gestión clientes (crear, editar)
-- Gestión equipos (crear, asignar a cliente)
-- Ver partes completados desde admin
+### Sesión 5 — Admin mínimo en PWA
+- [ ] Gestión usuarios (crear técnicos, editar, desactivar)
+- [ ] Gestión clientes (crear, editar)
+- [ ] Ver partes completados desde admin con firma
+- [ ] Endpoints Worker: POST/PUT /api/users, POST/PUT /api/customers
 
 ### Sesión 6 — Importación Excel
-- Importar clientes desde Excel
-- Importar repuestos desde Excel
-
-### Sesión 7 — Verificación final
-- Checklist completo sin túnel
-- Tag v2.0.0
+### Sesión 7 — Verificación final + tag v2.0.0

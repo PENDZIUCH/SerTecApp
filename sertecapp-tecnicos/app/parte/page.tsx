@@ -5,8 +5,19 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import { saveParteLocal } from '../lib/storage';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineModal } from '../components/ui/OfflineModal';
+import { API_URL } from '../../lib/config';
 
-const API = 'https://sertecapp-worker.pendziuch.workers.dev';
+// Obtener geolocalización del dispositivo
+function getGeoLocation(): Promise<{lat: number; lng: number} | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { timeout: 5000, maximumAge: 60000 }
+    );
+  });
+}
 
 function ParteContent() {
   const router = useRouter();
@@ -106,19 +117,25 @@ function ParteContent() {
     setSaving(true);
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const parteData = {
+
+    // Intentar obtener geolocalización en paralelo (no bloquea)
+    const geo = await getGeoLocation();
+
+    const parteData: any = {
       orden_id: parseInt(orderId),
       tecnico_id: user.id || 1,
       diagnostico,
       trabajo_realizado: trabajoRealizado,
       repuestos_usados: repuestos,
       firma_base64: firma,
+      // Geolocalización si está disponible
+      ...(geo && { lat: geo.lat, lng: geo.lng }),
     };
 
     if (effectiveOnline) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API}/api/v1/partes`, {
+        const response = await fetch(`${API_URL}/api/v1/partes`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -135,16 +152,15 @@ function ParteContent() {
           showSuccessToast('Parte guardado exitosamente ✓');
           setTimeout(() => router.push('/ordenes'), 1500);
         } else {
-          // Error del servidor — mostrar detalle y guardar local
           const errMsg = data.errors
             ? Object.values(data.errors).flat().join(', ')
             : data.message || `Error ${response.status}`;
-          console.error('Error del servidor al guardar parte:', errMsg, data);
+          console.error('Error del servidor:', errMsg, data);
           saveParteLocal(parteData);
           setShowOfflineModal(true);
         }
       } catch (err) {
-        console.error('Error de red al guardar parte:', err);
+        console.error('Error de red:', err);
         saveParteLocal(parteData);
         setShowOfflineModal(true);
       }
@@ -206,11 +222,11 @@ function ParteContent() {
           <div className="space-y-2">
             <input type="text" value={nuevoRepuesto} onChange={(e) => setNuevoRepuesto(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), agregarRepuesto())}
-              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-3 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500"
               placeholder="Nombre del repuesto" />
             <div className="flex gap-2">
               <input type="number" value={cantidadRepuesto} onChange={(e) => setCantidadRepuesto(parseInt(e.target.value) || 1)} min="1"
-                className="flex-1 px-3 py-3 border border-gray-300 rounded-lg text-sm text-center text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                className="flex-1 px-3 py-3 border border-gray-300 rounded-lg text-sm text-center text-gray-900 bg-white focus:ring-2 focus:ring-blue-500" />
               <button type="button" onClick={agregarRepuesto} disabled={!nuevoRepuesto.trim()}
                 className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-300 transition-colors">
                 Agregar
@@ -244,7 +260,7 @@ function ParteContent() {
 
       {showToast && (
         <div className="fixed bottom-6 left-4 right-4 z-50">
-          <div className={`rounded-lg shadow-2xl p-4 flex items-center gap-3 ${toastType === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          <div className={`rounded-lg shadow-2xl p-4 ${toastType === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
             <p className="font-medium">{toastMessage}</p>
           </div>
         </div>

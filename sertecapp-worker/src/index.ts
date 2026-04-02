@@ -1,5 +1,5 @@
 import { Env } from './types';
-import { cors, err } from './utils/response';
+import { cors, err, ok } from './utils/response';
 import { handleLogin, handleMe } from './routes/auth';
 import { handleWorkOrders } from './routes/workOrders';
 import { handleCustomers } from './routes/customers';
@@ -7,18 +7,28 @@ import { handleEquipments } from './routes/equipments';
 import { handleUsers } from './routes/users';
 import { handleParts } from './routes/parts';
 import { handlePartesTecnicos } from './routes/partesTecnicos';
+import { getLogs } from './utils/logger';
+import { requireAuth, isResponse } from './middleware/auth';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') return cors();
 
     const url = new URL(request.url);
-    // Normalizar: acepta /api/v1/... y /api/... indistintamente
     const path = url.pathname.replace(/^\/api\/v1\//, '/api/');
 
     // Auth
     if (path === '/api/login' && request.method === 'POST') return handleLogin(request, env);
     if (path === '/api/me') return handleMe(request, env);
+
+    // Logs de una orden: GET /api/work-orders/:id/logs
+    const logsMatch = path.match(/\/api\/work-orders\/(\d+)\/logs$/);
+    if (logsMatch && request.method === 'GET') {
+      const user = await requireAuth(request, env);
+      if (isResponse(user)) return user;
+      const logs = await getLogs(env, parseInt(logsMatch[1]));
+      return ok({ data: logs });
+    }
 
     // Work orders + ordenes técnico
     if (path.startsWith('/api/work-orders') || path.startsWith('/api/ordenes')) {

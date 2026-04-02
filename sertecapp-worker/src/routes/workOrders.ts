@@ -17,6 +17,7 @@ const SELECT = `
   LEFT JOIN equipment_models em ON e.model_id = em.id
 `;
 
+// Formato admin — objeto customer anidado
 function fmt(row: any) {
   return {
     id: row.id, wo_number: row.wo_number, title: row.title,
@@ -38,6 +39,30 @@ function fmt(row: any) {
   };
 }
 
+// Formato técnico — campos planos que espera ordenes/page.tsx
+function fmtTecnico(row: any) {
+  const clientName = row.business_name || [row.first_name, row.last_name].filter(Boolean).join(' ') || 'Sin cliente';
+  const address = [row.address, row.city].filter(Boolean).join(', ') || '';
+  const priority = ({ low:'baja', medium:'media', high:'alta', urgent:'urgente' } as any)[row.priority] || row.priority || 'media';
+  const status = ({ completed:'completado', in_progress:'en_progreso', pending:'pendiente' } as any)[row.status] || row.status || 'pendiente';
+  return {
+    id: row.id,
+    clientName,
+    problem: row.description || row.title || '',
+    address,
+    priority,
+    status,
+    created_at: row.created_at,
+    completed_at: row.completed_at,
+    scheduled_date: row.scheduled_date,
+    // También incluimos datos extra por si el frontend los necesita
+    title: row.title,
+    wo_number: row.wo_number,
+    equipment: row.eq_id ? { brand: row.brand_name, model: row.model_name, serial: row.serial_number } : null,
+    contact: { name: clientName, phone: row.cust_phone || '', email: row.cust_email || '' },
+  };
+}
+
 export async function handleWorkOrders(request: Request, env: Env, path: string): Promise<Response> {
   const user = await requireAuth(request, env);
   if (isResponse(user)) return user;
@@ -47,14 +72,14 @@ export async function handleWorkOrders(request: Request, env: Env, path: string)
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
   const offset = (page - 1) * perPage;
 
-  // GET /api/ordenes/tecnico/:id
+  // GET /api/ordenes/tecnico/:id — formato plano para la vista técnico
   const techMatch = path.match(/\/api\/ordenes\/tecnico\/(\d+)/);
   if (techMatch) {
     const rows = await env.DB.prepare(SELECT + 'WHERE wo.assigned_tech_id = ? ORDER BY wo.created_at DESC').bind(techMatch[1]).all();
-    return ok({ data: rows.results.map(fmt) });
+    return ok({ success: true, data: rows.results.map(fmtTecnico) });
   }
 
-  // /api/work-orders/:id/change-status
+  // POST /api/work-orders/:id/change-status
   const statusMatch = path.match(/\/api\/work-orders\/(\d+)\/change-status/);
   if (statusMatch && request.method === 'POST') {
     let body: any; try { body = await request.json(); } catch { return err('JSON invalido'); }

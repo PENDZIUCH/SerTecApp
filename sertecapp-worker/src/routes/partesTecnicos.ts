@@ -18,68 +18,72 @@ export async function handlePartesTecnicos(request: Request, env: Env, path: str
       LIMIT 1
     `).bind(idMatch[1]).first<any>();
 
-    if (!parte) return ok({ data: null });
+    if (!parte) return ok({ success: true, data: null });
 
-    // Cargar repuestos usados
     const repuestos = await env.DB.prepare(
       'SELECT * FROM parte_repuestos WHERE parte_id = ?'
     ).bind(parte.id).all();
 
-    return ok({ data: fmtParte(parte, repuestos.results) });
+    return ok({ success: true, data: fmtParte(parte, repuestos.results) });
   }
 
-  // POST /api/partes — crear/actualizar parte
+  // POST /api/partes
   if (request.method === 'POST') {
     let body: any;
     try { body = await request.json(); } catch { return err('JSON invalido', 400); }
 
-    if (!body.work_order_id) return err('work_order_id es requerido', 422);
+    // Aceptar orden_id (frontend legacy) O work_order_id (nuevo)
+    const workOrderId = body.work_order_id || body.orden_id;
+    if (!workOrderId) return err('orden_id o work_order_id es requerido', 422);
+
+    // Aceptar campos en español (frontend) o inglés (futuro)
+    const diagnostico = body.diagnostico || body.diagnosis || null;
+    const trabajoRealizado = body.trabajo_realizado || body.work_done || null;
+    const firmaBase64 = body.firma_base64 || body.signature || null;
+    const tecnicoId = body.tecnico_id || body.technician_id || user.id;
+    // repuestos_usados (Laravel) o repuestos (nuevo)
+    const repuestos = body.repuestos || body.repuestos_usados || [];
 
     const now = new Date().toISOString();
     const fotosJson = body.fotos ? JSON.stringify(body.fotos) : null;
 
-    // Verificar si ya existe parte para esta orden
     const existing = await env.DB.prepare(
       'SELECT id FROM work_order_partes WHERE work_order_id = ?'
-    ).bind(body.work_order_id).first<{id:number}>();
+    ).bind(workOrderId).first<{id:number}>();
 
     let parteId: number;
 
     if (existing) {
-      // Actualizar
       await env.DB.prepare(`
         UPDATE work_order_partes
         SET tecnico_id=?, diagnostico=?, trabajo_realizado=?, firma_base64=?, fotos=?, updated_at=?
         WHERE id=?
-      `).bind(body.tecnico_id||user.id, body.diagnostico||null, body.trabajo_realizado||null, body.firma_base64||null, fotosJson, now, existing.id).run();
+      `).bind(tecnicoId, diagnostico, trabajoRealizado, firmaBase64, fotosJson, now, existing.id).run();
       parteId = existing.id;
-
-      // Limpiar repuestos anteriores y reinsertar
       await env.DB.prepare('DELETE FROM parte_repuestos WHERE parte_id = ?').bind(parteId).run();
     } else {
-      // Crear nuevo
       const result = await env.DB.prepare(`
         INSERT INTO work_order_partes (work_order_id, tecnico_id, diagnostico, trabajo_realizado, firma_base64, fotos, synced, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
-      `).bind(body.work_order_id, body.tecnico_id||user.id, body.diagnostico||null, body.trabajo_realizado||null, body.firma_base64||null, fotosJson, now, now).run();
+      `).bind(workOrderId, tecnicoId, diagnostico, trabajoRealizado, firmaBase64, fotosJson, now, now).run();
       parteId = result.meta.last_row_id as number;
 
-      // Actualizar estado de la orden a 'completado'
       await env.DB.prepare('UPDATE work_orders SET status=?, completed_at=?, updated_at=? WHERE id=?')
-        .bind('completado', now, now, body.work_order_id).run();
+        .bind('completado', now, now, workOrderId).run();
     }
 
-    // Insertar repuestos si vienen
-    if (body.repuestos && Array.isArray(body.repuestos)) {
-      for (const rep of body.repuestos) {
+    if (Array.isArray(repuestos) && repuestos.length > 0) {
+      for (const rep of repuestos) {
+        const nombre = rep.nombre || rep.name || '';
+        const cantidad = rep.cantidad || rep.quantity || 1;
         await env.DB.prepare('INSERT INTO parte_repuestos (parte_id, part_id, nombre, cantidad) VALUES (?,?,?,?)')
-          .bind(parteId, rep.part_id||null, rep.nombre||'', rep.cantidad||1).run();
+          .bind(parteId, rep.part_id||null, nombre, cantidad).run();
       }
     }
 
     const parte = await env.DB.prepare('SELECT * FROM work_order_partes WHERE id = ?').bind(parteId).first<any>();
-    const repuestos = await env.DB.prepare('SELECT * FROM parte_repuestos WHERE parte_id = ?').bind(parteId).all();
-    return ok({ data: fmtParte(parte, repuestos.results) }, existing ? 200 : 201);
+    const reps = await env.DB.prepare('SELECT * FROM parte_repuestos WHERE parte_id = ?').bind(parteId).all();
+    return ok({ success: true, message: 'Parte guardado exitosamente', data: { id: parteId, ...fmtParte(parte, reps.results) } }, existing ? 200 : 201);
   }
 
   return err('Metodo no permitido', 405);
@@ -90,8 +94,10 @@ function fmtParte(p: any, repuestos: any[]) {
     id: p.id, work_order_id: p.work_order_id,
     tecnico_id: p.tecnico_id, tecnico_name: p.tecnico_name,
     diagnostico: p.diagnostico, trabajo_realizado: p.trabajo_realizado,
-    firma_base64: p.firma_base64,
-    fotos: p.fotos ? JSON.parse(p.fotos) : [],
+    // También exponer con nombres que el frontend de Laravel espera
+    diagnosis: p.diagnostico, work_done: p.trabajo_realizado,
+    firma_base64: p.firma_base64, signature: p.firma_base64,
+    fotos: p.fotos ? (() => { try { return JSON.parse(p.fotos); } catch { return []; } })() : [],
     repuestos: repuestos.map(r => ({ id: r.id, part_id: r.part_id, nombre: r.nombre, cantidad: r.cantidad })),
     synced: !!p.synced, created_at: p.created_at, updated_at: p.updated_at,
   };

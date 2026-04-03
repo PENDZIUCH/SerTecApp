@@ -214,6 +214,14 @@ export default function AdminPage() {
             <span className="text-2xl">👤</span>
             <div><p className="font-semibold text-gray-800 text-sm">Usuarios</p><p className="text-xs text-gray-400">Gestionar técnicos</p></div>
           </button>
+          <button onClick={() => router.push('/admin/clientes')} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
+            <span className="text-2xl">🏢</span>
+            <div><p className="font-semibold text-gray-800 text-sm">Clientes</p><p className="text-xs text-gray-400">Ver y buscar clientes</p></div>
+          </button>
+          <button onClick={() => router.push('/admin/importar')} className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
+            <span className="text-2xl">📊</span>
+            <div><p className="font-semibold text-gray-800 text-sm">Importar Excel</p><p className="text-xs text-gray-400">Cargar clientes y repuestos</p></div>
+          </button>
         </div>
 
         {/* Ver como técnico específico */}

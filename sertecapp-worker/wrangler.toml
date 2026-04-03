@@ -1,0 +1,12 @@
+name = "sertecapp-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sertecapp-db"
+database_id = "0a560f0a-950e-4ea2-8ccb-147d3fe87755"
+
+[vars]
+ENVIRONMENT = "development"

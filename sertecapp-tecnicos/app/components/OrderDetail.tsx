@@ -44,7 +44,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
     setLoadingParte(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
       const response = await fetch(`${apiUrl}/api/v1/partes/${order.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

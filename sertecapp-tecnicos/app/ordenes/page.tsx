@@ -51,7 +51,7 @@ export default function OrdenesPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
       const result = await syncPendingPartes(apiUrl, token);
       
       console.log('Sync result:', result);
@@ -83,7 +83,7 @@ export default function OrdenesPage() {
       if (!token || !userData) return;
 
       const user = JSON.parse(userData);
-      const apiUrl = 'https://sertecapp.pendziuch.com';
+      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
       const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -192,7 +192,7 @@ export default function OrdenesPage() {
         const token = localStorage.getItem('token');
         if (token) {
           const toastId = showToast('🔄 Sincronizando partes guardados...', 'loading');
-          const apiUrl = 'https://sertecapp.pendziuch.com';
+          const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
           const result = await syncPendingPartes(apiUrl, token);
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
@@ -223,7 +223,7 @@ export default function OrdenesPage() {
         try {
           const token = localStorage.getItem('token');
           if (token) {
-            const apiUrl = 'https://sertecapp.pendziuch.com';
+            const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
             const result = await syncPendingPartes(apiUrl, token);
             setPendingSync(getPartesPendientesSync().length);
             await loadPendingOrders();

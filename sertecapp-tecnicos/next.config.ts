@@ -11,11 +11,24 @@ if (isProd) {
     skipWaiting: true,
     disable: false,
     fallbacks: { document: '/offline.html' },
+    buildExcludes: [/middleware-manifest\.json$/],
     runtimeCaching: [
       {
         urlPattern: /^https:\/\/sertecapp\.pendziuch\.com\/api\/.*/i,
         handler: 'NetworkFirst',
-        options: { cacheName: 'api-cache', expiration: { maxEntries: 200, maxAgeSeconds: 86400 }, networkTimeoutSeconds: 10 },
+        options: {
+          cacheName: 'api-cache-v2',
+          expiration: { maxEntries: 200, maxAgeSeconds: 86400 },
+          networkTimeoutSeconds: 10,
+        },
+      },
+      {
+        urlPattern: /^https:\/\/sertecapp-tecnicos\.pages\.dev\/.*/i,
+        handler: 'StaleWhileRevalidate',
+        options: {
+          cacheName: 'pages-cache-v2',
+          expiration: { maxEntries: 50, maxAgeSeconds: 3600 },
+        },
       },
     ],
   });

@@ -1,34 +1,21 @@
 # SESIÓN DEPLOY — sertecapp-tecnicos
-**Última actualización:** 2026-03-31
-**Estado:** ✅ LOCAL FUNCIONANDO — ⏳ DEPLOY PENDIENTE PARA MAÑANA
+**Última actualización:** 2026-04-02
+**Estado:** ✅ PRODUCCIÓN EN CLOUDFLARE — sin túnel, sin Laravel, sin PC encendida
 
 ---
 
-## ESTADO ACTUAL HOY
+## ESTADO ACTUAL — TODO EN CLOUDFLARE
 
-### ✅ Lo que funciona en localhost:3002
-- Login con detección de rol (admin → /admin, técnico → /ordenes)
-- Dashboard admin con stats (órdenes, clientes, repuestos)
-- Crear orden desde admin con selects dinámicos (cliente → equipo filtrado)
-- Editar orden con datos precargados (cliente, técnico, estado, prioridad)
-- Crear parte técnico desde /parte?id=X con firma y offline support
-- Vista técnico con órdenes asignadas
-- Mensajes de error en español
+| Componente | URL | Estado |
+|-----------|-----|--------|
+| Frontend PWA | https://sertecapp-tecnicos.pages.dev | ✅ LIVE |
+| API Worker | https://sertecapp-worker.pendziuch.workers.dev | ✅ LIVE |
+| Base de datos | Cloudflare D1 (sertecapp-db) | ✅ LIVE |
+| Túnel Laravel | sertecapp.pendziuch.com | ❌ APAGADO (no necesario) |
 
-### ✅ Backend Laravel (requiere PC encendida + túnel)
-- URL: https://sertecapp.pendziuch.com
-- Tunnel: cloudflared en sertecapp-tunnel
-- DB: SQLite con 5 usuarios, 394 repuestos, 311 clientes, 13+ órdenes
-- Todos los controllers arreglados (sin applyFilters)
-
-### ⏳ Deploy pendiente para mañana
-- Frontend en Cloudflare Pages: sertecapp-tecnicos.pages.dev
-- Usar deploy.bat — hace todo automático
-- NO deployar hasta probar bien local
-
-### ❌ pro.pendziuch.com
-- Desactivado — apuntaba al frontend local (puerto 3002)
-- Para reactivar: apuntar DNS a sertecapp-tecnicos.pages.dev
+### Datos en D1 producción
+- 311 clientes, 394 repuestos, 5 usuarios con roles, 6 órdenes
+- Status de órdenes normalizados en español (pendiente/completado/en_progreso)
 
 ---
 
@@ -42,145 +29,78 @@
 
 ---
 
-## CÓMO LEVANTAR LOCAL
+## FLUJO DE TRABAJO PARA NUEVOS CAMBIOS
 
+### Desarrollo local
 ```cmd
-:: Terminal 1 — Backend Laravel
+:: 1. Apuntar al Worker local
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\backend-laravel"
-php artisan serve --host=127.0.0.1 --port=8000
+php switch_api.php local
 
-:: Terminal 2 — Túnel Cloudflare
-cd "C:\Users\Hugo Pendziuch\AppData\Local\Microsoft\WinGet\Packages\Cloudflare.cloudflared_Microsoft.Winget.Source_8wekyb3d8bbwe"
-cloudflared.exe tunnel run sertecapp-tunnel
+:: 2. Worker local
+cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-worker"
+npx wrangler dev --local --port 8787
 
-:: Terminal 3 — Frontend Next.js
+:: 3. Frontend local
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos"
 npx next dev --port 3002
 ```
 
-**IMPORTANTE:** next.config.ts NO debe tener output:export ni next-pwa en dev.
-El config correcto para dev es simplemente: `module.exports = {}`
-
----
-
-## CÓMO DEPLOYAR (cuando esté listo)
-
+### Deploy a producción (solo cuando está testeado local)
 ```cmd
-:: Doble click en:
-C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos\deploy.bat
+:: Worker
+php backend-laravel\switch_api.php worker
+cd sertecapp-worker && npx wrangler deploy
+
+:: Frontend
+cd sertecapp-tecnicos
+set NEXT_EXPORT=1
+rmdir /s /q .next & rmdir /s /q out
+npx next build --webpack
+npx wrangler pages deploy out --project-name sertecapp-tecnicos --branch main --commit-dirty=true
 ```
 
-El deploy.bat hace:
-1. Limpia .next
-2. Build con NEXT_EXPORT=1 y --webpack (activa output:export y next-pwa)
-3. Deploy a Cloudflare Pages sertecapp-tecnicos
+### Rollback de emergencia a Laravel
+```cmd
+php backend-laravel\switch_api.php laravel
+:: + deploy frontend (5 min) → vuelve a Laravel
+:: Encender túnel: cloudflared tunnel run sertecapp-tunnel
+```
 
 ---
 
-## RUTAS DE LA APP
+## BUGS RESUELTOS HOY
 
-| Ruta | Descripción |
-|------|-------------|
-| / | Login |
-| /ordenes | Vista técnico (sus órdenes) |
-| /parte?id=X | Crear parte técnico |
-| /detalle?id=X | Ver detalle de orden |
-| /admin | Dashboard admin |
-| /admin/orden?id=X | Editar orden |
-
-**REGLA:** Rutas dinámicas usan SIEMPRE query params (?id=X), nunca /ruta/[id]
-
----
-
-## BUGS CONOCIDOS / PENDIENTES
-
-- [ ] Status "completed" vs "completado" — el backend a veces devuelve "completed" en inglés
-- [ ] pro.pendziuch.com apuntar a Pages después del deploy
-- [ ] Migración backend a independiente del túnel (plan abajo)
-
----
-
-## PLAN MIGRACIÓN — INDEPENDIZARSE DEL BACKEND (próximas sesiones)
-
-### Objetivo
-Eliminar dependencia de la PC encendida. Todo en Cloudflare, gratis, siempre online.
-
-### Stack objetivo
-```
-sertecapp-tecnicos.pages.dev
-         ↓
-Cloudflare Workers (API — reemplaza Laravel)
-         ↓
-Cloudflare D1 (SQLite serverless — reemplaza SQLite local)
-```
-
-### Fases
-
-#### Fase 1 — Crear infraestructura Cloudflare (1 sesión)
-1. Crear base D1 en Cloudflare: `npx wrangler d1 create sertecapp-db`
-2. Exportar SQLite actual a SQL: `sqlite3 database.sqlite .dump > export.sql`
-3. Limpiar el SQL (quitar triggers incompatibles con D1)
-4. Importar a D1: `npx wrangler d1 execute sertecapp-db --file=export.sql`
-5. Verificar que los 311 clientes, 394 repuestos, 5 usuarios estén en D1
-
-#### Fase 2 — Crear Worker API (2-3 sesiones)
-Endpoints a implementar en Workers (JS/TypeScript):
-
-**Auth:**
-- POST /api/login → verificar usuario en D1, devolver JWT
-- GET /api/me → datos del usuario logueado
-
-**Órdenes:**
-- GET /api/work-orders → lista paginada con filtros
-- POST /api/work-orders → crear orden
-- PUT /api/work-orders/:id → editar orden
-- POST /api/work-orders/:id/change-status → cambiar estado
-
-**Clientes:**
-- GET /api/customers → lista paginada
-
-**Equipos:**
-- GET /api/equipments → lista, filtrable por customer_id
-
-**Usuarios/Técnicos:**
-- GET /api/users → lista con roles
-
-**Repuestos:**
-- GET /api/parts → lista paginada
-
-**Partes técnicos:**
-- POST /api/partes → guardar parte
-- GET /api/partes/:orden_id → obtener parte de una orden
-
-#### Fase 3 — Conectar frontend al Worker (1 sesión)
-- Cambiar API_URL de `https://sertecapp.pendziuch.com` al Worker URL
-- Probar todos los flujos
-- Deploy final
-
-#### Fase 4 — Dominio (30 minutos)
-- Apuntar pro.pendziuch.com a Cloudflare Pages
-- Apuntar api.pendziuch.com al Worker
-
-### Datos a migrar
-- 5 usuarios (con passwords hasheadas — necesitan rehash o reset)
-- 394 repuestos (importados de Excel Life Fitness)
-- 311 clientes
-- Equipos y órdenes existentes
-
-### Consideraciones
-- Los passwords en SQLite son bcrypt de Laravel — hay que reimplementar bcrypt en el Worker o resetearlos todos
-- JWT en Workers es simple con la librería jose
-- D1 tiene limitaciones: no soporta algunos tipos de SQLite (pero el schema de Laravel es compatible)
+| Bug | Causa | Fix |
+|-----|-------|-----|
+| "Application error" en prod | `config.ts` fallback era localhost:8787 | Fallback al Worker de producción |
+| Técnico no veía sus órdenes | Worker devolvía formato admin (customer anidado) | `fmtTecnico()` con clientName, problem, address planos |
+| Status "completed"/"pending" en inglés | D1 tenía valores de Laravel sin normalizar | UPDATE masivo en D1 local y remota |
+| POST partes fallaba | Worker esperaba `work_order_id`, frontend mandaba `orden_id` | Acepta ambos + campos en español |
 
 ---
 
 ## NOTAS TÉCNICAS
 
-- Node v24.11.0, npm 11.6.1, wrangler 4.56.0
-- next-pwa@5.6.0 — solo se usa en BUILD de producción
-- Build producción: NEXT_EXPORT=1 npx next build --webpack
-- Dev local: npx next dev --port 3002 (sin flags)
-- Comandos: Desktop Commander:start_process con shell="cmd"
-- NUNCA Windows-MCP:PowerShell
-- Windows-MCP:FileSystem para leer/escribir archivos
-- Para strings con template literals usar node fix.js en vez de Windows-MCP (escapa backslashes)
+- `set NEXT_EXPORT=1` va en comando SEPARADO antes del build (no con &&)
+- `switch_api.php local` → localhost:8787 (Worker dev)
+- `switch_api.php worker` → Worker Cloudflare (producción)
+- `switch_api.php laravel` → sertecapp.pendziuch.com (fallback)
+- Worker acepta /api/v1/... y /api/... indistintamente
+- Worker acepta `orden_id` y `work_order_id` en POST /api/partes
+- `config.ts` tiene fallback al Worker de producción (NUNCA localhost)
+- NUNCA usar Windows-MCP:PowerShell para comandos
+- SIEMPRE usar Desktop Commander:start_process con shell="cmd"
+
+---
+
+## PRÓXIMAS SESIONES
+
+### Sesión 5 — Admin mínimo en PWA
+- [ ] Gestión usuarios (crear técnicos, editar, desactivar)
+- [ ] Gestión clientes (crear, editar)
+- [ ] Ver partes completados desde admin con firma
+- [ ] Endpoints Worker: POST/PUT /api/users, POST/PUT /api/customers
+
+### Sesión 6 — Importación Excel
+### Sesión 7 — Verificación final + tag v2.0.0

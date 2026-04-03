@@ -1,0 +1,24 @@
+{
+  "name": "sertecapp-worker",
+  "version": "1.0.0",
+  "description": "SerTecApp API - Cloudflare Worker",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "test": "node scripts/test.js",
+    "db:setup": "wrangler d1 execute sertecapp-db --local --file=src/db/schema.sql",
+    "db:seed": "wrangler d1 execute sertecapp-db --local --file=src/db/seed.sql",
+    "db:setup:prod": "wrangler d1 execute sertecapp-db --file=src/db/schema.sql",
+    "db:seed:prod": "wrangler d1 execute sertecapp-db --file=src/db/seed.sql"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260401.1",
+    "@types/bcryptjs": "^2.4.6",
+    "typescript": "^6.0.2",
+    "wrangler": "^4.79.0"
+  }
+}

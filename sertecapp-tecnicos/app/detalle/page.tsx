@@ -31,7 +31,7 @@ function DetalleContent() {
   const loadParte = async (id: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://sertecapp-worker.pendziuch.workers.dev/api/v1/partes/${id}`, {
+      const response = await fetch(`http://localhost:8787/api/v1/partes/${id}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
       });
       const data = await response.json();

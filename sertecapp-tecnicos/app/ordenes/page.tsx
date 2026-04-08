@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderCard } from '../components/OrderCard';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
+import { API_URL } from '../../lib/config';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { getGreeting } from '../../lib/utils';
 import { useToast } from '../../hooks/useToast';
@@ -51,7 +52,7 @@ export default function OrdenesPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
+      const apiUrl = API_URL;
       const result = await syncPendingPartes(apiUrl, token);
       
       console.log('Sync result:', result);
@@ -83,8 +84,7 @@ export default function OrdenesPage() {
       if (!token || !userData) return;
 
       const user = JSON.parse(userData);
-      const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
-      const response = await fetch(`${apiUrl}/api/v1/ordenes/tecnico/${user.id}`, {
+      const response = await fetch(`${API_URL}/api/v1/ordenes/tecnico/${user.id}`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
@@ -192,7 +192,7 @@ export default function OrdenesPage() {
         const token = localStorage.getItem('token');
         if (token) {
           const toastId = showToast('🔄 Sincronizando partes guardados...', 'loading');
-          const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
+          const apiUrl = 'http://localhost:8787';
           const result = await syncPendingPartes(apiUrl, token);
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
@@ -223,7 +223,7 @@ export default function OrdenesPage() {
         try {
           const token = localStorage.getItem('token');
           if (token) {
-            const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
+            const apiUrl = 'http://localhost:8787';
             const result = await syncPendingPartes(apiUrl, token);
             setPendingSync(getPartesPendientesSync().length);
             await loadPendingOrders();

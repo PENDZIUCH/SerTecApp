@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API_URL } from '../../../../lib/config';
+import { CustomerSelect } from '../../../components/CustomerSelect';
 
 const sel = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500";
 const inp = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500";
@@ -124,6 +125,7 @@ function OrdenEditContent() {
 
   const guardar = async () => {
     if (!form.customer_id || !form.title.trim()) { setError('Cliente y titulo son obligatorios'); return; }
+    if (!form.assigned_tech_id) { setError('Debés asignar un técnico'); return; }
     setSaving(true); setError(''); setSuccess('');
     try {
       const body: any = {
@@ -200,16 +202,18 @@ function OrdenEditContent() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
-            <select value={form.customer_id} onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))} style={{color:'#111827'}} className={sel}>
-              <option value="">Seleccionar cliente...</option>
-              {clientes.map(c => <option key={c.id} value={c.id} style={{color:'#111827'}}>{nombreCliente(c)}</option>)}
-            </select>
+            <CustomerSelect
+              token={token}
+              value={form.customer_id}
+              initialName={orden?.customer?.business_name || orden?.customer?.full_name || ''}
+              onChange={(id) => setForm(f => ({ ...f, customer_id: id, equipment_id: '' }))}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
             <select value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))} disabled={!form.customer_id} style={{color:'#111827'}} className={sel + ' disabled:bg-gray-50'}>
               <option value="">{form.customer_id ? (equiposFiltrados.length === 0 ? 'Sin equipos' : 'Seleccionar...') : 'Primero selecciona cliente'}</option>
-              {equiposFiltrados.map(e => <option key={e.id} value={e.id} style={{color:'#111827'}}>{e.brand?.name || e.brand} {e.model?.name || e.model}</option>)}
+              {equiposFiltrados.map(e => <option key={e.id} value={e.id} style={{color:'#111827'}}>{typeof e.brand === 'object' ? (e.brand as any)?.name : e.brand} {typeof e.model === 'object' ? (e.model as any)?.name : e.model}</option>)}
             </select>
           </div>
           <div>

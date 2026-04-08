@@ -45,7 +45,13 @@ export async function handleUsers(request: Request, env: Env, path: string): Pro
 
     // Actualizar rol si viene
     if (body.role) {
-      const role = await env.DB.prepare('SELECT id FROM roles WHERE name = ?').bind(body.role).first<{id:number}>();
+      const roleMap: Record<string, string> = {
+        'tecnico': 'técnico', 'técnico': 'técnico',
+        'administrador': 'administrador', 'admin': 'administrador',
+        'supervisor': 'supervisor', 'cliente': 'cliente',
+      };
+      const roleName = roleMap[body.role?.toLowerCase()] || body.role;
+      const role = await env.DB.prepare('SELECT id FROM roles WHERE name = ?').bind(roleName).first<{id:number}>();
       if (role) {
         await env.DB.prepare('DELETE FROM user_roles WHERE user_id = ?').bind(idMatch[1]).run();
         await env.DB.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)').bind(idMatch[1], role.id).run();
@@ -80,8 +86,13 @@ export async function handleUsers(request: Request, env: Env, path: string): Pro
 
     const newId = result.meta.last_row_id as number;
 
-    // Asignar rol
-    const roleName = body.role || 'tecnico';
+    // Asignar rol — normalizar nombres con/sin tilde
+    const roleMap: Record<string, string> = {
+      'tecnico': 'técnico', 'técnico': 'técnico',
+      'administrador': 'administrador', 'admin': 'administrador',
+      'supervisor': 'supervisor', 'cliente': 'cliente',
+    };
+    const roleName = roleMap[body.role?.toLowerCase() || ''] || 'técnico';
     const role = await env.DB.prepare('SELECT id FROM roles WHERE name = ?').bind(roleName).first<{id:number}>();
     if (role) {
       await env.DB.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)').bind(newId, role.id).run();

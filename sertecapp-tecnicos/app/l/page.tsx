@@ -18,7 +18,7 @@ function MagicLinkContent() {
     // Verificar token con el backend
     const verifyToken = async () => {
       try {
-        const apiUrl = 'https://sertecapp-worker.pendziuch.workers.dev';
+        const apiUrl = 'http://localhost:8787';
         const response = await fetch(`${apiUrl}/api/v1/magic-link/verify?token=${token}`, {
           headers: {
             'Authorization': `Bearer ${token}`,

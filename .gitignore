@@ -236,3 +236,6 @@ docs-site/sertecapp-docs/node_modules/
 !.editorconfig
 !.prettierrc
 !.eslintrc
+
+# Claude Code
+.claude/

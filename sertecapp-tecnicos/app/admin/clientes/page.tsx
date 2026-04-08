@@ -77,11 +77,21 @@ export default function ClientesPage() {
 
   const abrirEditar = (c: Customer) => {
     setEditCustomer(c);
+    // Detectar tipo real basado en datos disponibles
+    const tipo = c.business_name ? 'company' : (c.first_name ? 'individual' : c.customer_type || 'company');
+    // Extraer address y city del full_address
+    const parts = (c.full_address || '').split(',').map(s => s.trim()).filter(s => s && s !== 'Argentina');
     setForm({
-      customer_type: c.customer_type || 'company',
-      business_name: c.business_name || '', first_name: c.first_name || '',
-      last_name: c.last_name || '', email: c.email || '', phone: c.phone || '',
-      tax_id: c.tax_id || '', address: '', city: '', notes: '',
+      customer_type: tipo,
+      business_name: c.business_name || '',
+      first_name: c.first_name || '',
+      last_name: c.last_name || '',
+      email: c.email || '',
+      phone: c.phone || '',
+      tax_id: c.tax_id || '',
+      address: parts[0] || '',
+      city: parts[1] || '',
+      notes: '',
     });
     setError(''); setShowModal(true);
   };

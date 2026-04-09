@@ -57,7 +57,8 @@ export default function GestionPage() {
     try {
       const res = await fetch(`${API_URL}/api/v1/roles`, { headers: hd(t) });
       if (res.ok) { const d = await res.json(); setAvailableRoles(d.data || []); }
-    } catch { console.error('Error cargando roles'); }
+      else { console.error('Error cargando roles:', res.status, res.statusText); }
+    } catch (e) { console.error('Error cargando roles:', e); }
   };
 
   const abrirNuevo = () => {
@@ -138,8 +139,8 @@ export default function GestionPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-semibold text-gray-900">{u.name}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.roles[0] === 'administrador' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {u.roles[0] === 'administrador' ? 'Admin' : 'Técnico'}
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.roles[0] === 'administrador' || u.roles[0] === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                        {u.roles[0]}
                       </span>
                       {!u.is_active && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Inactivo</span>}
                     </div>

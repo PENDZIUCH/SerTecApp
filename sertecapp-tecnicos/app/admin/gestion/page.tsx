@@ -176,7 +176,7 @@ export default function GestionPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
-                <input value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} className={inp} placeholder="Ej: Técnico Senior" />
+                <input autoComplete="off" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} className={inp} placeholder="Ej: Técnico Senior" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>

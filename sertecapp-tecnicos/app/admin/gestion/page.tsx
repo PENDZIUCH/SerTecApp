@@ -65,6 +65,7 @@ export default function GestionPage() {
   const guardar = async () => {
     if (!form.name.trim() || !form.email.trim()) { setError('Nombre y email son obligatorios'); return; }
     if (!editUser && !form.password.trim()) { setError('La contraseña es obligatoria para nuevos usuarios'); return; }
+    if (form.password && form.password.length < 8) { setError('La contraseña debe tener mínimo 8 caracteres'); return; }
     setSaving(true); setError('');
     try {
       const body: any = { name: form.name, email: form.email, phone: form.phone || null, job_title: form.job_title || null, role: form.role };

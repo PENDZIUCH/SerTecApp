@@ -164,15 +164,15 @@ export default function GestionPage() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inp} placeholder="Nombre completo" />
+                <input autoComplete="name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className={inp} placeholder="Nombre completo" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inp} placeholder="email@ejemplo.com" />
+                <input type="email" autoComplete="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inp} placeholder="email@ejemplo.com" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inp} placeholder="+54 9 11 ..." />
+                <input autoComplete="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className={inp} placeholder="+54 9 11 ..." />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
@@ -189,7 +189,7 @@ export default function GestionPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {editUser ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
                 </label>
-                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="••••••••" />
+                <input type="password" autoComplete={editUser ? "current-password" : "new-password"} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="••••••••" />
               </div>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
               {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}

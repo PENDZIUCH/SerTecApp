@@ -68,7 +68,7 @@ export default function GestionPage() {
     if (form.password && form.password.length < 8) { setError('La contraseña debe tener mínimo 8 caracteres'); return; }
     setSaving(true); setError('');
     try {
-      const body: any = { name: form.name, email: form.email, phone: form.phone || null, job_title: form.job_title || null, role: form.role };
+      const body: any = { name: form.name, email: form.email, phone: form.phone || null, job_title: form.job_title || null, roles: [form.role] };
       if (form.password) body.password = form.password;
 
       const url = editUser ? `${API_URL}/api/v1/users/${editUser.id}` : `${API_URL}/api/v1/users`;

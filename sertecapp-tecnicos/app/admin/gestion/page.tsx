@@ -168,10 +168,10 @@ export default function GestionPage() {
       {/* Modal crear/editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <form onSubmit={(e) => { e.preventDefault(); guardar(); }} className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl">
               <h2 className="font-bold text-gray-800 text-lg">{editUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+              <button type="button" onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
             </div>
             <div className="p-6 space-y-4">
               <div>
@@ -180,7 +180,7 @@ export default function GestionPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input type="email" autoComplete="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inp} placeholder="email@ejemplo.com" />
+                <input type="email" name="email" autoComplete="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className={inp} placeholder="email@ejemplo.com" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
@@ -202,7 +202,7 @@ export default function GestionPage() {
                   {editUser ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
                 </label>
                 <div className="relative">
-                  <input type={showPassword ? "text" : "password"} autoComplete={editUser ? "current-password" : "new-password"} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="••••••••" />
+                  <input type={showPassword ? "text" : "password"} name="password" autoComplete={editUser ? "current-password" : "new-password"} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="••••••••" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
                     {showPassword ? '🙈' : '👁️'}
                   </button>
@@ -210,11 +210,11 @@ export default function GestionPage() {
               </div>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
               {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}
-              <button onClick={guardar} disabled={saving} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl disabled:opacity-50 transition-colors">
+              <button type="submit" disabled={saving} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl disabled:opacity-50 transition-colors">
                 {saving ? 'Guardando...' : editUser ? 'Guardar Cambios' : 'Crear Usuario'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

@@ -23,8 +23,9 @@ export default function GestionPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', job_title: '', password: '', role: 'tecnico',
+    name: '', email: '', phone: '', job_title: '', password: '', role: 'técnico',
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -52,13 +53,13 @@ export default function GestionPage() {
 
   const abrirNuevo = () => {
     setEditUser(null);
-    setForm({ name: '', email: '', phone: '', job_title: '', password: '', role: 'tecnico' });
+    setForm({ name: '', email: '', phone: '', job_title: '', password: '', role: 'técnico' });
     setError(''); setSuccess(''); setShowModal(true);
   };
 
   const abrirEditar = (u: User) => {
     setEditUser(u);
-    setForm({ name: u.name, email: u.email, phone: u.phone || '', job_title: u.job_title || '', password: '', role: u.roles[0] || 'tecnico' });
+    setForm({ name: u.name, email: u.email, phone: u.phone || '', job_title: u.job_title || '', password: '', role: u.roles[0] || 'técnico' });
     setError(''); setSuccess(''); setShowModal(true);
   };
 
@@ -176,12 +177,12 @@ export default function GestionPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
-                <input autoComplete="off" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} className={inp} placeholder="Ej: Técnico Senior" />
+                <input autoComplete="organization-title" value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} className={inp} placeholder="Ej: Técnico Senior" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                 <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={inp}>
-                  <option value="tecnico">Técnico</option>
+                  <option value="técnico">Técnico</option>
                   <option value="administrador">Administrador</option>
                 </select>
               </div>
@@ -189,7 +190,12 @@ export default function GestionPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {editUser ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *'}
                 </label>
-                <input type="password" autoComplete={editUser ? "current-password" : "new-password"} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="••••••••" />
+                <div className="relative">
+                  <input type={showPassword ? "text" : "password"} autoComplete={editUser ? "current-password" : "new-password"} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} className={inp} placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    {showPassword ? '🙈' : '👁️'}
+                  </button>
+                </div>
               </div>
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
               {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}

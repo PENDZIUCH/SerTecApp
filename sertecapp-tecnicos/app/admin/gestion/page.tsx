@@ -23,9 +23,10 @@ export default function GestionPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', job_title: '', password: '', role: 'técnico',
+    name: '', email: '', phone: '', job_title: '', password: '', role: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState<{id: number; name: string}[]>([]);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -36,6 +37,7 @@ export default function GestionPage() {
     if (!roles.includes('administrador') && !roles.includes('admin')) { router.push('/ordenes'); return; }
     setToken(t);
     loadUsers(t);
+    loadRoles(t);
   }, []);
 
   const hd = (t: string) => ({
@@ -51,9 +53,16 @@ export default function GestionPage() {
     finally { setLoading(false); }
   };
 
+  const loadRoles = async (t: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/roles`, { headers: hd(t) });
+      if (res.ok) { const d = await res.json(); setAvailableRoles(d.data || []); }
+    } catch { console.error('Error cargando roles'); }
+  };
+
   const abrirNuevo = () => {
     setEditUser(null);
-    setForm({ name: '', email: '', phone: '', job_title: '', password: '', role: 'técnico' });
+    setForm({ name: '', email: '', phone: '', job_title: '', password: '', role: availableRoles[0]?.name || '' });
     setError(''); setSuccess(''); setShowModal(true);
   };
 
@@ -65,6 +74,7 @@ export default function GestionPage() {
 
   const guardar = async () => {
     if (!form.name.trim() || !form.email.trim()) { setError('Nombre y email son obligatorios'); return; }
+    if (!form.role.trim()) { setError('Rol es obligatorio'); return; }
     if (!editUser && !form.password.trim()) { setError('La contraseña es obligatoria para nuevos usuarios'); return; }
     if (form.password && form.password.length < 8) { setError('La contraseña debe tener mínimo 8 caracteres'); return; }
     setSaving(true); setError('');
@@ -182,8 +192,8 @@ export default function GestionPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                 <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={inp}>
-                  <option value="técnico">Técnico</option>
-                  <option value="administrador">Administrador</option>
+                  <option value="">Seleccionar rol...</option>
+                  {availableRoles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                 </select>
               </div>
               <div>

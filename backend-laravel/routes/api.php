@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EquipmentController;
 use App\Http\Controllers\Api\V1\PartController;
+use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VisitController;
@@ -31,9 +32,11 @@ Route::prefix('v1')->group(function () {
     Route::get('partes/{workOrderId}', [TechnicianController::class, 'getParte']);
 
     Route::middleware('auth:sanctum')->group(function () {
-        
+
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+
+        Route::get('roles', [RoleController::class, 'index']);
 
         Route::apiResource('users', UserController::class);
         

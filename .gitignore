@@ -36,7 +36,6 @@ storage/logs/*
 bootstrap/cache/*
 .phpunit.result.cache
 php_errors.log
-artisan
 auth.json
 composer.lock
 

@@ -1,17 +1,27 @@
 # SerTecApp — Contexto para Claude
 
-> Cargado automáticamente al inicio de cada sesión.
-> **Regla:** Al final de cada sesión actualizar "Estado actual" y "Próximos pasos" y hacer commit.
+> Este archivo se carga automáticamente. LEERLO COMPLETO antes de hacer cualquier cosa.
+> Al final de cada sesión: actualizar estado y hacer commit.
+
+---
+
+## ⚠️ REGLAS CRÍTICAS — LEER PRIMERO
+
+1. **NUNCA copiar/modificar `.env` sin preguntar al usuario primero.** Cambiar `.env` puede romper la DB en uso.
+2. **NUNCA asumir que algo "está seguro" sin verificarlo.** Verificar siempre antes de afirmar.
+3. **NUNCA crear usuarios/roles en DB sin preguntar.** El usuario sabe lo que tiene.
+4. **Antes de cualquier acción destructiva o que cambie config: preguntar.**
+5. **Si el usuario dice que algo estaba funcionando, creerle. No contradecirlo.**
 
 ---
 
 ## Qué es este proyecto
 
 Sistema de gestión de órdenes de trabajo para servicio técnico de equipos de fitness.
-- **Cliente final:** Luis (Fitness Company — reparación de equipos fitness, CABA/GBA)
+- **Cliente final:** Luis (Fitness Company — reparación equipos fitness, CABA/GBA)
 - **Desarrollador:** Hugo Pendziuch (`pendziuch@gmail.com`)
 - **GitHub:** https://github.com/PENDZIUCH/SerTecApp
-- **Dos interfaces:** Admin panel (Filament, uso interno) + PWA móvil (técnicos en campo)
+- **Dos interfaces:** Filament admin (uso interno) + PWA móvil (técnicos en campo)
 
 ---
 
@@ -23,7 +33,7 @@ Sistema de gestión de órdenes de trabajo para servicio técnico de equipos de 
 | API producción | Cloudflare Workers (TypeScript) | `sertecapp-worker/` |
 | Admin panel | Laravel 11 + Filament 3.2 + filament-shield | `backend-laravel/` |
 | DB producción | Cloudflare D1 (SQLite edge) | — |
-| DB local/Filament | MySQL 8.4 vía Laragon | DB: `sertecapp` |
+| DB local Filament | MySQL 8.4 vía Laragon | DB: `sertecapp` |
 
 ---
 
@@ -33,30 +43,30 @@ Sistema de gestión de órdenes de trabajo para servicio técnico de equipos de 
 |---------|-----|--------|
 | Frontend PWA producción | https://sertecapp-tecnicos.pages.dev | ✅ Live |
 | API Worker producción | https://sertecapp-worker.pendziuch.workers.dev | ✅ Live |
-| Filament admin local | http://localhost:8000/admin/login | local only |
-| Hostinger demo (viejo) | https://demos.pendziuch.com/admin | ⚠️ verificar si sigue activo |
+| Filament admin local | http://localhost:8000/admin/login | local |
+| Hostinger demo (viejo) | https://demos.pendziuch.com/admin | verificar |
 
 ---
 
-## Credenciales
+## Credenciales Filament local (MySQL)
 
-### Producción (Cloudflare D1)
+| Email | Password | Rol |
+|-------|----------|-----|
+| pendziuch@gmail.com | ❓ pendiente confirmar | super_admin + administrador |
+| admin@sertecapp.local | ❓ pendiente confirmar | administrador |
+| luisgomez@fitnesscompany.com.ar | ❓ | customer_viewer |
+| hcoronel@fitnesscompany.com.ar | ❓ | supervisor |
+| tech@demo.com | ❓ | técnico |
+
+> Las passwords están hasheadas en DB. Si no funcionan, resetear con:
+> `php artisan tinker --execute="App\Models\User::where('email','X')->update(['password'=>bcrypt('nuevo')]);"` 
+
+## Credenciales producción (Cloudflare D1)
 | Email | PIN | Rol |
 |-------|-----|-----|
 | admin@sertecapp.local | 1234 | administrador |
 | pendziuch@gmail.com | 1234 | administrador |
 | tech@demo.com | 1234 | técnico |
-
-### Filament local (MySQL Laragon)
-| Email | Password | Rol |
-|-------|----------|-----|
-| admin@sertecapp.local | (seeder) | admin |
-| pendziuch@gmail.com | admin1234 | super_admin |
-| tecnico@sertecapp.local | (seeder) | technician |
-| supervisor@sertecapp.local | (seeder) | supervisor |
-
-### Roles MySQL (Spatie Permission) — creados 2026-04-09
-`admin`, `technician`, `supervisor`, `customer_viewer`, `super_admin`
 
 ---
 
@@ -64,135 +74,116 @@ Sistema de gestión de órdenes de trabajo para servicio técnico de equipos de 
 
 | Rama | Propósito |
 |------|-----------|
-| `main` | Producción estable — Cloudflare |
-| `development` | Trabajo activo — Filament + MySQL local |
+| `main` | Producción estable |
+| `development` | Trabajo activo — Filament + MySQL |
 
 **Siempre trabajar en `development`** para cambios de Filament/backend.
 
-### Lo que tiene `development` que `main` no tiene
-- `.env.mysql.local` — config MySQL Laragon
-- `RoleController.php` + ruta `GET /api/roles` — roles dinámicos desde Filament
-- Roles en español (`técnico`, `supervisor`, etc.) alineados con D1
+---
+
+## Cómo levantar Filament local
+
+### IMPORTANTE: el `.env` DEBE apuntar a MySQL (no SQLite)
+El archivo `.env.mysql.local` tiene la config correcta. Si `.env` dice `DB_CONNECTION=sqlite`, ejecutar:
+```bash
+cp backend-laravel/.env.mysql.local backend-laravel/.env
+```
+Verificar siempre con: `head -5 backend-laravel/.env | grep DB_CONNECTION`
+
+### Pasos
+1. Abrir Laragon (MySQL en puerto 3306)
+2. `cp backend-laravel/.env.mysql.local backend-laravel/.env` (si no está ya)
+3. `cd backend-laravel && php artisan serve --port=8000`
+4. http://localhost:8000/admin/login
+
+### PWA local (apunta a Laravel, no Cloudflare)
+```bash
+# sertecapp-tecnicos/.env.local debe tener:
+# NEXT_PUBLIC_API_URL=http://localhost:8000
+cd sertecapp-tecnicos && npm run dev  # → http://localhost:3000
+```
 
 ---
 
-## Cómo levantar local
+## Estado de la DB MySQL (sertecapp) — 2026-04-13
 
-### Prerequisito: Laragon corriendo (MySQL puerto 3306, DB: sertecapp, user: root, sin password)
+| Tabla | Registros | Fuente |
+|-------|-----------|--------|
+| users | 5 | migrado de SQLite |
+| customers | 311 | migrado de SQLite |
+| parts | 363 | migrado de SQLite |
+| work_orders | 22 | migrado de SQLite |
+| roles | 7 | migrado + super_admin agregado |
+| permissions | 50 | migrado de SQLite |
 
-```bash
-# Backend Filament
-cp backend-laravel/.env.mysql.local backend-laravel/.env
-cd backend-laravel && php artisan serve --port=8000
-# → http://localhost:8000/admin/login
+**Roles en MySQL:** administrador, técnico, supervisor, cliente, admin, customer_viewer, super_admin
 
-# PWA apuntando a local (rama development)
-# sertecapp-tecnicos/.env.local tiene NEXT_PUBLIC_API_URL=http://localhost:8000
-cd sertecapp-tecnicos && npm run dev
-# → http://localhost:3000
+**Script de migración:** `backend-laravel/migrate_sqlite_to_mysql.php`
+> Si los datos de MySQL se pierden, ejecutar: `php migrate_sqlite_to_mysql.php`
+> Los datos originales siempre están en: `backend-laravel/database/database.sqlite`
 
-# Worker local (si se necesita testear Cloudflare)
-cd sertecapp-worker && npx wrangler dev --local --port 8787
-```
+---
+
+## Historia del problema de hoy (2026-04-13) — para no repetirlo
+
+1. `.env` apuntaba a SQLite → Filament usaba SQLite con todos los datos
+2. Copié `.env.mysql.local` a `.env` sin preguntar → Filament quedó apuntando a MySQL vacío
+3. Los datos nunca habían sido migrados de SQLite a MySQL (el script anterior solo creaba esquema, no datos)
+4. Tuvimos que migrar todo manualmente con `migrate_sqlite_to_mysql.php`
+5. **Lección:** NUNCA cambiar `.env` sin preguntar primero
 
 ---
 
 ## Filament Admin — Resources (14 completos)
 
-| Resource | CRUD | Estado |
-|----------|------|--------|
-| WorkOrder | ✅ + cambiar estado + partes | Completo |
-| Customer | ✅ + import/export Excel | Completo |
-| Equipment | ✅ | Completo |
-| User | ✅ + gestión roles/permisos | Completo |
-| Part | ✅ + movimientos stock | Completo |
-| Budget | ✅ + aprobar/rechazar | Completo |
-| Visit | ✅ + check-in/out | Completo |
-| Subscription | ✅ + renovar | Completo |
-| WorkshopItem | ✅ inventario taller | Completo |
-| WorkPart | ✅ partes usadas en órdenes | Completo |
-| Notification | listar/ver | Completo |
-| PdfTemplate | ✅ | Completo |
-| SystemSetting | configuración global | Completo |
-| SystemLog | auditoría | Completo |
+WorkOrder, Customer, Equipment, User, Part, Budget, Visit, Subscription,
+WorkshopItem, WorkPart, Notification, PdfTemplate, SystemSetting, SystemLog
+
+Ver detalle en `FEATURES_FILAMENT_VS_APP.md`.
 
 ---
 
-## PWA App (`/admin`) — Estado de features vs Filament
+## Rama development — diferencias vs main
 
-Ver detalle completo en `FEATURES_FILAMENT_VS_APP.md`.
-
-Resumen: WorkOrders (listar/crear ✅, editar/cambiar estado ❌), Customers (listar ✅, crear/editar ❌), Users (listar/crear ✅), Import Excel ✅.
-
----
-
-## DB MySQL local — Estado
-
-- 61 tablas, 2.97 MB
-- Datos: clientes reales de Fitness Company (305+), repuestos Life Fitness, usuarios con roles
-- Migración SQLite → MySQL completada (script: `MIGRATE_SQLITE_TO_MYSQL.ps1`)
+- `.env.mysql.local` — config MySQL Laragon
+- `RoleController.php` + ruta `GET /api/roles` — roles dinámicos desde Filament hacia la PWA
+- Roles en español alineados con D1
 
 ---
 
-## Decisiones arquitecturales importantes
-
-1. **Cloudflare Workers + D1 para producción** — sin servidor PHP encendido, costo ~$0
-2. **Filament separado** — necesita PHP hosting propio, no corre en Cloudflare
-3. **MySQL para Filament** — SQLite era default pero se migró para producción real
-4. **Roles dinámicos** — se crean en Filament, la app los consume via `GET /api/roles`
-5. **Rama `development`** para no romper `main` mientras se prueba MySQL/Filament
-6. **Demo en Hostinger** — se usó `demos.pendziuch.com/admin` para mostrar al cliente Luis
-
----
-
-## Estado actual (última actualización: 2026-04-13)
+## Estado actual (2026-04-13)
 
 ### Completado ✅
-- PWA Next.js — órdenes, partes con firma, offline, SW
-- Cloudflare Worker API completa
-- D1 producción — 311 clientes, 394 repuestos, 5 usuarios
-- Filament admin local — 14 resources con roles Spatie
-- MySQL local — 61 tablas, migración completa
+- PWA + Cloudflare Workers + D1 en producción
+- Filament local con MySQL — 14 resources, datos migrados
+- Roles/permisos con Spatie Permission (filament-shield)
 - Import/Export Excel clientes y repuestos
-- Roles dinámicos desde Filament → app
+- Migración SQLite → MySQL completada
 
 ### En progreso 🔄
-- Validar Filament local con pendziuch@gmail.com (sesión actual)
-- Decidir hosting definitivo para Filament en producción
-- Merge `development` → `main`
+- Validar login Filament con pendziuch@gmail.com (pendiente confirmar password)
+- Decidir y ejecutar hosting Filament en producción
 
 ### Pendiente ⏳
-- Elegir y ejecutar hosting Filament (Hostinger shared PHP / VPS / Railway)
-- Configurar env vars producción Filament
-- Conectar PWA a roles de Filament productivo
-- Definir si D1 y MySQL se sincronizan o son independientes
-- Features faltantes en PWA admin: editar orden, cambiar estado, detalle `/admin/orden`
+- Elegir hosting Filament (Hostinger PHP / VPS / Railway)
+- Deploy Filament producción
+- Merge `development` → `main`
+- Features PWA faltantes: editar orden, cambiar estado, detalle orden
 
 ---
 
-## Próximos pasos (prioridad)
+## Próximos pasos
 
-1. **Probar login Filament local** → http://localhost:8000/admin/login (`pendziuch@gmail.com` / `admin1234`)
-2. **Decidir hosting Filament** — Hostinger ya fue usado antes para demo, es la opción más directa
-3. **Deploy Filament producción** — configurar env, DB MySQL en nube, migraciones
-4. **Merge `development` → `main`**
-5. **Conectar PWA a roles Filament productivo**
-
----
-
-## Reglas de trabajo
-
-- Dar siempre **URLs clickeables**
-- Usar **Bash tool** para comandos artisan/npm (Desktop Commander no soporta `cd` con rutas con espacios)
-- Verificar al inicio: Laragon corriendo + `.env` apunta a MySQL
-- **Al final de cada sesión:** actualizar este archivo + commit + generar informe si hubo cambios grandes
+1. Confirmar que login Filament funciona → http://localhost:8000/admin/login
+2. Elegir hosting para Filament
+3. Deploy Filament a producción
+4. Conectar PWA a roles de Filament productivo
 
 ---
 
-## Historial de sesiones (resúmenes en `ARCHIVOS/`)
+## Reglas técnicas
 
-- `ARCHIVOS/SESION_2024-12-09_RESUMEN.md` — inicio del proyecto
-- `ARCHIVOS/RESUMEN_SESION_2025-12-11.md` — deploy Hostinger, import Excel, 305 clientes
-- `ARCHIVOS/ESTADO_ACTUAL_30DIC2025.md` — estado completo a fines de 2025
-- `ARCHIVOS/RESUMEN_06ENE2026.md` — online/offline, dark mode, magic link, roles español
-- `sertecapp-tecnicos/SESION_DEPLOY.md` — migración a Cloudflare Workers+D1, bugs resueltos
+- Usar **Bash tool** para comandos artisan/npm (Desktop Commander falla con rutas con espacios)
+- Laragon: MySQL en 127.0.0.1:3306, user root, sin password
+- `.env.sqlite.backup` existe como backup del `.env` SQLite original
+- **Al final de sesión:** actualizar este archivo + `git add CLAUDE.md && git commit`

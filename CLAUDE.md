@@ -152,7 +152,7 @@ Ver detalle en `FEATURES_FILAMENT_VS_APP.md`.
 
 ---
 
-## Estado actual (2026-04-13)
+## Estado actual (2026-04-13 16:32 UTC)
 
 ### Completado ✅
 - PWA + Cloudflare Workers + D1 en producción
@@ -161,21 +161,29 @@ Ver detalle en `FEATURES_FILAMENT_VS_APP.md`.
 - Import/Export Excel clientes y repuestos
 - Migración SQLite → MySQL completada
 - **Deploy Filament en Hostinger:** https://demos.pendziuch.com/sertecapp/
-  - Rama `development` pusheada a Github
-  - Clonada en Hostinger en SSH
+  - Rama `development` pusheada a Github, clonada en Hostinger SSH
   - Migraciones Laravel completadas
-  - `.env` configurado con BD MySQL en Hostinger
-  - Base de datos u283281385_sertecappers creada
+  - `.env` configurado con BD MySQL Hostinger (u283281385_sertecappers)
+  - Filament login funcional y estilizado ✅
+  - **PROBLEMAS RESUELTOS:**
+    - ✅ Artisan file ahora en git (no en .gitignore)
+    - ✅ index.php puente + .htaccess correcto (reescritura subdirectorio)
+    - ✅ Symlinks para assets (css, js, fonts, images, vendor, storage)
+    - ✅ SESSION_PATH=/sertecapp (las sesiones no expiran)
+    - ✅ TRUSTED_PROXIES=* (proxy configuration)
+    - ✅ Usuario admin creado: pendziuch@gmail.com / Filament123!
+  - **Deploy script documentado en memory** para futuras deployments
 
 ### En progreso 🔄
 - Migrar datos (311 clientes, 363 repuestos, etc.) desde SQLite local a MySQL Hostinger
-- Testear acceso Filament en Hostinger
-- Configurar endpoints API en `/sertecapp/api/`
+  - **IMPORTANTE:** Los usuarios deben ser los MISMOS de localhost, no reseeding
+- Testear login Filament + flujo completo
 
 ### Pendiente ⏳
-- Conectar PWA (sertecapp-tecnicos) a API de Hostinger
+- Configurar endpoints API en `/sertecapp/api/`
+- Git webhook automático (push development → deploy automático)
+- Conectar PWA a API de Hostinger
 - Merge `development` → `main`
-- Features PWA faltantes: editar orden, cambiar estado, detalle orden
 
 ---
 

@@ -43,8 +43,9 @@ Sistema de gestión de órdenes de trabajo para servicio técnico de equipos de 
 |---------|-----|--------|
 | Frontend PWA producción | https://sertecapp-tecnicos.pages.dev | ✅ Live |
 | API Worker producción | https://sertecapp-worker.pendziuch.workers.dev | ✅ Live |
-| Filament admin local | http://localhost:8000/admin/login | local |
-| Hostinger demo (viejo) | https://demos.pendziuch.com/admin | verificar |
+| Filament admin local | http://localhost:8000/admin/login | ✅ local |
+| Filament admin Hostinger | https://demos.pendziuch.com/sertecapp/ | 🔄 Deploy 2026-04-13 |
+| API Hostinger (futuro) | https://demos.pendziuch.com/sertecapp/api/ | ⏳ Próximo |
 
 ---
 
@@ -159,14 +160,20 @@ Ver detalle en `FEATURES_FILAMENT_VS_APP.md`.
 - Roles/permisos con Spatie Permission (filament-shield)
 - Import/Export Excel clientes y repuestos
 - Migración SQLite → MySQL completada
+- **Deploy Filament en Hostinger:** https://demos.pendziuch.com/sertecapp/
+  - Rama `development` pusheada a Github
+  - Clonada en Hostinger en SSH
+  - Migraciones Laravel completadas
+  - `.env` configurado con BD MySQL en Hostinger
+  - Base de datos u283281385_sertecappers creada
 
 ### En progreso 🔄
-- Validar login Filament con pendziuch@gmail.com (pendiente confirmar password)
-- Decidir y ejecutar hosting Filament en producción
+- Migrar datos (311 clientes, 363 repuestos, etc.) desde SQLite local a MySQL Hostinger
+- Testear acceso Filament en Hostinger
+- Configurar endpoints API en `/sertecapp/api/`
 
 ### Pendiente ⏳
-- Elegir hosting Filament (Hostinger PHP / VPS / Railway)
-- Deploy Filament producción
+- Conectar PWA (sertecapp-tecnicos) a API de Hostinger
 - Merge `development` → `main`
 - Features PWA faltantes: editar orden, cambiar estado, detalle orden
 

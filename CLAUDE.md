@@ -12,6 +12,8 @@
 3. **NUNCA crear usuarios/roles en DB sin preguntar.** El usuario sabe lo que tiene.
 4. **Antes de cualquier acción destructiva o que cambie config: preguntar.**
 5. **Si el usuario dice que algo estaba funcionando, creerle. No contradecirlo.**
+6. **MANTENER TODO DOCUMENTADO.** Crear archivos .md con cada fix, decisión, cambio.
+7. **PASAR URLs COMO LINKS** — No como texto plano.
 
 ---
 
@@ -37,168 +39,153 @@ Sistema de gestión de órdenes de trabajo para servicio técnico de equipos de 
 
 ---
 
-## URLs
+## URLs — Estado Actual (2026-04-14)
 
 | Entorno | URL | Estado |
 |---------|-----|--------|
-| Frontend PWA producción | https://sertecapp-tecnicos.pages.dev | ✅ Live |
-| API Worker producción | https://sertecapp-worker.pendziuch.workers.dev | ✅ Live |
-| Filament admin local | http://localhost:8000/admin/login | ✅ local |
-| Filament admin Hostinger | https://demos.pendziuch.com/sertecapp/ | 🔄 Deploy 2026-04-13 |
-| API Hostinger (futuro) | https://demos.pendziuch.com/sertecapp/api/ | ⏳ Próximo |
+| PWA Producción | [https://sertecapp-tecnicos.pages.dev](https://sertecapp-tecnicos.pages.dev) | ✅ Live |
+| API Producción (Workers) | [https://sertecapp-worker.pendziuch.workers.dev](https://sertecapp-worker.pendziuch.workers.dev) | ✅ Live |
+| Filament LOCAL | [http://localhost:8000/admin/login](http://localhost:8000/admin/login) | ✅ Funcional |
+| Filament HOSTINGER | [https://demos.pendziuch.com/admin/login](https://demos.pendziuch.com/admin/login) | ✅ HTTP 200 OK (test manual pendiente) |
+| PWA LOCAL | [http://localhost:3002](http://localhost:3002) | 🔄 Verificar |
 
 ---
 
-## Credenciales Filament local (MySQL)
+## Credenciales
 
+### Filament LOCAL (MySQL Laragon)
 | Email | Password | Rol |
 |-------|----------|-----|
-| pendziuch@gmail.com | ❓ pendiente confirmar | super_admin + administrador |
-| admin@sertecapp.local | ❓ pendiente confirmar | administrador |
-| luisgomez@fitnesscompany.com.ar | ❓ | customer_viewer |
-| hcoronel@fitnesscompany.com.ar | ❓ | supervisor |
-| tech@demo.com | ❓ | técnico |
+| pendziuch@gmail.com | TBD | super_admin |
+| admin@sertecapp.local | TBD | administrador |
 
-> Las passwords están hasheadas en DB. Si no funcionan, resetear con:
-> `php artisan tinker --execute="App\Models\User::where('email','X')->update(['password'=>bcrypt('nuevo')]);"` 
+### Filament HOSTINGER (MySQL Hostinger)
+| Email | Password | Rol |
+|-------|----------|-----|
+| pendziuch@gmail.com | TBD | administrador |
 
-## Credenciales producción (Cloudflare D1)
-| Email | PIN | Rol |
-|-------|-----|-----|
-| admin@sertecapp.local | 1234 | administrador |
-| pendziuch@gmail.com | 1234 | administrador |
-| tech@demo.com | 1234 | técnico |
-
----
-
-## Ramas git
-
-| Rama | Propósito |
-|------|-----------|
-| `main` | Producción estable |
-| `development` | Trabajo activo — Filament + MySQL |
-
-**Siempre trabajar en `development`** para cambios de Filament/backend.
-
----
-
-## Cómo levantar Filament local
-
-### IMPORTANTE: el `.env` DEBE apuntar a MySQL (no SQLite)
-El archivo `.env.mysql.local` tiene la config correcta. Si `.env` dice `DB_CONNECTION=sqlite`, ejecutar:
+**Nota:** Las passwords están hasheadas. Si no funcionan, resetear con:
 ```bash
+php artisan tinker --execute="App\Models\User::where('email','X')->update(['password'=>bcrypt('nueva')]);"
+```
+
+---
+
+## Ramas Git
+
+| Rama | Propósito | Estado |
+|------|-----------|--------|
+| `main` | Producción estable | ✅ |
+| `development` | Trabajo activo — Filament + MySQL | 🔄 Activo |
+
+**REGLA:** Trabajar siempre en `development` para cambios de Filament/backend.
+
+---
+
+## Cómo Levantar Filament LOCAL
+
+### 1. Verificar .env
+```bash
+# Debe apuntar a MySQL, NO SQLite
 cp backend-laravel/.env.mysql.local backend-laravel/.env
+grep DB_CONNECTION backend-laravel/.env  # Verificar que dice 'mysql'
 ```
-Verificar siempre con: `head -5 backend-laravel/.env | grep DB_CONNECTION`
 
-### Pasos
-1. Abrir Laragon (MySQL en puerto 3306)
-2. `cp backend-laravel/.env.mysql.local backend-laravel/.env` (si no está ya)
-3. `cd backend-laravel && php artisan serve --port=8000`
-4. http://localhost:8000/admin/login
-
-### PWA local (apunta a Laravel, no Cloudflare)
+### 2. Levantar Laravel
 ```bash
-# sertecapp-tecnicos/.env.local debe tener:
+cd C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\backend-laravel
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+Acceder a: [http://localhost:8000/admin/login](http://localhost:8000/admin/login)
+
+### 3. Levantar PWA LOCAL
+```bash
+cd C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp\sertecapp-tecnicos
+# Verificar que .env.local tiene:
 # NEXT_PUBLIC_API_URL=http://localhost:8000
-cd sertecapp-tecnicos && npm run dev  # → http://localhost:3000
+
+npm run dev  # → http://localhost:3002
 ```
 
 ---
 
-## Estado de la DB MySQL (sertecapp) — 2026-04-13
+## Estado de la DB MySQL LOCAL (sertecapp)
 
-| Tabla | Registros | Fuente |
-|-------|-----------|--------|
-| users | 5 | migrado de SQLite |
-| customers | 311 | migrado de SQLite |
-| parts | 363 | migrado de SQLite |
-| work_orders | 22 | migrado de SQLite |
-| roles | 7 | migrado + super_admin agregado |
-| permissions | 50 | migrado de SQLite |
+| Tabla | Registros | Fuente | Estado |
+|-------|-----------|--------|--------|
+| users | 5 | SQLite → MySQL | ✅ |
+| customers | 311 | SQLite → MySQL | ✅ |
+| parts | 363 | SQLite → MySQL | ✅ |
+| work_orders | 22 | SQLite → MySQL | ✅ |
+| roles | 7 | SQLite → MySQL + super_admin | ✅ |
+| permissions | 50 | SQLite → MySQL | ✅ |
 
-**Roles en MySQL:** administrador, técnico, supervisor, cliente, admin, customer_viewer, super_admin
-
-**Script de migración:** `backend-laravel/migrate_sqlite_to_mysql.php`
-> Si los datos de MySQL se pierden, ejecutar: `php migrate_sqlite_to_mysql.php`
-> Los datos originales siempre están en: `backend-laravel/database/database.sqlite`
+**Respaldo original:** `backend-laravel/database/database.sqlite`
 
 ---
 
-## Historia del problema de hoy (2026-04-13) — para no repetirlo
+## 🔧 FIX 2026-04-14 — Hostinger Login 403
 
-1. `.env` apuntaba a SQLite → Filament usaba SQLite con todos los datos
-2. Copié `.env.mysql.local` a `.env` sin preguntar → Filament quedó apuntando a MySQL vacío
-3. Los datos nunca habían sido migrados de SQLite a MySQL (el script anterior solo creaba esquema, no datos)
-4. Tuvimos que migrar todo manualmente con `migrate_sqlite_to_mysql.php`
-5. **Lección:** NUNCA cambiar `.env` sin preguntar primero
+**Problema:** Claude Code creó dos middlewares con errores de sintaxis:
+- `app/Http/Middleware/FixClientIp.php:10`
+- `app/Http/Middleware/TrustProxiedRequests.php:10`
 
----
+**Solución aplicada:**
+1. ✅ Eliminar archivos rotos vía SSH
+2. ✅ `php artisan config:cache && php artisan cache:clear`
+3. ✅ Agregar config SESSION/CSRF faltante al `.env`
 
-## Filament Admin — Resources (14 completos)
+**Resultado:** [https://demos.pendziuch.com/admin/login](https://demos.pendziuch.com/admin/login) → **HTTP 200 OK**
 
-WorkOrder, Customer, Equipment, User, Part, Budget, Visit, Subscription,
-WorkshopItem, WorkPart, Notification, PdfTemplate, SystemSetting, SystemLog
-
-Ver detalle en `FEATURES_FILAMENT_VS_APP.md`.
+**Documentación:** Ver [ARCHIVOS/HOSTINGER_FIX_2026-04-14.md](ARCHIVOS/HOSTINGER_FIX_2026-04-14.md)
 
 ---
 
-## Rama development — diferencias vs main
+## Estado Actual (2026-04-14 17:10 UTC)
 
-- `.env.mysql.local` — config MySQL Laragon
-- `RoleController.php` + ruta `GET /api/roles` — roles dinámicos desde Filament hacia la PWA
-- Roles en español alineados con D1
-
----
-
-## Estado actual (2026-04-13 16:32 UTC)
-
-### Completado ✅
+### ✅ Completado
 - PWA + Cloudflare Workers + D1 en producción
 - Filament local con MySQL — 14 resources, datos migrados
-- Roles/permisos con Spatie Permission (filament-shield)
-- Import/Export Excel clientes y repuestos
-- Migración SQLite → MySQL completada
-- **Deploy Filament en Hostinger:** https://demos.pendziuch.com/sertecapp/
-  - Rama `development` pusheada a Github, clonada en Hostinger SSH
-  - Migraciones Laravel completadas
-  - `.env` configurado con BD MySQL Hostinger (u283281385_sertecappers)
-  - Filament login funcional y estilizado ✅
-  - **PROBLEMAS RESUELTOS:**
-    - ✅ Artisan file ahora en git (no en .gitignore)
-    - ✅ index.php puente + .htaccess correcto (reescritura subdirectorio)
-    - ✅ Symlinks para assets (css, js, fonts, images, vendor, storage)
-    - ✅ SESSION_PATH=/sertecapp (las sesiones no expiran)
-    - ✅ TRUSTED_PROXIES=* (proxy configuration)
-    - ✅ Usuario admin creado: pendziuch@gmail.com / Filament123!
-  - **Deploy script documentado en memory** para futuras deployments
+- Filament en Hostinger desplegado y accesible
+- Login page carga correctamente en Hostinger (HTTP 200 OK)
+- Cookies CSRF y session se setean correctamente
+- Middlewares rotos eliminados
 
-### En progreso 🔄
-- Migrar datos (311 clientes, 363 repuestos, etc.) desde SQLite local a MySQL Hostinger
-  - **IMPORTANTE:** Los usuarios deben ser los MISMOS de localhost, no reseeding
-- Testear login Filament + flujo completo
+### 🔄 En Progreso
+- **TEST MANUAL:** Intentar login con credentials en [https://demos.pendziuch.com/admin/login](https://demos.pendziuch.com/admin/login)
+- Levantar servidores locales (Laravel 8000 + Next.js 3002)
+- Verificar que PWA local conecta a API local
 
-### Pendiente ⏳
-- Configurar endpoints API en `/sertecapp/api/`
-- Git webhook automático (push development → deploy automático)
-- Conectar PWA a API de Hostinger
+### ⏳ Pendiente
+- Migrar datos (311 clientes, 363 repuestos) a MySQL Hostinger
+- Testear flujo completo end-to-end
+- Verificar que todas las apps están online y conectadas
 - Merge `development` → `main`
 
 ---
 
-## Próximos pasos
+## Próximos Pasos (2026-04-14)
 
-1. Confirmar que login Filament funciona → http://localhost:8000/admin/login
-2. Elegir hosting para Filament
-3. Deploy Filament a producción
-4. Conectar PWA a roles de Filament productivo
+1. ✅ Hostinger login responde HTTP 200 — **Aguardando test manual de POST**
+2. Levantar Laravel en [http://localhost:8000](http://localhost:8000)
+3. Levantar Next.js PWA en [http://localhost:3002](http://localhost:3002)
+4. Verificar conexión: PWA → API Local
+5. Testear login POST en Hostinger
+6. Migrar datos a MySQL Hostinger
+7. Testear flujo completo online
 
 ---
 
-## Reglas técnicas
+## Reglas Técnicas
 
-- Usar **Bash tool** para comandos artisan/npm (Desktop Commander falla con rutas con espacios)
-- Laragon: MySQL en 127.0.0.1:3306, user root, sin password
-- `.env.sqlite.backup` existe como backup del `.env` SQLite original
-- **Al final de sesión:** actualizar este archivo + `git add CLAUDE.md && git commit`
+- **SSH a Hostinger:** `ssh -i ~/.ssh/hostinger_sertecapp -p 65002 u283281385@147.79.103.125`
+- **Laragon:** MySQL en 127.0.0.1:3306, user `root`, sin password
+- **Git commits:** Siempre hacer commit después de cambios documentados
+- **Documentación:** Crear `.md` para cada fix/decisión importante
+- **URLs:** Siempre pasar como markdown links `[texto](url)`, nunca como texto plano
+
+---
+
+**Última actualización:** 2026-04-14 17:10 UTC  
+**Estado:** En progreso — Hostinger login responde, apps locales por levantar

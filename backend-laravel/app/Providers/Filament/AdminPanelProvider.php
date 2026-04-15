@@ -25,8 +25,8 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
-            ->id('admin')
-            ->path('admin')
+            ->id('sertecapp')
+            ->path('sertecapp')
             ->login()
             ->brandName('SerTecApp')
             ->favicon(asset('favicon.ico'))

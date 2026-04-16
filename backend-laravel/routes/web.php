@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Budget;
 
 Route::get('/', function () {
-    return redirect('/admin');
+    return redirect('/sertecapp');
 });
 
 Route::get('/budgets/{budget}/pdf', function (Budget $budget) {

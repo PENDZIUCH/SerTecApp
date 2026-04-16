@@ -17,9 +17,16 @@ class SubscriptionController extends Controller
 
     public function index()
     {
-        $subscriptions = Subscription::with('customer')
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = Subscription::with('customer');
+
+        if (request('status')) {
+            $query->where('status', request('status'));
+        }
+        if (request('customer_id')) {
+            $query->where('customer_id', request('customer_id'));
+        }
+
+        $subscriptions = $query->orderBy('created_at', 'desc')->paginate(request('per_page', 15));
 
         return SubscriptionResource::collection($subscriptions);
     }

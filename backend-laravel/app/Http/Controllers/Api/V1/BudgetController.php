@@ -17,9 +17,16 @@ class BudgetController extends Controller
 
     public function index()
     {
-        $budgets = Budget::with(['customer', 'items'])
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = Budget::with(['customer', 'items']);
+
+        if (request('status')) {
+            $query->where('status', request('status'));
+        }
+        if (request('customer_id')) {
+            $query->where('customer_id', request('customer_id'));
+        }
+
+        $budgets = $query->orderBy('created_at', 'desc')->paginate(request('per_page', 15));
 
         return BudgetResource::collection($budgets);
     }

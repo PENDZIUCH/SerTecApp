@@ -21,10 +21,15 @@ class CustomerController extends Controller
         $query = Customer::with(['contacts', 'addresses']);
 
         if (request('search')) {
-            $query->where('name', 'like', '%' . request('search') . '%');
+            $query->where(function ($q) {
+                $term = '%' . request('search') . '%';
+                $q->where('business_name', 'like', $term)
+                  ->orWhere('first_name', 'like', $term)
+                  ->orWhere('last_name', 'like', $term);
+            });
         }
 
-        $customers = $query->orderBy('name')->paginate(request('per_page', 15));
+        $customers = $query->orderBy('business_name')->paginate(request('per_page', 15));
 
         return CustomerResource::collection($customers);
     }

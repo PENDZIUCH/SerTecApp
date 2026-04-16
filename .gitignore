@@ -236,8 +236,13 @@ docs-site/sertecapp-docs/node_modules/
 !.prettierrc
 !.eslintrc
 
-# Claude Code - Allow memory files only
+# Claude Code - Allow memory files and skills
 .claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/*/
+.claude/skills/*/**
+!.claude/skills/*/SKILL.md
 !.claude/projects/
 .claude/projects/*
 !.claude/projects/*/memory/

@@ -18,9 +18,16 @@ class VisitController extends Controller
 
     public function index()
     {
-        $visits = Visit::with(['workOrder', 'assignedTech'])
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = Visit::with(['workOrder', 'assignedTech']);
+
+        if (request('status')) {
+            $query->where('status', request('status'));
+        }
+        if (request('tech_id')) {
+            $query->where('assigned_tech_id', request('tech_id'));
+        }
+
+        $visits = $query->orderBy('created_at', 'desc')->paginate(request('per_page', 15));
 
         return VisitResource::collection($visits);
     }

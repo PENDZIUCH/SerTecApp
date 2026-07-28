@@ -6,15 +6,18 @@ SET MSG=%~1
 IF "%MSG%"=="" SET MSG=fix: actualizacion de codigo
 
 echo.
-echo [1/4] Sincronizando archivos backend-laravel -^> app/ ...
+echo [1/4] Sincronizando archivos backend-laravel -^> raiz del repo ...
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp"
-robocopy backend-laravel . /E /XO /XF .env /XD vendor node_modules .git storage /NFL /NDL /NJH /NJS > nul
+robocopy backend-laravel\app app /E /XO /NFL /NDL /NJH /NJS > nul
+robocopy backend-laravel\config config /E /XO /NFL /NDL /NJH /NJS > nul
+robocopy backend-laravel\routes routes /E /XO /NFL /NDL /NJH /NJS > nul
+robocopy backend-laravel\resources resources /E /XO /NFL /NDL /NJH /NJS > nul
 echo     OK
 
 echo.
 echo [2/4] Commiteando en git...
-git add app/ backend-laravel/app/ backend-laravel/config/ backend-laravel/routes/ backend-laravel/resources/
-git add CLAUDE.md
+git add app/ config/ routes/ resources/ backend-laravel/app/ backend-laravel/config/ backend-laravel/routes/ backend-laravel/resources/
+git add CLAUDE.md DEPLOY_CI_GUIDE.md deploy.bat deploy-sertecapp.sh
 git diff --cached --quiet && (echo     Sin cambios nuevos.) || (git commit -m "%MSG%" && echo     OK)
 
 echo.

@@ -9,12 +9,12 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewWorkOrder extends ViewRecord
 {
     protected static string $resource = WorkOrderResource::class;
-    
+    protected ?string $heading = 'Detalle de Orden de Trabajo';
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
-                ->label('Editar Orden'),
+            Actions\EditAction::make()->label('Editar Orden'),
         ];
     }
 }

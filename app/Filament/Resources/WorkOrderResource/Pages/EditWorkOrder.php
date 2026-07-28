@@ -9,6 +9,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditWorkOrder extends EditRecord
 {
     protected static string $resource = WorkOrderResource::class;
+    protected ?string $heading = 'Editar Orden de Trabajo';
 
     protected function getRedirectUrl(): string
     {
@@ -18,7 +19,7 @@ class EditWorkOrder extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

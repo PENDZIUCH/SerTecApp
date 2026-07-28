@@ -56,10 +56,14 @@ class LatestWorkOrdersWidget extends BaseWidget
                     ->sortable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->url(fn (WorkOrder $record) => WorkOrderResource::getUrl('view', ['record' => $record->id])),
-                Tables\Actions\EditAction::make()
-                    ->url(fn (WorkOrder $record) => WorkOrderResource::getUrl('edit', ['record' => $record->id])),
+                Tables\Actions\Action::make('ver')
+                    ->label('Ver')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn (WorkOrder $record): string => WorkOrderResource::getUrl('view', ['record' => $record->getKey()])),
+                Tables\Actions\Action::make('editar')
+                    ->label('Editar')
+                    ->icon('heroicon-o-pencil')
+                    ->url(fn (WorkOrder $record): string => WorkOrderResource::getUrl('edit', ['record' => $record->getKey()])),
             ])
             ->heading('Últimas Órdenes de Trabajo');
     }

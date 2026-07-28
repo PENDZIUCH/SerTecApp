@@ -16,6 +16,9 @@ class PartResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-cube';
     protected static ?string $navigationLabel = 'Repuestos';
     protected static ?int $navigationSort = 3;
+    protected static ?string $modelLabel = 'Repuesto';
+    protected static ?string $pluralModelLabel = 'Repuestos';
+
 
     public static function form(Form $form): Form
     {

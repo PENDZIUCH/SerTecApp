@@ -17,6 +17,9 @@ class WorkOrderResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'Órdenes de Trabajo';
     protected static ?int $navigationSort = 2;
+    protected static ?string $modelLabel = 'Orden de Trabajo';
+    protected static ?string $pluralModelLabel = 'Órdenes de Trabajo';
+
 
     public static function form(Form $form): Form
     {

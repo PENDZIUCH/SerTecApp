@@ -16,6 +16,9 @@ class EquipmentResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $navigationLabel = 'Equipos';
     protected static ?int $navigationSort = 2;
+    protected static ?string $modelLabel = 'Equipo';
+    protected static ?string $pluralModelLabel = 'Equipos';
+
 
     public static function form(Form $form): Form
     {

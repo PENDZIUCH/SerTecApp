@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\WorkOrderResource\Pages;
+use App\Filament\Resources\WorkPartResource;
 use App\Models\WorkOrder;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -16,6 +17,9 @@ class WorkOrderResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'Órdenes de Trabajo';
     protected static ?int $navigationSort = 2;
+    protected static ?string $modelLabel = 'Orden de Trabajo';
+    protected static ?string $pluralModelLabel = 'Órdenes de Trabajo';
+
 
     public static function form(Form $form): Form
     {
@@ -35,13 +39,12 @@ class WorkOrderResource extends Resource
                         ->required()
                         ->live()
                         ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('equipment_id', null)),
-                    
+
                     Forms\Components\Select::make('equipment_id')
                         ->label('Equipo')
                         ->options(function (Forms\Get $get) {
                             $customerId = $get('customer_id');
                             if (!$customerId) return [];
-                            
                             return \App\Models\Equipment::where('customer_id', $customerId)
                                 ->with(['brand', 'model'])
                                 ->get()
@@ -53,7 +56,7 @@ class WorkOrderResource extends Resource
                         ->nullable()
                         ->helperText('Opcional - dejar vacío si el técnico debe identificar el equipo en el lugar')
                         ->disabled(fn (Forms\Get $get) => !$get('customer_id')),
-                    
+
                     Forms\Components\Select::make('assigned_tech_id')
                         ->label('Técnico Asignado')
                         ->options(function () {
@@ -66,8 +69,8 @@ class WorkOrderResource extends Resource
                         })
                         ->searchable()
                         ->required()
-                        ->helperText("Requerido — asignar un técnico antes de enviar"),
-                    
+                        ->helperText('Requerido — asignar un técnico antes de enviar'),
+
                     Forms\Components\Select::make('priority')
                         ->label('Prioridad')
                         ->options([
@@ -78,12 +81,12 @@ class WorkOrderResource extends Resource
                         ])
                         ->default(2)
                         ->required(),
-                    
+
                     Forms\Components\Textarea::make('description')
                         ->label('Descripción del Problema')
                         ->required()
                         ->columnSpanFull(),
-                    
+
                     Forms\Components\Select::make('status')
                         ->label('Estado')
                         ->options([
@@ -95,7 +98,7 @@ class WorkOrderResource extends Resource
                         ->default('pending')
                         ->required(),
                 ])->columns(2),
-            
+
             Forms\Components\Section::make('Repuestos Utilizados')
                 ->schema([
                     Forms\Components\Repeater::make('partsUsed')
@@ -117,7 +120,7 @@ class WorkOrderResource extends Resource
                                         $set('total_cost', $unitCost * $quantity);
                                     }
                                 }),
-                            
+
                             Forms\Components\TextInput::make('unit_cost')
                                 ->label('Precio Unit.')
                                 ->numeric()
@@ -128,7 +131,7 @@ class WorkOrderResource extends Resource
                                     $quantity = $get('quantity') ?? 1;
                                     $set('total_cost', $state * $quantity);
                                 }),
-                            
+
                             Forms\Components\TextInput::make('quantity')
                                 ->label('Cantidad')
                                 ->numeric()
@@ -139,7 +142,7 @@ class WorkOrderResource extends Resource
                                     $unitCost = $get('unit_cost') ?? 0;
                                     $set('total_cost', $state * $unitCost);
                                 }),
-                            
+
                             Forms\Components\TextInput::make('total_cost')
                                 ->label('Subtotal')
                                 ->numeric()
@@ -207,7 +210,6 @@ class WorkOrderResource extends Resource
                         'completed' => 'Completada',
                         'cancelled' => 'Cancelada',
                     ]),
-                
                 Tables\Filters\SelectFilter::make('assigned_tech_id')
                     ->label('Técnico')
                     ->relationship('assignedTech', 'name'),
@@ -218,13 +220,12 @@ class WorkOrderResource extends Resource
                     ->icon('heroicon-o-document-text')
                     ->color('info')
                     ->visible(fn (WorkOrder $record) => $record->status === 'completed')
-                    ->url(fn (WorkOrder $record) => \App\Models\WorkPart::where('work_order_id', $record->id)->exists() 
-                        ? route('filament.admin.resources.work-parts.view', [
+                    ->url(fn (WorkOrder $record) => \App\Models\WorkPart::where('work_order_id', $record->id)->exists()
+                        ? WorkPartResource::getUrl('view', [
                             'record' => \App\Models\WorkPart::where('work_order_id', $record->id)->first()->id
                         ])
                         : null
                     ),
-                
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])

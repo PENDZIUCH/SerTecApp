@@ -190,3 +190,26 @@ Corrección aplicada en `StatsOverviewWidget.php` — commit `0e5e352`.
 - Traducir títulos del resto de resources (WorkPart, Customer, etc.)
 - Deploy PWA conectada a Hostinger en Cloudflare Pages separado
 - Jerarquía de roles: solo superadmin puede crear otros superadmin
+
+---
+
+## Problema pendiente — estructura del repo (RESOLVER PRIMERO en próxima sesión)
+
+**El problema:** El repo tiene archivos en dos paths distintos:
+- Local trackea: `backend-laravel/app/Filament/...` (repo root = `SerTecApp/`)
+- Hostinger trackea: `app/Filament/...` (repo root = `backend-laravel/`)
+
+Por eso `git pull` en Hostinger nunca actualiza los archivos de Filament correctamente.
+
+**La solución (Opción B — próxima sesión):**
+Reorganizar Hostinger para que el repo root sea `SerTecApp/` igual que local, y el deploy apunte a `public_html/backend-laravel/`. Así git pull funciona de verdad.
+
+**Lo que NO hacer mientras tanto:**
+- No commitear desde Hostinger — pisa los fixes de local
+- No hacer git reset --hard desde Hostinger
+
+**Estado actual de Hostinger:**
+- Dashboard funciona ✅
+- Links sin 404 ✅  
+- Técnico obligatorio ✅
+- Títulos en inglés todavía (ListWorkOrders, etc.) ⚠️

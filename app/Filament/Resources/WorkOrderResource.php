@@ -65,8 +65,8 @@ class WorkOrderResource extends Resource
                                 ]);
                         })
                         ->searchable()
-                        ->nullable()
-                        ->helperText('Opcional - se puede asignar después'),
+                        ->required()
+                        ->helperText("Requerido — asignar un técnico antes de enviar"),
                     
                     Forms\Components\Select::make('priority')
                         ->label('Prioridad')

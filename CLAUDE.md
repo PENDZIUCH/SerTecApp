@@ -164,3 +164,29 @@ El script y webhook ya están en el servidor. Falta:
 Siempre usar `NombreResource::getUrl('index')` en widgets y cualquier link interno.
 Razón: si cambia el nombre del panel o el dominio, los links se rompen.
 Corrección aplicada en `StatsOverviewWidget.php` — commit `0e5e352`.
+
+---
+
+## Estado actualizado 2026-07-28
+
+### Deploy funcionando
+- Git en Hostinger ahora trackea todos los archivos — `git pull` actualiza correctamente
+- Flujo de deploy: fix local → commit → push → SSH `git pull origin development && php artisan view:clear && php artisan cache:clear`
+- Webhook automático pendiente (conectar GitHub → `https://demo.pendziuch.com/deploy.php`)
+
+### Fixes aplicados hoy (local + Hostinger)
+- Widget dashboard: URLs dinámicas via `Resource::getUrl()` — no depende del nombre del panel
+- Técnico asignado obligatorio en crear/editar órdenes
+- Títulos de páginas WorkOrder en español
+- Notificación de parte en try-catch separado — no bloquea el guardado
+- CORS: orígenes explícitos en lugar de wildcard con credentials
+- URL "Ver Parte" dinámica via `WorkPartResource::getUrl()`
+
+### Flujo completo verificado en local Y Hostinger
+- Coordinador crea orden en Filament → técnico la ve en PWA → técnico completa parte → aparece en Filament ✅
+
+### Pendiente próxima sesión
+- Configurar webhook GitHub → deploy.php para auto-deploy
+- Traducir títulos del resto de resources (WorkPart, Customer, etc.)
+- Deploy PWA conectada a Hostinger en Cloudflare Pages separado
+- Jerarquía de roles: solo superadmin puede crear otros superadmin

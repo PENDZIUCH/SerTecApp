@@ -155,3 +155,12 @@ El script y webhook ya están en el servidor. Falta:
 1. **GitHub Webhook** → [github.com/PENDZIUCH/SerTecApp/settings/hooks/new](https://github.com/PENDZIUCH/SerTecApp/settings/hooks/new)
    - URL: `https://demo.pendziuch.com/deploy.php` | Secret: `SerTecDeploy2026!`
 2. **hPanel → Cron Jobs**: `/bin/bash /home/u283281385/deploy-sertecapp.sh` cada 5 min
+
+---
+
+## ⚠️ Regla agregada 2026-07-28
+
+**NUNCA hardcodear paths del panel Filament** (ej: `/sertecapp/`, `/admin/`).
+Siempre usar `NombreResource::getUrl('index')` en widgets y cualquier link interno.
+Razón: si cambia el nombre del panel o el dominio, los links se rompen.
+Corrección aplicada en `StatsOverviewWidget.php` — commit `0e5e352`.

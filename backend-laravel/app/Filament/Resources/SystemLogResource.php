@@ -20,6 +20,10 @@ class SystemLogResource extends Resource
     protected static ?string $model = SystemLog::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->check() && auth()->user()->hasRole('super_admin');
+    }
 
     public static function form(Form $form): Form
     {

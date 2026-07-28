@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListWorkOrders extends ListRecords
 {
     protected static string $resource = WorkOrderResource::class;
+    protected ?string $heading = 'Órdenes de Trabajo';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nueva Orden'),
         ];
     }
 }

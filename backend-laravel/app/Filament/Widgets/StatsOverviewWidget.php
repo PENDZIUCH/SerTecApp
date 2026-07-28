@@ -26,7 +26,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Órdenes por atender')
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('warning')
-                ->url('/admin/work-orders')
+                ->url('/sertecapp/work-orders')
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-amber-500/50',
                 ]),
@@ -35,7 +35,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('En reparación')
                 ->descriptionIcon('heroicon-o-wrench')
                 ->color('info')
-                ->url('/admin/equipment')
+                ->url('/sertecapp/equipment')
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-blue-500/50',
                 ]),
@@ -44,7 +44,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Total de clientes')
                 ->descriptionIcon('heroicon-o-user-group')
                 ->color('success')
-                ->url('/admin/customers')
+                ->url('/sertecapp/customers')
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-green-500/50',
                 ]),
@@ -53,7 +53,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Visitas registradas')
                 ->descriptionIcon('heroicon-o-map-pin')
                 ->color('primary')
-                ->url('/admin/visits')
+                ->url('/sertecapp/visits')
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-amber-500/50',
                 ]),

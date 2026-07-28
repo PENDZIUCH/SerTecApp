@@ -8,12 +8,16 @@ use App\Models\WorkOrder;
 use App\Models\Equipment;
 use App\Models\Customer;
 use App\Models\Visit;
+use App\Filament\Resources\WorkOrderResource;
+use App\Filament\Resources\EquipmentResource;
+use App\Filament\Resources\CustomerResource;
+use App\Filament\Resources\VisitResource;
 
 class StatsOverviewWidget extends BaseWidget
 {
     protected static ?string $pollingInterval = '30s';
     protected int | string | array $columnSpan = 'full';
-    
+
     protected function getColumns(): int
     {
         return 2;
@@ -26,7 +30,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Órdenes por atender')
                 ->descriptionIcon('heroicon-o-clock')
                 ->color('warning')
-                ->url('/sertecapp/work-orders')
+                ->url(WorkOrderResource::getUrl('index'))
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-amber-500/50',
                 ]),
@@ -35,7 +39,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('En reparación')
                 ->descriptionIcon('heroicon-o-wrench')
                 ->color('info')
-                ->url('/sertecapp/equipment')
+                ->url(EquipmentResource::getUrl('index'))
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-blue-500/50',
                 ]),
@@ -44,7 +48,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Total de clientes')
                 ->descriptionIcon('heroicon-o-user-group')
                 ->color('success')
-                ->url('/sertecapp/customers')
+                ->url(CustomerResource::getUrl('index'))
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-green-500/50',
                 ]),
@@ -53,7 +57,7 @@ class StatsOverviewWidget extends BaseWidget
                 ->description('Visitas registradas')
                 ->descriptionIcon('heroicon-o-map-pin')
                 ->color('primary')
-                ->url('/sertecapp/visits')
+                ->url(VisitResource::getUrl('index'))
                 ->extraAttributes([
                     'class' => 'cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1 active:scale-95 hover:ring-2 hover:ring-amber-500/50',
                 ]),

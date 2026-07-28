@@ -1,0 +1,12 @@
+                \Filament\Notifications\Notification::make()
+                    ->title('Nuevo parte pendiente de aprobación')
+                    ->body("Orden #{$order->id} - {$order->customer->business_name} completada por {$technician->name}")
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->iconColor('warning')
+                    ->actions([
+                        \Filament\Notifications\Actions\Action::make('ver')
+                            ->label('Ver Parte')
+                            ->url(\App\Filament\Resources\WorkPartResource::getUrl('view', ['record' => $parte->id]))
+                            ->markAsRead(),
+                    ])
+                    ->sendToDatabase($supervisor);

@@ -213,3 +213,51 @@ Reorganizar Hostinger para que el repo root sea `SerTecApp/` igual que local, y 
 - Links sin 404 ✅  
 - Técnico obligatorio ✅
 - Títulos en inglés todavía (ListWorkOrders, etc.) ⚠️
+
+---
+
+## SOLUCIÓN DEFINITIVA AL PROBLEMA DE DEPLOY (2026-07-28)
+
+### El problema
+El repo tiene archivos en DOS paths distintos:
+- `app/Filament/...` — path que usa Hostinger (repo root = `backend-laravel/`)
+- `backend-laravel/app/Filament/...` — path local (repo root = `SerTecApp/`)
+
+`git pull` en Hostinger solo actualiza los archivos en `app/...` — nunca los de `backend-laravel/app/...`.
+
+### La solución
+Antes de cada commit que toca archivos PHP, correr robocopy para sincronizar:
+
+```cmd
+cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp"
+robocopy backend-laravel . /E /XO /XF .env /XD vendor node_modules .git storage
+git add app/
+git commit -m "fix: descripción del cambio"
+git push origin development
+```
+
+Luego en SSH de Hostinger:
+```bash
+git pull origin development && php artisan view:clear && php artisan cache:clear
+```
+
+### Archivos que NO sincronizar con robocopy
+- `.env` — cada entorno tiene el suyo
+- `vendor/` — se instala con composer
+- `storage/` — datos locales
+- `.git/` — repositorio git
+
+### Pendiente — automatizar con script
+Crear un script `deploy.ps1` local que haga todo en un comando:
+1. robocopy backend-laravel → app/
+2. git add + commit + push
+3. SSH a Hostinger → git pull + artisan clear
+
+### Pendiente — recursos en inglés
+Traducir Pages de todos los resources:
+- WorkPart (Partes pendientes)
+- Customer (Clientes)
+- Equipment (Equipos)
+- Part (Repuestos)
+- Visit (Visitas)
+- User (Usuarios)

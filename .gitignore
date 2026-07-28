@@ -248,3 +248,6 @@ docs-site/sertecapp-docs/node_modules/
 !.claude/projects/*/memory/
 .claude/projects/*/memory/*
 !.claude/projects/*/memory/*.md
+.env.mysql
+.env.mysql.local
+.gitattributes

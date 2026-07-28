@@ -1,0 +1,36 @@
+/* Custom SerTecApp Styles */
+
+/* Sidebar navigation active state glow */
+.fi-sidebar-item-button[aria-current="page"],
+.fi-sidebar-nav-item[aria-current="page"] {
+    @apply ring-2 ring-amber-500/50 shadow-lg shadow-amber-500/30 bg-amber-500/10;
+}
+
+/* Sidebar item hover effects */
+.fi-sidebar-item-button:hover,
+.fi-sidebar-nav-item:hover {
+    @apply transform translate-x-1 shadow-md;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Card stats enhanced hover */
+[class*="fi-wi-stats-overview-stat"] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Table row hover effect */
+.fi-ta-row:hover {
+    @apply bg-amber-500/5;
+    transition: background-color 0.2s ease;
+}
+
+/* Button hover enhancement */
+.fi-btn:hover {
+    @apply shadow-lg transform -translate-y-0.5;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Active navigation group */
+.fi-sidebar-group[aria-expanded="true"] > .fi-sidebar-group-button {
+    @apply text-amber-500;
+}

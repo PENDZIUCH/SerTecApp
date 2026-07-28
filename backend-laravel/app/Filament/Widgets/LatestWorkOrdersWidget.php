@@ -6,6 +6,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use App\Models\WorkOrder;
+use App\Filament\Resources\WorkOrderResource;
 
 class LatestWorkOrdersWidget extends BaseWidget
 {
@@ -20,9 +21,8 @@ class LatestWorkOrdersWidget extends BaseWidget
                 WorkOrder::query()->latest()->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('wo_number')
-                    ->label('Nº Orden')
-                    ->searchable()
+                Tables\Columns\TextColumn::make('id')
+                    ->label('Nº OT')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('customer.business_name')
                     ->label('Cliente')
@@ -30,19 +30,37 @@ class LatestWorkOrdersWidget extends BaseWidget
                     ->sortable(),
                 Tables\Columns\TextColumn::make('equipment.serial_number')
                     ->label('Equipo')
-                    ->searchable(),
+                    ->searchable()
+                    ->default('Sin asignar'),
+                Tables\Columns\TextColumn::make('assignedTech.name')
+                    ->label('Técnico')
+                    ->default('Sin asignar'),
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Estado')
+                    ->formatStateUsing(fn ($state) => match($state) {
+                        'pending' => 'Pendiente',
+                        'in_progress' => 'En Progreso',
+                        'completed' => 'Completada',
+                        'cancelled' => 'Cancelada',
+                        default => $state,
+                    })
                     ->colors([
                         'warning' => 'pending',
-                        'info' => 'in_progress',
+                        'primary' => 'in_progress',
                         'success' => 'completed',
                         'danger' => 'cancelled',
                     ]),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creada')
-                    ->dateTime('d/m/Y H:i')
+                    ->date('d/m/Y')
                     ->sortable(),
-            ]);
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()
+                    ->url(fn (WorkOrder $record) => WorkOrderResource::getUrl('view', ['record' => $record->id])),
+                Tables\Actions\EditAction::make()
+                    ->url(fn (WorkOrder $record) => WorkOrderResource::getUrl('edit', ['record' => $record->id])),
+            ])
+            ->heading('Últimas Órdenes de Trabajo');
     }
 }

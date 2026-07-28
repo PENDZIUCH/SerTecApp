@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateWorkshopItem extends CreateRecord
 {
     protected static string $resource = WorkshopItemResource::class;
+    protected ?string $heading = 'Crear Ítem';
 }

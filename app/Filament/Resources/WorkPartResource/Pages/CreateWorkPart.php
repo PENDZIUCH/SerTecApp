@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateWorkPart extends CreateRecord
 {
     protected static string $resource = WorkPartResource::class;
+    protected ?string $heading = 'Crear Parte';
 }

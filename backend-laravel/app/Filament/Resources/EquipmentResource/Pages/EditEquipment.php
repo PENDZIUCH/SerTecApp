@@ -9,6 +9,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditEquipment extends EditRecord
 {
     protected static string $resource = EquipmentResource::class;
+    protected ?string $heading = 'Editar Equipo';
 
     protected function getRedirectUrl(): string
     {
@@ -18,7 +19,7 @@ class EditEquipment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

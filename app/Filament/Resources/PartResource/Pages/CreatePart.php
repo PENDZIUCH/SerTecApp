@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePart extends CreateRecord
 {
     protected static string $resource = PartResource::class;
+    protected ?string $heading = 'Crear Repuesto';
 }

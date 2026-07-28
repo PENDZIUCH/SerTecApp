@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePdfTemplate extends CreateRecord
 {
     protected static string $resource = PdfTemplateResource::class;
+    protected ?string $heading = 'Crear Plantilla';
 }

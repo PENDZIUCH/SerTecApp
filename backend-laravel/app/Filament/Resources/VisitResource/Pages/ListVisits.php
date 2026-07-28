@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListVisits extends ListRecords
 {
     protected static string $resource = VisitResource::class;
+    protected ?string $heading = 'Visitas';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nueva Visita'),
         ];
     }
 }

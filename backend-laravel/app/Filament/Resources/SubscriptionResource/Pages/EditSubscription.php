@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditSubscription extends EditRecord
 {
     protected static string $resource = SubscriptionResource::class;
+    protected ?string $heading = 'Editar Suscripción';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

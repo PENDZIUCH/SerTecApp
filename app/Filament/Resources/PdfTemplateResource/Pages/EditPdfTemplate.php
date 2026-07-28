@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditPdfTemplate extends EditRecord
 {
     protected static string $resource = PdfTemplateResource::class;
+    protected ?string $heading = 'Editar Plantilla PDF';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

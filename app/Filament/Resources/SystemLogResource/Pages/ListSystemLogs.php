@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListSystemLogs extends ListRecords
 {
     protected static string $resource = SystemLogResource::class;
+    protected ?string $heading = 'Logs del Sistema';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nuevo Log'),
         ];
     }
 }

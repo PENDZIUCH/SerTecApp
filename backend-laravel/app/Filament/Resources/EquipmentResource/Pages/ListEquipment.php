@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListEquipment extends ListRecords
 {
     protected static string $resource = EquipmentResource::class;
+    protected ?string $heading = 'Equipos';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nuevo Equipo'),
         ];
     }
 }

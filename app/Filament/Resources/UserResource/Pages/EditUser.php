@@ -9,6 +9,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditUser extends EditRecord
 {
     protected static string $resource = UserResource::class;
+    protected ?string $heading = 'Editar Usuario';
 
     protected function getRedirectUrl(): string
     {
@@ -23,7 +24,7 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
             Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
         ];

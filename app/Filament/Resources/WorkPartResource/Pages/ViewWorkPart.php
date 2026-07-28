@@ -9,6 +9,7 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewWorkPart extends ViewRecord
 {
     protected static string $resource = WorkPartResource::class;
+    protected ?string $heading = 'Ver Parte de Trabajo';
     
     protected function getHeaderActions(): array
     {

@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditVisit extends EditRecord
 {
     protected static string $resource = VisitResource::class;
+    protected ?string $heading = 'Editar Visita';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

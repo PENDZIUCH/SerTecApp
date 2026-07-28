@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditSystemLog extends EditRecord
 {
     protected static string $resource = SystemLogResource::class;
+    protected ?string $heading = 'Editar Log';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

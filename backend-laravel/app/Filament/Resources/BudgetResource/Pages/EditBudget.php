@@ -9,6 +9,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditBudget extends EditRecord
 {
     protected static string $resource = BudgetResource::class;
+    protected ?string $heading = 'Editar Presupuesto';
 
     protected function getRedirectUrl(): string
     {
@@ -18,7 +19,7 @@ class EditBudget extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 

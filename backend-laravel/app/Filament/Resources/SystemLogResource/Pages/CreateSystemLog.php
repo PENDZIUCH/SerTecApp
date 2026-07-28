@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateSystemLog extends CreateRecord
 {
     protected static string $resource = SystemLogResource::class;
+    protected ?string $heading = 'Crear Log';
 }

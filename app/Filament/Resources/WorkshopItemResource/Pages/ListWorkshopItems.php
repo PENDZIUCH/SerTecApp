@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListWorkshopItems extends ListRecords
 {
     protected static string $resource = WorkshopItemResource::class;
+    protected ?string $heading = 'Ítems de Taller';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nuevo Ítem'),
         ];
     }
 }

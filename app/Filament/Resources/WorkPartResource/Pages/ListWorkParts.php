@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListWorkParts extends ListRecords
 {
     protected static string $resource = WorkPartResource::class;
+    protected ?string $heading = 'Partes de Trabajo';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nuevo Parte'),
         ];
     }
 }

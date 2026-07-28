@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateSystemSetting extends CreateRecord
 {
     protected static string $resource = SystemSettingResource::class;
+    protected ?string $heading = 'Crear Configuración';
 }

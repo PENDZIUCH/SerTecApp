@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListPdfTemplates extends ListRecords
 {
     protected static string $resource = PdfTemplateResource::class;
+    protected ?string $heading = 'Plantillas PDF';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nueva Plantilla'),
         ];
     }
 }

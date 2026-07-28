@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListSystemSettings extends ListRecords
 {
     protected static string $resource = SystemSettingResource::class;
+    protected ?string $heading = 'Configuraciones';
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('Nueva Configuración'),
         ];
     }
 }

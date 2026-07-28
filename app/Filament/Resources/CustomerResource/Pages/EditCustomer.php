@@ -9,6 +9,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditCustomer extends EditRecord
 {
     protected static string $resource = CustomerResource::class;
+    protected ?string $heading = 'Editar Cliente';
 
     protected function getRedirectUrl(): string
     {
@@ -23,7 +24,7 @@ class EditCustomer extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()->label('Eliminar'),
         ];
     }
 }

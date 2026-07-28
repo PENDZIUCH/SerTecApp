@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateVisit extends CreateRecord
 {
     protected static string $resource = VisitResource::class;
+    protected ?string $heading = 'Crear Visita';
 }

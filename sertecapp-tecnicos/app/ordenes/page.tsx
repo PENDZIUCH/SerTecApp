@@ -101,7 +101,13 @@ export default function OrdenesPage() {
         const completed = newOrders.filter((o: Order) => o.status === 'completado');
         
         // SOLO usar datos del servidor - NUNCA merge con cache viejo
-        const finalOrders = [...pending, ...completed];
+        // Deduplicar por ID por si hay duplicados
+        const seen = new Set();
+        const finalOrders = [...pending, ...completed].filter(o => {
+          if (seen.has(o.id)) return false;
+          seen.add(o.id);
+          return true;
+        });
         
         setOrders(finalOrders);
         cacheOrdenes(finalOrders);
@@ -192,7 +198,7 @@ export default function OrdenesPage() {
         const token = localStorage.getItem('token');
         if (token) {
           const toastId = showToast('🔄 Sincronizando partes guardados...', 'loading');
-          const apiUrl = 'http://localhost:8787';
+          const apiUrl = API_URL;
           const result = await syncPendingPartes(apiUrl, token);
           if (result.success > 0) {
             setPendingSync(getPartesPendientesSync().length);
@@ -223,7 +229,7 @@ export default function OrdenesPage() {
         try {
           const token = localStorage.getItem('token');
           if (token) {
-            const apiUrl = 'http://localhost:8787';
+            const apiUrl = API_URL;
             const result = await syncPendingPartes(apiUrl, token);
             setPendingSync(getPartesPendientesSync().length);
             await loadPendingOrders();

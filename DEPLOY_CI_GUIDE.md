@@ -7,36 +7,57 @@ Cada `deploy.bat "mensaje"` desde local actualiza Hostinger automáticamente en 
 
 ---
 
-## Arquitectura
+## El problema estructural — leer antes de empezar
 
-```
-Local (Windows)
-    ↓ deploy.bat "mensaje"
-    ↓ robocopy backend-laravel/ → app/ (sincroniza paths)
-    ↓ git commit + push
-GitHub (repo)
-    ↓ webhook POST a deploy.php
-Hostinger deploy.php
-    ↓ valida firma + ejecuta script
-deploy-sertecapp.sh
-    ↓ git pull + cp app/ → backend-laravel/app/ + artisan clear
-Hostinger (producción actualizada ✅)
-```
+Este proyecto tiene un problema de estructura heredado: el repo en Hostinger tiene su root en `backend-laravel/` pero localmente el root es `SerTecApp/`. Esto genera dos paths distintos para los mismos archivos:
 
----
-
-## El problema estructural del repo — LEER PRIMERO
-
-Este repo tiene archivos en DOS paths distintos porque el repo raíz en Hostinger es `backend-laravel/` pero localmente es `SerTecApp/`.
-
-| Path en repo GitHub | Quién lo usa |
+| Path en GitHub | Quién lo usa |
 |---|---|
 | `app/Filament/...` | Hostinger (su repo root es `backend-laravel/`) |
 | `backend-laravel/app/Filament/...` | Local (repo root es `SerTecApp/`) |
 
-**La solución implementada:**
-- `deploy.bat` usa robocopy para copiar `backend-laravel/` → `app/` antes de commitear → GitHub tiene ambos paths sincronizados
-- `deploy-sertecapp.sh` en Hostinger hace `git pull` y luego copia `app/` → `backend-laravel/app/` → Hostinger queda actualizado
+**Para futuros proyectos: evitar esto clonando el repo en Hostinger desde el nivel correcto.** Ver sección "Cómo hacer bien un deploy nuevo desde cero" al final.
+
+---
+
+## Solución implementada
+
+**`deploy.bat`** (local) sincroniza los subdirectorios de `backend-laravel/` a la raíz del repo antes de commitear:
+
+```
+backend-laravel/app/     → app/
+backend-laravel/config/  → config/
+backend-laravel/routes/  → routes/
+backend-laravel/resources/ → resources/
+```
+
+**`deploy-sertecapp.sh`** (Hostinger) hace `git pull` y luego copia los archivos del repo raíz al directorio de Laravel:
+
+```
+app/     → backend-laravel/app/
+config/  → backend-laravel/config/
+```
+
+---
+
+## Arquitectura completa
+
+```
+Local (Windows)
+    ↓ deploy.bat "mensaje"
+    ↓ robocopy: backend-laravel/{app,config,routes,resources} → raíz del repo
+    ↓ git commit + push
+GitHub (repo)
+    ↓ webhook POST a deploy.php
+Hostinger deploy.php
+    ↓ valida firma HMAC + lanza script en background
+deploy-sertecapp.sh
+    ↓ git pull
+    ↓ cp app/ → backend-laravel/app/
+    ↓ cp config/ → backend-laravel/config/
+    ↓ php artisan config:clear + cache:clear + view:clear
+Hostinger (producción actualizada ✅)
+```
 
 ---
 
@@ -44,9 +65,9 @@ Este repo tiene archivos en DOS paths distintos porque el repo raíz en Hostinge
 
 | Archivo | Ubicación | Función |
 |---|---|---|
+| `deploy.bat` | `SerTecApp/deploy.bat` | Script local — sincroniza, commitea, pushea |
 | `deploy.php` | `public_html/deploy.php` | Recibe webhook de GitHub, valida firma, lanza script |
 | `deploy-sertecapp.sh` | `/home/u283281385/deploy-sertecapp.sh` | git pull + sincroniza paths + artisan clear |
-| `deploy.bat` | `SerTecApp/deploy.bat` | Script local — sincroniza, commitea, pushea |
 
 ---
 
@@ -67,16 +88,18 @@ log "=== DEPLOY INICIADO ==="
 cd "$LARAVEL_DIR"
 
 cp .env /tmp/sertecapp_env_backup
-
 git pull origin development >> "$LOG" 2>&1
-
 cp /tmp/sertecapp_env_backup .env
 
-# Sincronizar app/ del repo raíz → backend-laravel/app/
-# Resuelve el problema de los dos paths
+# Sincronizar app/ y config/ del repo raíz → backend-laravel/
 if [ -d "$REPO_ROOT/app" ]; then
     cp -ru "$REPO_ROOT/app/." "$LARAVEL_DIR/app/"
-    log "Archivos app/ sincronizados"
+    log "app/ sincronizado"
+fi
+
+if [ -d "$REPO_ROOT/config" ]; then
+    cp -ru "$REPO_ROOT/config/." "$LARAVEL_DIR/config/"
+    log "config/ sincronizado"
 fi
 
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1
@@ -87,7 +110,7 @@ chmod -R 775 storage bootstrap/cache 2>/dev/null
 log "=== DEPLOY COMPLETADO ==="
 ```
 
-Para crear/recrear este script en Hostinger:
+Para crear o recrear este script en Hostinger (una sola vez):
 ```bash
 cat > /home/u283281385/deploy-sertecapp.sh << 'EOF'
 [contenido de arriba]
@@ -113,7 +136,7 @@ URL: [github.com/PENDZIUCH/SerTecApp/settings/hooks](https://github.com/PENDZIUC
 
 ## Credenciales git en Hostinger
 
-El repo necesita el token de GitHub en la URL del remote:
+El repo necesita el token de GitHub en la URL del remote para hacer pull sin pedir contraseña:
 
 ```bash
 git remote set-url origin https://TOKEN@github.com/PENDZIUCH/SerTecApp.git
@@ -131,7 +154,7 @@ Si el token expira: generar uno nuevo en [github.com/settings/tokens](https://gi
 deploy.bat "descripción del cambio"
 ```
 
-El webhook dispara automáticamente. No hay paso manual adicional.
+Eso hace todo. El webhook dispara automáticamente. No hay paso manual adicional.
 
 ### Verificar deploy
 ```bash
@@ -141,45 +164,103 @@ Debe terminar con `=== DEPLOY COMPLETADO ===`.
 
 ---
 
+## Cómo hacer bien un deploy nuevo desde cero (futuros proyectos)
+
+Para evitar el problema de los dos paths, seguir este orden desde el principio:
+
+**1. Estructura local correcta**
+
+El repo debe tener el proyecto Laravel en la raíz, no en un subdirectorio:
+```
+mi-proyecto/          ← repo git root
+├── app/
+├── config/
+├── routes/
+├── .env.example
+└── ...
+```
+
+**2. Clonar en Hostinger desde el nivel correcto**
+
+```bash
+cd /home/u283281385/domains/mi-dominio.com/
+git clone https://TOKEN@github.com/USER/REPO.git backend-laravel
+```
+
+Así `backend-laravel/` es el repo clonado completo, y `git pull` dentro de él actualiza directamente `app/`, `config/`, etc. sin necesidad de sincronización extra.
+
+**3. Configurar el public_html**
+
+```bash
+# index.php en public_html que apunta al proyecto
+echo '<?php require __DIR__ . "/../backend-laravel/public/index.php";' > /home/u283281385/domains/mi-dominio.com/public_html/index.php
+```
+
+**4. Script de deploy simplificado (sin doble path)**
+
+Para un proyecto bien estructurado, el script de deploy es mucho más simple:
+```bash
+#!/bin/bash
+cd /home/u283281385/domains/mi-dominio.com/backend-laravel
+cp .env /tmp/env_backup
+git pull origin main
+cp /tmp/env_backup .env
+php artisan config:clear && php artisan cache:clear && php artisan view:clear
+```
+
+**5. deploy.bat local simplificado**
+
+```batch
+cd "C:\ruta\al\proyecto"
+git add .
+git commit -m "%~1"
+git push origin main
+```
+
+Sin robocopy, sin sincronización de paths — directo.
+
+---
+
 ## Solución de problemas
 
-### git pull falla por conflicto local
+### git pull falla por conflicto
 ```bash
-git checkout -- app/Filament/Resources/ARCHIVO_EN_CONFLICTO.php
+git checkout -- archivo/en/conflicto.php
 git pull origin development
 ```
-Causa: archivo modificado manualmente en Hostinger. Siempre usar deploy.bat, nunca editar en Hostinger.
+**Causa:** archivo editado directamente en Hostinger. Nunca editar en producción.
+
+### Cambio en config/ no se refleja en producción
+Verificar que `deploy-sertecapp.sh` tenga el bloque de sincronización de `config/`. Si no lo tiene, recrear el script desde la sección anterior.
 
 ### El webhook no dispara
-1. GitHub → Settings → Webhooks → ver el último delivery y el código de respuesta
-2. Si da 403: el secret no coincide
-3. Verificar log: `cat /tmp/sertecapp_deploy.log`
+GitHub → Settings → Webhooks → ver el último delivery. Si da 403: el secret no coincide. Verificar log: `cat /tmp/sertecapp_deploy.log`
 
 ### git pull pide contraseña
-El token expiró o se revocó. Generar uno nuevo y:
+El token expiró. Generar uno nuevo y actualizar el remote:
 ```bash
-git remote set-url origin https://NUEVO_TOKEN@github.com/PENDZIUCH/SerTecApp.git
+git remote set-url origin https://NUEVO_TOKEN@github.com/USER/REPO.git
 ```
 
-### Cambios no se ven después del deploy
+### Los cambios no se ven después del deploy
 ```bash
 cd /home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel
-php artisan view:clear && php artisan cache:clear
+php artisan optimize:clear
 ```
 
 ---
 
 ## Reglas — no saltear
 
-1. **NUNCA editar archivos directamente en Hostinger** — el próximo deploy va a generar conflicto
+1. **NUNCA editar archivos directamente en Hostinger** — el próximo deploy genera conflicto
 2. **NUNCA commitear desde Hostinger** — pisa los fixes de local
-3. **NUNCA hacer git reset --hard en Hostinger** — rompe el repo
-4. **SIEMPRE usar deploy.bat** — sincroniza los dos paths del repo
+3. **NUNCA hacer git reset --hard en Hostinger** sin entender el estado
+4. **SIEMPRE usar deploy.bat** — sincroniza todos los paths del repo
 5. **El token de GitHub no va en el chat** — solo en la terminal
 
 ---
 
-## Referencia rápida del servidor
+## Referencia rápida
 
 | Dato | Valor |
 |---|---|
@@ -188,3 +269,4 @@ php artisan view:clear && php artisan cache:clear
 | Script deploy | `/home/u283281385/deploy-sertecapp.sh` |
 | Log deploy | `/tmp/sertecapp_deploy.log` |
 | Admin panel | `https://demo.pendziuch.com/sertecapp/login` |
+| Webhook secret | `SerTecDeploy2026!` |

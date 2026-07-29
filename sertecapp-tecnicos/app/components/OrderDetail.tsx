@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { API_URL } from '../../lib/config';
 
 interface OrderDetailProps {
   order: {
@@ -44,7 +45,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
     setLoadingParte(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = 'http://localhost:8787';
+      const apiUrl = API_URL;
       const response = await fetch(`${apiUrl}/api/v1/partes/${order.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

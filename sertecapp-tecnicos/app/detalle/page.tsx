@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '../../lib/config';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
@@ -31,7 +32,7 @@ function DetalleContent() {
   const loadParte = async (id: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8787/api/v1/partes/${id}`, {
+      const response = await fetch(`${API_URL}/api/v1/partes/${id}`, {
         headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
       });
       const data = await response.json();

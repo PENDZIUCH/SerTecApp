@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '../../lib/config';
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -18,7 +19,7 @@ function MagicLinkContent() {
     // Verificar token con el backend
     const verifyToken = async () => {
       try {
-        const apiUrl = 'http://localhost:8787';
+        const apiUrl = API_URL;
         const response = await fetch(`${apiUrl}/api/v1/magic-link/verify?token=${token}`, {
           headers: {
             'Authorization': `Bearer ${token}`,

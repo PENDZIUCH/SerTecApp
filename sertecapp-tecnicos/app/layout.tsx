@@ -56,6 +56,24 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#dc2626" />
         <link rel="apple-touch-icon" href="/icon.svg" />
+        {/* Script de tema — se ejecuta antes de React para evitar flash */}
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              try {
+                var theme = localStorage.getItem('theme') || 'system';
+                var root = document.documentElement;
+                if (theme === 'dark') {
+                  root.classList.add('dark');
+                } else if (theme === 'system') {
+                  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    root.classList.add('dark');
+                  }
+                }
+              } catch(e) {}
+            })();
+          `
+        }} />
       </head>
       <body className={`${inter.className} antialiased`}>
         {children}

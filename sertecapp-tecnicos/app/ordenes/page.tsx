@@ -405,16 +405,7 @@ export default function OrdenesPage() {
                           >
                             ☀️ Claro
                           </button>
-                          <button
-                            onClick={() => changeTheme('system')}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                              theme === 'system'
-                                ? 'bg-blue-500 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            💻 Auto
-                          </button>
+
                           <button
                             onClick={() => changeTheme('dark')}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${

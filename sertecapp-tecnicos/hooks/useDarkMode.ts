@@ -10,20 +10,27 @@ export const useDarkMode = () => {
 
   useEffect(() => {
     setMounted(true);
-    // Cargar preferencia guardada
     const saved = localStorage.getItem('theme') as Theme;
-    if (saved) {
+
+    if (saved === 'dark' || saved === 'light') {
       setTheme(saved);
       applyTheme(saved);
     } else {
-      applyTheme('system');
+      // Sin preferencia guardada o 'system' — detectar el sistema
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const resolved: Theme = prefersDark ? 'dark' : 'light';
+      setTheme(resolved);
+      applyTheme(resolved);
     }
 
-    // Listener para cambios de preferencia del sistema
+    // Listener para cambios del sistema (solo si no hay preferencia manual)
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
-      if (localStorage.getItem('theme') === 'system') {
-        applyTheme('system');
+      const current = localStorage.getItem('theme');
+      if (!current || current === 'system') {
+        const resolved: Theme = mediaQuery.matches ? 'dark' : 'light';
+        setTheme(resolved);
+        applyTheme(resolved);
       }
     };
     mediaQuery.addEventListener('change', handleChange);
@@ -32,18 +39,8 @@ export const useDarkMode = () => {
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
-    
-    // Limpiar todas las clases primero
     root.classList.remove('light', 'dark');
-    
-    if (newTheme === 'dark') {
-      root.classList.add('dark');
-    } else if (newTheme === 'light') {
-      root.classList.add('light');
-    } else {
-      // System preference - no agregar ninguna clase
-      // El CSS usa @media (prefers-color-scheme: dark)
-    }
+    if (newTheme === 'dark') root.classList.add('dark');
   };
 
   const changeTheme = (newTheme: Theme) => {

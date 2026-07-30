@@ -39,6 +39,16 @@ function ParteContent() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showOfflineModal, setShowOfflineModal] = useState(false);
 
+  // Inicializar canvas con fondo blanco al montar
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
   const startDrawing = (e: React.TouchEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     setIsDrawing(true);
@@ -78,7 +88,12 @@ function ParteContent() {
   const stopDrawing = () => {
     setIsDrawing(false);
     const canvas = canvasRef.current;
-    if (canvas) setFirma(canvas.toDataURL());
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const hasContent = Array.from(imageData.data).some((pixel, index) => index % 4 === 3 && pixel > 0);
+    if (hasContent) setFirma(canvas.toDataURL());
   };
 
   const clearSignature = () => {
@@ -86,7 +101,8 @@ function ParteContent() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     setFirma(null);
   };
 
@@ -111,7 +127,7 @@ function ParteContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnostico.trim() || !trabajoRealizado.trim()) { showErrorToast('Completá el diagnóstico y el trabajo realizado'); return; }
-    if (!firma) { showErrorToast('Falta la firma del cliente'); return; }
+    if (!firma) { showErrorToast('La firma del cliente es obligatoria'); return; }
     if (!orderId) { showErrorToast('Error: no hay ID de orden'); return; }
     if (saving) return;
     setSaving(true);
@@ -240,7 +256,7 @@ function ParteContent() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
             <canvas ref={canvasRef} width={600} height={200}
               className="w-full touch-none bg-white"
-              style={{ maxWidth: '100%', height: 'auto', aspectRatio: '3/1' }}
+              style={{ maxWidth: '100%', height: 'auto', aspectRatio: '3/1', backgroundColor: '#ffffff' }}
               onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
               onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} />
           </div>

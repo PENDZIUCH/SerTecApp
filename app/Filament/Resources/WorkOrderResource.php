@@ -74,12 +74,12 @@ class WorkOrderResource extends Resource
                     Forms\Components\Select::make('priority')
                         ->label('Prioridad')
                         ->options([
-                            1 => 'Baja',
-                            2 => 'Media',
-                            3 => 'Alta',
-                            4 => 'Urgente',
+                            'low'    => 'Baja',
+                            'medium' => 'Media',
+                            'high'   => 'Alta',
+                            'urgent' => 'Urgente',
                         ])
-                        ->default(2)
+                        ->default('medium')
                         ->required(),
 
                     Forms\Components\Textarea::make('description')
@@ -177,6 +177,20 @@ class WorkOrderResource extends Resource
                     ->label('Técnico')
                     ->searchable()
                     ->default('Sin asignar'),
+                                Tables\Columns\BadgeColumn::make('priority')
+                    ->label('Prioridad')
+                    ->formatStateUsing(fn ($state) => match($state) {
+                        'low'    => 'Baja',
+                        'medium' => 'Media',
+                        'high'   => 'Alta',
+                        'urgent' => 'Urgente',
+                        default  => $state,
+                    })
+                    ->colors([
+                        'success' => 'low',
+                        'warning' => 'medium',
+                        'danger'  => fn ($state) => in_array($state, ['high', 'urgent']),
+                    ]),
                 Tables\Columns\TextColumn::make('description')
                     ->label('Descripción')
                     ->limit(50),

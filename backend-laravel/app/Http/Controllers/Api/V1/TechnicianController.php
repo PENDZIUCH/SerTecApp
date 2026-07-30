@@ -205,7 +205,7 @@ class TechnicianController extends Controller
 
     private function mapPriority($priority)
     {
-        return [1 => 'baja', 2 => 'media', 3 => 'alta', 4 => 'urgente'][$priority] ?? 'media';
+        return ['low' => 'baja', 'medium' => 'media', 'high' => 'alta', 'urgent' => 'urgente'][$priority] ?? $priority;
     }
 
     private function mapStatus($status)

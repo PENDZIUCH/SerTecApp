@@ -15,16 +15,18 @@ git pull origin development >> "$LOG" 2>&1
 
 cp /tmp/sertecapp_env_backup .env
 
-# Sincronizar app/ y config/ del repo raíz → backend-laravel/
-# Sin -u para SIEMPRE sobreescribir independientemente de fechas
+# Sincronizar app/ y config/ — tocar archivos del repo para que tengan fecha actual
+# y luego copiar forzado para siempre sobreescribir
 if [ -d "$REPO_ROOT/app" ]; then
+    find "$REPO_ROOT/app" -type f -exec touch {} \;
     cp -rf "$REPO_ROOT/app/." "$LARAVEL_DIR/app/"
-    log "app/ sincronizado (forzado)"
+    log "app/ sincronizado (forzado con touch)"
 fi
 
 if [ -d "$REPO_ROOT/config" ]; then
+    find "$REPO_ROOT/config" -type f -exec touch {} \;
     cp -rf "$REPO_ROOT/config/." "$LARAVEL_DIR/config/"
-    log "config/ sincronizado (forzado)"
+    log "config/ sincronizado (forzado con touch)"
 fi
 
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1

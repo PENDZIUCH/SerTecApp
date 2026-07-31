@@ -52,7 +52,12 @@ class LatestWorkOrdersWidget extends BaseWidget
                     ]),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creada')
-                    ->date('d/m/Y')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('completed_at')
+                    ->label('Completada')
+                    ->dateTime('d/m/Y H:i')
+                    ->default('—')
                     ->sortable(),
             ])
             ->actions([

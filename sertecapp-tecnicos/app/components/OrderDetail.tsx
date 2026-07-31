@@ -154,7 +154,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
               {parte.signature && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Firma del Cliente</h4>
-                  <img src={parte.signature} alt="Firma" className="border border-gray-300 dark:border-gray-600 rounded-lg max-w-full h-auto" />
+                  <img src={parte.signature} alt="Firma" className="border border-gray-300 dark:border-gray-600 rounded-lg max-w-full h-auto bg-white" />
                 </div>
               )}
 

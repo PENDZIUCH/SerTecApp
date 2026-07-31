@@ -41,12 +41,16 @@ function ParteContent() {
 
   // Inicializar canvas con fondo blanco al montar
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const initCanvas = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+    // Esperar a que el canvas tenga dimensiones reales
+    setTimeout(initCanvas, 100);
   }, []);
 
   const startDrawing = (e: React.TouchEvent<HTMLCanvasElement> | React.MouseEvent<HTMLCanvasElement>) => {
@@ -254,7 +258,7 @@ function ParteContent() {
         <div className="bg-white rounded-lg p-4 border border-gray-200">
           <label className="block text-sm font-semibold text-gray-900 mb-2">Firma del Cliente *</label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden bg-gray-50">
-            <canvas ref={canvasRef} width={600} height={200}
+            <canvas ref={(el) => { (canvasRef as React.MutableRefObject<HTMLCanvasElement|null>).current = el; if (el) { const ctx = el.getContext('2d'); if (ctx) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, el.width, el.height); } } }} width={600} height={200}
               className="w-full touch-none bg-white"
               style={{ maxWidth: '100%', height: 'auto', aspectRatio: '3/1', backgroundColor: '#ffffff' }}
               onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}

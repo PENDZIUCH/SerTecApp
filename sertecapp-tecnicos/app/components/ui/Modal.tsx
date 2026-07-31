@@ -25,15 +25,16 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop + container — click fuera cierra el modal */}
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 animate-fade-in"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 animate-fade-in flex items-center justify-center p-4"
         onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-up border border-white/20 dark:border-gray-700/50">
+      >
+        {/* Modal — stopPropagation para que el click adentro no cierre */}
+        <div 
+          className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-up border border-white/20 dark:border-gray-700/50 z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>

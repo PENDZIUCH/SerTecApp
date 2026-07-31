@@ -102,6 +102,7 @@ class WorkOrderResource extends Resource
             Forms\Components\Section::make('Repuestos Utilizados')
                 ->schema([
                     Forms\Components\Repeater::make('partsUsed')
+                        ->label('Repuestos')
                         ->relationship('partsUsed')
                         ->schema([
                             Forms\Components\Select::make('part_id')
@@ -215,6 +216,7 @@ class WorkOrderResource extends Resource
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordUrl(fn (WorkOrder $record): string => WorkOrderResource::getUrl('edit', ['record' => $record]))
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Estado')

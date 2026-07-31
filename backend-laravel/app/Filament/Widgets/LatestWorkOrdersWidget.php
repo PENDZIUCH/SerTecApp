@@ -65,6 +65,7 @@ class LatestWorkOrdersWidget extends BaseWidget
                     ->icon('heroicon-o-pencil')
                     ->url(fn (WorkOrder $record): string => WorkOrderResource::getUrl('edit', ['record' => $record->getKey()])),
             ])
+            ->recordUrl(fn (WorkOrder $record): string => WorkOrderResource::getUrl('edit', ['record' => $record]))
             ->heading('Últimas Órdenes de Trabajo');
     }
 }

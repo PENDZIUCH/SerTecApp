@@ -14,7 +14,7 @@ function getGeoLocation(): Promise<{lat: number; lng: number} | null> {
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => resolve(null),
-      { timeout: 5000, maximumAge: 60000 }
+      { timeout: 15000, maximumAge: 60000 }
     );
   });
 }
@@ -38,6 +38,12 @@ function ParteContent() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showOfflineModal, setShowOfflineModal] = useState(false);
+  const [precachedGeo, setPrecachedGeo] = useState<{lat: number; lng: number} | null>(null);
+
+  // Obtener ubicación al abrir el formulario — ya lista cuando el tecnico termine
+  useEffect(() => {
+    getGeoLocation().then(geo => { if (geo) setPrecachedGeo(geo); });
+  }, []);
 
   // Inicializar canvas con fondo blanco al montar
   useEffect(() => {
@@ -138,8 +144,8 @@ function ParteContent() {
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // Intentar obtener geolocalización en paralelo (no bloquea)
-    const geo = await getGeoLocation();
+    // Usar ubicación precargada o intentar obtenerla ahora
+    const geo = precachedGeo || await getGeoLocation();
 
     const parteData: any = {
       orden_id: parseInt(orderId),

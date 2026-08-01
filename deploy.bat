@@ -1,5 +1,5 @@
 @echo off
-REM deploy.bat — commit + push desde local
+REM deploy.bat — commit + push a development
 REM Uso: deploy.bat "mensaje del commit"
 
 SET MSG=%~1
@@ -13,7 +13,7 @@ git diff --cached --quiet && (echo     Sin cambios nuevos.) || (git commit -m "%
 
 echo.
 echo [2/3] Pusheando a GitHub...
-git push origin fix/deploy-git-archive
+git push origin development
 echo     OK
 
 echo.

@@ -1,42 +1,39 @@
 # Guía: Integración Continua en Hostinger con GitHub Webhooks
 
-> Última actualización: 2026-07-28 — Funcionando en producción ✅
+> Última actualización: 2026-07-31 — Solución definitiva con git archive ✅
 
 ## Qué logramos
-Cada `deploy.bat "mensaje"` desde local actualiza Hostinger automáticamente en segundos sin intervención manual.
+Cada `deploy.bat "mensaje"` desde local actualiza Hostinger automáticamente en segundos. El deploy usa `git archive` para extraer el contenido exacto del remote — sin comparar fechas, sin rsync, sin parches manuales.
 
 ---
 
-## El problema estructural — leer antes de empezar
+## El problema que tuvimos (y cómo se resolvió)
 
-Este proyecto tiene un problema de estructura heredado: el repo en Hostinger tiene su root en `backend-laravel/` pero localmente el root es `SerTecApp/`. Esto genera dos paths distintos para los mismos archivos:
+El repo tiene archivos en DOS paths distintos porque el repo en Hostinger tiene su root en `backend-laravel/` pero localmente el root es `SerTecApp/`:
 
 | Path en GitHub | Quién lo usa |
 |---|---|
 | `app/Filament/...` | Hostinger (su repo root es `backend-laravel/`) |
 | `backend-laravel/app/Filament/...` | Local (repo root es `SerTecApp/`) |
 
-**Para futuros proyectos: evitar esto clonando el repo en Hostinger desde el nivel correcto.** Ver sección "Cómo hacer bien un deploy nuevo desde cero" al final.
+**Intentos fallidos:**
+- `cp -rf` — pierde contra archivos con fecha más reciente en Hostinger
+- `rsync --checksum` — compara checksums pero el `public_html/app/` que usa como fuente está FUERA del repo de Hostinger y nunca se actualiza con `git pull`
 
----
+**La solución correcta: `git archive`**
 
-## Solución implementada
+`git archive` lee directamente del objeto git en el remote — ignora fechas, ignora archivos en disco, siempre extrae el contenido exacto de lo que está en GitHub. No hay forma de que falle por problemas de fechas o archivos locales más nuevos.
 
-**`deploy.bat`** (local) sincroniza los subdirectorios de `backend-laravel/` a la raíz del repo antes de commitear:
-
-```
-backend-laravel/app/     → app/
-backend-laravel/config/  → config/
-backend-laravel/routes/  → routes/
-backend-laravel/resources/ → resources/
+```bash
+git fetch origin development
+git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
 ```
 
-**`deploy-sertecapp.sh`** (Hostinger) hace `git pull` y luego copia los archivos del repo raíz al directorio de Laravel:
-
-```
-app/     → backend-laravel/app/
-config/  → backend-laravel/config/
-```
+Lo que hace:
+1. `git archive origin/development backend-laravel/` — crea un tar del contenido de `backend-laravel/` tal como está en GitHub
+2. `--strip-components=1` — elimina el prefijo `backend-laravel/`
+3. `-C "$LARAVEL_DIR/"` — extrae en `/public_html/backend-laravel/`
+4. Resultado: archivos en el lugar correcto, con el contenido exacto de GitHub
 
 ---
 
@@ -45,29 +42,18 @@ config/  → backend-laravel/config/
 ```
 Local (Windows)
     ↓ deploy.bat "mensaje"
-    ↓ robocopy: backend-laravel/{app,config,routes,resources} → raíz del repo
-    ↓ git commit + push
-GitHub (repo)
+    ↓ git add backend-laravel/ + commit + push
+GitHub (repo, rama development)
     ↓ webhook POST a deploy.php
 Hostinger deploy.php
     ↓ valida firma HMAC + lanza script en background
 deploy-sertecapp.sh
-    ↓ git pull
-    ↓ cp app/ → backend-laravel/app/
-    ↓ cp config/ → backend-laravel/config/
+    ↓ git fetch origin
+    ↓ git archive origin/development backend-laravel/ | tar extract
+    ↓ restaurar .env
     ↓ php artisan config:clear + cache:clear + view:clear
-Hostinger (producción actualizada ✅)
+Hostinger (producción actualizada ✅ — siempre exactamente lo que está en GitHub)
 ```
-
----
-
-## Archivos clave
-
-| Archivo | Ubicación | Función |
-|---|---|---|
-| `deploy.bat` | `SerTecApp/deploy.bat` | Script local — sincroniza, commitea, pushea |
-| `deploy.php` | `public_html/deploy.php` | Recibe webhook de GitHub, valida firma, lanza script |
-| `deploy-sertecapp.sh` | `/home/u283281385/deploy-sertecapp.sh` | git pull + sincroniza paths + artisan clear |
 
 ---
 
@@ -78,7 +64,6 @@ Hostinger (producción actualizada ✅)
 ```bash
 #!/bin/bash
 LARAVEL_DIR="/home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel"
-REPO_ROOT="/home/u283281385/domains/demo.pendziuch.com/public_html"
 LOG="/tmp/sertecapp_deploy.log"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG"; }
@@ -88,19 +73,16 @@ log "=== DEPLOY INICIADO ==="
 cd "$LARAVEL_DIR"
 
 cp .env /tmp/sertecapp_env_backup
-git pull origin development >> "$LOG" 2>&1
-cp /tmp/sertecapp_env_backup .env
+log ".env respaldado"
 
-# Sincronizar app/ y config/ del repo raíz → backend-laravel/
-if [ -d "$REPO_ROOT/app" ]; then
-    cp -ru "$REPO_ROOT/app/." "$LARAVEL_DIR/app/"
-    log "app/ sincronizado"
-fi
+git fetch origin development >> "$LOG" 2>&1
+log "git fetch completado"
 
-if [ -d "$REPO_ROOT/config" ]; then
-    cp -ru "$REPO_ROOT/config/." "$LARAVEL_DIR/config/"
-    log "config/ sincronizado"
-fi
+git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
+log "git archive extraído correctamente"
+
+cp /tmp/sertecapp_env_backup "$LARAVEL_DIR/.env"
+log ".env restaurado"
 
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1
 /usr/bin/php artisan cache:clear >> "$LOG" 2>&1
@@ -110,7 +92,7 @@ chmod -R 775 storage bootstrap/cache 2>/dev/null
 log "=== DEPLOY COMPLETADO ==="
 ```
 
-Para crear o recrear este script en Hostinger (una sola vez):
+Para crear/recrear en Hostinger:
 ```bash
 cat > /home/u283281385/deploy-sertecapp.sh << 'EOF'
 [contenido de arriba]
@@ -120,9 +102,26 @@ chmod +x /home/u283281385/deploy-sertecapp.sh
 
 ---
 
+## deploy.bat local (versión simplificada)
+
+```batch
+@echo off
+SET MSG=%~1
+IF "%MSG%"=="" SET MSG=fix: actualizacion de codigo
+
+cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp"
+git add backend-laravel/app/ backend-laravel/config/ backend-laravel/routes/ backend-laravel/resources/ CLAUDE.md deploy.bat deploy-sertecapp.sh sertecapp-tecnicos/
+git diff --cached --quiet && echo "Sin cambios" || git commit -m "%MSG%"
+git push origin development
+```
+
+**Sin robocopy** — ya no hace falta porque `git archive` en Hostinger toma directamente de `backend-laravel/` en el remote.
+
+---
+
 ## Webhook en GitHub
 
-URL: [github.com/PENDZIUCH/SerTecApp/settings/hooks](https://github.com/PENDZIUCH/SerTecApp/settings/hooks)
+[github.com/PENDZIUCH/SerTecApp/settings/hooks](https://github.com/PENDZIUCH/SerTecApp/settings/hooks)
 
 | Campo | Valor |
 |---|---|
@@ -130,21 +129,17 @@ URL: [github.com/PENDZIUCH/SerTecApp/settings/hooks](https://github.com/PENDZIUC
 | Content type | `application/json` |
 | Secret | `SerTecDeploy2026!` |
 | Events | Just the push event |
-| Active | ✅ |
+| Branch | `development` |
 
 ---
 
 ## Credenciales git en Hostinger
 
-El repo necesita el token de GitHub en la URL del remote para hacer pull sin pedir contraseña:
-
 ```bash
 git remote set-url origin https://TOKEN@github.com/PENDZIUCH/SerTecApp.git
 ```
 
-**Nunca pegar el token en el chat** — armarlo en bloc de notas y pegarlo directo en SSH.
-
-Si el token expira: generar uno nuevo en [github.com/settings/tokens](https://github.com/settings/tokens) (scope: repo, sin expiración) y actualizar el remote.
+Token: sin expiración, scope `repo`. Nunca pegarlo en el chat.
 
 ---
 
@@ -154,7 +149,7 @@ Si el token expira: generar uno nuevo en [github.com/settings/tokens](https://gi
 deploy.bat "descripción del cambio"
 ```
 
-Eso hace todo. El webhook dispara automáticamente. No hay paso manual adicional.
+El webhook dispara automáticamente. Sin SSH manual. Sin parches.
 
 ### Verificar deploy
 ```bash
@@ -164,99 +159,51 @@ Debe terminar con `=== DEPLOY COMPLETADO ===`.
 
 ---
 
-## Cómo hacer bien un deploy nuevo desde cero (futuros proyectos)
+## Para futuros proyectos en Hostinger — hacerlo bien desde el principio
 
-Para evitar el problema de los dos paths, seguir este orden desde el principio:
-
-**1. Estructura local correcta**
-
-El repo debe tener el proyecto Laravel en la raíz, no en un subdirectorio:
-```
-mi-proyecto/          ← repo git root
-├── app/
-├── config/
-├── routes/
-├── .env.example
-└── ...
-```
-
-**2. Clonar en Hostinger desde el nivel correcto**
+Para evitar el problema de doble path, clonar el repo directamente en el nivel correcto:
 
 ```bash
-cd /home/u283281385/domains/mi-dominio.com/
+cd /home/u283281385/domains/nuevo-dominio.com/
 git clone https://TOKEN@github.com/USER/REPO.git backend-laravel
 ```
 
-Así `backend-laravel/` es el repo clonado completo, y `git pull` dentro de él actualiza directamente `app/`, `config/`, etc. sin necesidad de sincronización extra.
+Así `backend-laravel/` es el repo clonado completo. `git pull` dentro de él actualiza `app/`, `config/`, etc. directamente sin necesidad de `git archive`.
 
-**3. Configurar el public_html**
-
+El `deploy-sertecapp.sh` en ese caso se simplifica a:
 ```bash
-# index.php en public_html que apunta al proyecto
-echo '<?php require __DIR__ . "/../backend-laravel/public/index.php";' > /home/u283281385/domains/mi-dominio.com/public_html/index.php
-```
-
-**4. Script de deploy simplificado (sin doble path)**
-
-Para un proyecto bien estructurado, el script de deploy es mucho más simple:
-```bash
-#!/bin/bash
-cd /home/u283281385/domains/mi-dominio.com/backend-laravel
+cd /home/.../backend-laravel
 cp .env /tmp/env_backup
 git pull origin main
 cp /tmp/env_backup .env
 php artisan config:clear && php artisan cache:clear && php artisan view:clear
 ```
 
-**5. deploy.bat local simplificado**
-
-```batch
-cd "C:\ruta\al\proyecto"
-git add .
-git commit -m "%~1"
-git push origin main
-```
-
-Sin robocopy, sin sincronización de paths — directo.
-
 ---
 
 ## Solución de problemas
 
-### git pull falla por conflicto
-```bash
-git checkout -- archivo/en/conflicto.php
-git pull origin development
-```
-**Causa:** archivo editado directamente en Hostinger. Nunca editar en producción.
-
-### Cambio en config/ no se refleja en producción
-Verificar que `deploy-sertecapp.sh` tenga el bloque de sincronización de `config/`. Si no lo tiene, recrear el script desde la sección anterior.
-
 ### El webhook no dispara
-GitHub → Settings → Webhooks → ver el último delivery. Si da 403: el secret no coincide. Verificar log: `cat /tmp/sertecapp_deploy.log`
+GitHub → Settings → Webhooks → ver el último delivery. Si da 403: el secret no coincide.
+
+### git archive falla
+```bash
+git fetch origin development
+git archive origin/development backend-laravel/ | tar -tf - | head -20
+```
+Si lista archivos, el archive funciona. Si da error, verificar que el remote esté accesible.
 
 ### git pull pide contraseña
-El token expiró. Generar uno nuevo y actualizar el remote:
+El token expiró. Generar uno nuevo y:
 ```bash
-git remote set-url origin https://NUEVO_TOKEN@github.com/USER/REPO.git
+git remote set-url origin https://NUEVO_TOKEN@github.com/PENDZIUCH/SerTecApp.git
 ```
 
-### Los cambios no se ven después del deploy
+### Rollback de emergencia
 ```bash
-cd /home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel
-php artisan optimize:clear
+git checkout v0.1-stable  # vuelve al estado estable
 ```
-
----
-
-## Reglas — no saltear
-
-1. **NUNCA editar archivos directamente en Hostinger** — el próximo deploy genera conflicto
-2. **NUNCA commitear desde Hostinger** — pisa los fixes de local
-3. **NUNCA hacer git reset --hard en Hostinger** sin entender el estado
-4. **SIEMPRE usar deploy.bat** — sincroniza todos los paths del repo
-5. **El token de GitHub no va en el chat** — solo en la terminal
+O desde local hacer `git push --force origin v0.1-stable:development` y re-deployar.
 
 ---
 
@@ -270,3 +217,4 @@ php artisan optimize:clear
 | Log deploy | `/tmp/sertecapp_deploy.log` |
 | Admin panel | `https://demo.pendziuch.com/sertecapp/login` |
 | Webhook secret | `SerTecDeploy2026!` |
+| Tag estable | `v0.1-stable` |

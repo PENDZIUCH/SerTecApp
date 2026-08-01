@@ -1,6 +1,9 @@
 #!/bin/bash
+# deploy-sertecapp.sh
+# Usa git archive para extraer contenido EXACTO del remote
+# Elimina el problema de fechas/rsync definitivamente
+
 LARAVEL_DIR="/home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel"
-REPO_ROOT="/home/u283281385/domains/demo.pendziuch.com/public_html"
 LOG="/tmp/sertecapp_deploy.log"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG"; }
@@ -9,29 +12,26 @@ log "=== DEPLOY INICIADO ==="
 
 cd "$LARAVEL_DIR"
 
+# Backup del .env antes de cualquier cambio
 cp .env /tmp/sertecapp_env_backup
+log ".env respaldado"
 
-git pull origin development >> "$LOG" 2>&1
+# Traer últimos cambios del remote
+git fetch origin development >> "$LOG" 2>&1
+log "git fetch completado"
 
-cp /tmp/sertecapp_env_backup .env
+# Extraer el contenido exacto de backend-laravel/ del remote
+# git archive lee del objeto git directamente — ignora fechas y archivos locales
+# --strip-components=1 elimina el prefijo backend-laravel/
+# El resultado se extrae en LARAVEL_DIR con los paths correctos
+git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
+log "git archive extraído correctamente"
 
-# rsync --checksum: compara contenido del archivo, no fechas
-# Siempre gana el repo, sin importar cuándo se editó en Hostinger
-if [ -d "$REPO_ROOT/app" ]; then
-    rsync -a --checksum --delete "$REPO_ROOT/app/" "$LARAVEL_DIR/app/"
-    log "app/ sincronizado con rsync --checksum"
-fi
+# Restaurar .env (git archive no lo toca porque está en .gitignore)
+cp /tmp/sertecapp_env_backup "$LARAVEL_DIR/.env"
+log ".env restaurado"
 
-if [ -d "$REPO_ROOT/config" ]; then
-    rsync -a --checksum "$REPO_ROOT/config/" "$LARAVEL_DIR/config/"
-    log "config/ sincronizado con rsync --checksum"
-fi
-
-if [ -d "$REPO_ROOT/routes" ]; then
-    rsync -a --checksum "$REPO_ROOT/routes/" "$LARAVEL_DIR/routes/"
-    log "routes/ sincronizado con rsync --checksum"
-fi
-
+# Artisan
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1
 /usr/bin/php artisan cache:clear >> "$LOG" 2>&1
 /usr/bin/php artisan view:clear >> "$LOG" 2>&1

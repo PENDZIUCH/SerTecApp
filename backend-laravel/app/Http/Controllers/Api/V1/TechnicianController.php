@@ -80,6 +80,8 @@ class TechnicianController extends Controller
                 'signature'     => $request->firma_base64,
                 'photos'        => $request->fotos,
                 'status'        => 'pending_approval',
+                'latitude'      => $request->lat,
+                'longitude'     => $request->lng,
             ]);
 
             $order = WorkOrder::find($request->orden_id);

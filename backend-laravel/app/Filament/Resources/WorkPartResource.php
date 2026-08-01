@@ -60,6 +60,27 @@ class WorkPartResource extends Resource
                 ])
                 ->visible(fn ($record) => $record && $record->signature),
             
+            
+            Forms\Components\Section::make('Ubicación del Parte')
+                ->schema([
+                    Forms\Components\Placeholder::make('mapa')
+                        ->label('Dónde se completó')
+                        ->content(function ($record) {
+                            if (!$record || !$record->latitude || !$record->longitude) {
+                                return 'Sin datos de ubicación';
+                            }
+                            $lat = $record->latitude;
+                            $lng = $record->longitude;
+                            $url = "https://www.google.com/maps?q={$lat},{$lng}";
+                            return new \Illuminate\Support\HtmlString(
+                                "<a href='{$url}' target='_blank' class='text-primary-600 hover:underline font-medium'>
+                                    📍 Ver en Google Maps ({$lat}, {$lng})
+                                </a>"
+                            );
+                        }),
+                ])
+                ->visible(fn ($record) => $record && $record->latitude),
+
             Forms\Components\Section::make('Supervisión')
                 ->schema([
                     Forms\Components\Select::make('status')

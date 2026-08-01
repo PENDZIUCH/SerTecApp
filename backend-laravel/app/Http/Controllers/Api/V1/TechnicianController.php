@@ -84,6 +84,7 @@ class TechnicianController extends Controller
 
             $order = WorkOrder::find($request->orden_id);
             $order->status = 'completed';
+            $order->completed_at = now();
             $order->save();
 
             DB::commit();

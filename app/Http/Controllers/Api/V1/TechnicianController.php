@@ -91,9 +91,8 @@ class TechnicianController extends Controller
             // Notificaciones en bloque separado — si fallan no afectan el guardado
             try {
                 $technician = \App\Models\User::find($request->tecnico_id);
-                $supervisors = \App\Models\User::where('role', 'supervisor')
-                    ->orWhere('email', 'admin@demo.com')
-                    ->get();
+                // Buscar supervisores y super_admins usando Spatie roles
+                $supervisors = \App\Models\User::role(['supervisor', 'super_admin'])->get();
 
                 foreach ($supervisors as $supervisor) {
                     \Filament\Notifications\Notification::make()

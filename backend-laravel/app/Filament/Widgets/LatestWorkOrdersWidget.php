@@ -27,11 +27,8 @@ class LatestWorkOrdersWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('customer.business_name')
                     ->label('Cliente')
                     ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('equipment.serial_number')
-                    ->label('Equipo')
-                    ->searchable()
-                    ->default('Sin asignar'),
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => mb_convert_encoding($state ?? '', 'UTF-8', 'UTF-8')),
                 Tables\Columns\TextColumn::make('assignedTech.name')
                     ->label('Técnico')
                     ->default('Sin asignar'),
@@ -57,7 +54,7 @@ class LatestWorkOrdersWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('completed_at')
                     ->label('Completada')
                     ->dateTime('d/m/Y H:i')
-                    ->default('—')
+                    ->placeholder('—')
                     ->sortable(),
             ])
             ->actions([

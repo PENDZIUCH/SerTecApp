@@ -196,8 +196,9 @@ class TechnicianController extends Controller
                     'diagnosis'  => $parte->diagnosis,
                     'work_done'  => $parte->work_done,
                     'signature'  => $parte->signature,
-                    'status'     => $parte->status,
-                    'created_at' => $parte->created_at->toISOString(),
+                    'status'            => $parte->status,
+                    'supervisor_notes'  => $parte->supervisor_notes,
+                    'created_at'        => $parte->created_at->toISOString(),
                 ],
             ]);
         } catch (\Exception $e) {

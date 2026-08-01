@@ -161,21 +161,39 @@ class WorkPartResource extends Resource
                     ->label('Aprobar')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->requiresConfirmation()
                     ->visible(fn (WorkPart $record) => $record->status === 'pending_approval')
-                    ->action(function (WorkPart $record) {
-                        DB::transaction(function () use ($record) {
+                    ->form([
+                        Forms\Components\Textarea::make('supervisor_notes')
+                            ->label('Notas para el técnico (opcional)')
+                            ->placeholder('Trabajo bien realizado, todo correcto...')
+                            ->rows(3),
+                    ])
+                    ->action(function (WorkPart $record, array $data) {
+                        DB::transaction(function () use ($record, $data) {
                             $record->update([
                                 'status' => 'approved',
                                 'approved_at' => now(),
+                                'supervisor_notes' => $data['supervisor_notes'] ?? null,
                             ]);
-                            
                             $record->workOrder->update([
                                 'status' => 'completed',
                                 'completed_at' => now(),
                             ]);
                         });
-                        
+
+                        // Notificar al técnico
+                        try {
+                            $tecnico = $record->technician;
+                            if ($tecnico) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('✅ Parte Aprobado')
+                                    ->body('Tu parte de la Orden #' . $record->work_order_id . ' fue aprobado.' .
+                                        ($data['supervisor_notes'] ? ' Nota: ' . $data['supervisor_notes'] : ''))
+                                    ->success()
+                                    ->sendToDatabase($tecnico);
+                            }
+                        } catch (\Exception $e) {}
+
                         Notification::make()
                             ->title('Parte Aprobado')
                             ->success()
@@ -186,22 +204,41 @@ class WorkPartResource extends Resource
                     ->label('Rechazar')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->requiresConfirmation()
                     ->visible(fn (WorkPart $record) => $record->status === 'pending_approval')
                     ->form([
                         Forms\Components\Textarea::make('supervisor_notes')
-                            ->label('Motivo del Rechazo')
+                            ->label('Motivo del rechazo (obligatorio)')
                             ->required()
+                            ->placeholder('Indicar qué debe corregir el técnico...')
                             ->rows(3),
                     ])
                     ->action(function (WorkPart $record, array $data) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                        
+                        DB::transaction(function () use ($record, $data) {
+                            $record->update([
+                                'status' => 'rejected',
+                                'supervisor_notes' => $data['supervisor_notes'],
+                            ]);
+                            // La orden vuelve a pendiente para que el técnico la retome
+                            $record->workOrder->update([
+                                'status' => 'pending',
+                                'completed_at' => null,
+                            ]);
+                        });
+
+                        // Notificar al técnico
+                        try {
+                            $tecnico = $record->technician;
+                            if ($tecnico) {
+                                \Filament\Notifications\Notification::make()
+                                    ->title('❌ Parte Rechazado')
+                                    ->body('Tu parte de la Orden #' . $record->work_order_id . ' fue rechazado. Motivo: ' . $data['supervisor_notes'])
+                                    ->danger()
+                                    ->sendToDatabase($tecnico);
+                            }
+                        } catch (\Exception $e) {}
+
                         Notification::make()
-                            ->title('Parte Rechazado')
+                            ->title('Parte Rechazado — Orden volvió a Pendiente')
                             ->warning()
                             ->send();
                     }),

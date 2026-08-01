@@ -158,6 +158,21 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
                 </div>
               )}
 
+              {/* Estado de aprobación */
+              }
+              {parte.status && parte.status !== 'pending_approval' && (
+                <div className={`p-3 rounded-lg ${parte.status === 'approved' ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700'}`}>
+                  <p className={`text-sm font-medium ${parte.status === 'approved' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                    {parte.status === 'approved' ? '✅ Parte Aprobado' : '❌ Parte Rechazado'}
+                  </p>
+                  {parte.supervisor_notes && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                      <span className="font-medium">Nota del supervisor:</span> {parte.supervisor_notes}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Fecha */}
               <div>
                 <p className="text-xs text-gray-400 dark:text-gray-500">

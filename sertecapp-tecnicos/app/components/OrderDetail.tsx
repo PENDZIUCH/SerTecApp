@@ -21,6 +21,7 @@ interface Parte {
   work_done: string;
   signature: string;
   status: string;
+  supervisor_notes?: string;
   created_at: string;
 }
 

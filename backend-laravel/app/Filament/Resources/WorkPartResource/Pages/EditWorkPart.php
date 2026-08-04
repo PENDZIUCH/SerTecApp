@@ -14,7 +14,16 @@ class EditWorkPart extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('volver')
+                ->label('← Volver')
+                ->color('gray')
+                ->url(WorkPartResource::getUrl('index')),
             Actions\DeleteAction::make()->label('Eliminar'),
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return WorkPartResource::getUrl('index');
     }
 }

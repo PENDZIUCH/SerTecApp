@@ -39,11 +39,28 @@ function ParteContent() {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showOfflineModal, setShowOfflineModal] = useState(false);
   const [precachedGeo, setPrecachedGeo] = useState<{lat: number; lng: number} | null>(null);
+  const [parteRechazado, setParteRechazado] = useState<{supervisor_notes: string} | null>(null);
 
   // Obtener ubicación al abrir el formulario — ya lista cuando el tecnico termine
   useEffect(() => {
     getGeoLocation().then(geo => { if (geo) setPrecachedGeo(geo); });
   }, []);
+
+  // Cargar parte rechazado previo para pre-llenar el formulario
+  useEffect(() => {
+    if (!orderId) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch(`${API_URL}/api/v1/partes/${orderId}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    }).then(r => r.json()).then(data => {
+      if (data.success && data.data?.status === 'rejected') {
+        setParteRechazado(data.data);
+        if (data.data.diagnosis) setDiagnostico(data.data.diagnosis);
+        if (data.data.work_done) setTrabajoRealizado(data.data.work_done);
+      }
+    }).catch(() => {});
+  }, [orderId]);
 
   // Inicializar canvas con fondo blanco al montar
   useEffect(() => {
@@ -102,8 +119,13 @@ function ParteContent() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const hasContent = Array.from(imageData.data).some((pixel, index) => index % 4 === 3 && pixel > 0);
-    if (hasContent) setFirma(canvas.toDataURL());
+    // Contar pixels con opacidad > 0 — mínimo 50 para firma válida
+    let pixelCount = 0;
+    for (let i = 3; i < imageData.data.length; i += 4) {
+      if (imageData.data[i] > 0) pixelCount++;
+    }
+    if (pixelCount > 50) setFirma(canvas.toDataURL());
+    else setFirma(null);
   };
 
   const clearSignature = () => {
@@ -213,6 +235,17 @@ function ParteContent() {
           </div>
         </div>
       </header>
+
+      {/* Banner parte rechazado */}
+      {parteRechazado && (
+        <div className="max-w-7xl mx-auto px-4 pt-4">
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+            <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">❌ Parte anterior rechazado — corregí los errores</p>
+            <p className="text-sm text-red-600 dark:text-red-300">{parteRechazado.supervisor_notes}</p>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-2">Los campos fueron pre-cargados con lo que completaste anteriormente. Corregí lo necesario y volvé a firmar.</p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="max-w-7xl mx-auto px-4 py-6 space-y-4">
         <div className="bg-white rounded-lg p-4 border border-gray-200">

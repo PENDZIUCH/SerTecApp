@@ -60,7 +60,7 @@ class TechnicianController extends Controller
             'diagnostico'      => 'required|string',
             'trabajo_realizado' => 'required|string',
             'repuestos_usados' => 'nullable|array',
-            'firma_base64'     => 'nullable|string',
+            'firma_base64'     => 'required|string|min:100', // Mínimo 100 chars para asegurar que es una firma real
             'fotos'            => 'nullable|array',
         ]);
 

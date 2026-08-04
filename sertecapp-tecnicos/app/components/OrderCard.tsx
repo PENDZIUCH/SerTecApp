@@ -10,6 +10,7 @@ interface OrderCardProps {
   address: string;
   priority: Priority;
   status: Status;
+  rejectedNote?: string | null;
   suggestedParts?: Array<{ id: number; name: string; stock: number }>;
   created_at?: string;
   completed_at?: string;
@@ -22,33 +23,29 @@ const priorityConfig = {
   urgente: {
     container: 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-l-4 border-red-500',
     badge: 'bg-red-500 text-white',
-    dot: 'bg-red-500',
     label: 'Urgente',
   },
   alta: {
     container: 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-l-4 border-orange-500',
     badge: 'bg-orange-500 text-white',
-    dot: 'bg-orange-500',
     label: 'Alta',
   },
   media: {
     container: 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-l-4 border-yellow-500',
     badge: 'bg-yellow-500 text-white',
-    dot: 'bg-yellow-500',
     label: 'Media',
   },
   baja: {
     container: 'bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-l-4 border-gray-400',
     badge: 'bg-gray-500 text-white',
-    dot: 'bg-gray-400',
     label: 'Baja',
-    },
+  },
 };
 
 const statusConfig = {
-  pendiente: { label: 'Pendiente', color: 'text-gray-600', bg: 'bg-gray-100' },
-  en_progreso: { label: 'En proceso', color: 'text-blue-700', bg: 'bg-blue-50' },
-  completado: { label: 'Completado', color: 'text-green-700', bg: 'bg-green-50' },
+  pendiente: { label: 'Pendiente', color: 'text-gray-600', bg: 'bg-gray-100 dark:bg-gray-700 dark:text-gray-300' },
+  en_progreso: { label: 'En proceso', color: 'text-blue-700', bg: 'bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300' },
+  completado: { label: 'Completado', color: 'text-green-700', bg: 'bg-green-50 dark:bg-green-900/30 dark:text-green-300' },
 };
 
 export const OrderCard: FC<OrderCardProps> = ({
@@ -58,6 +55,7 @@ export const OrderCard: FC<OrderCardProps> = ({
   address,
   priority,
   status,
+  rejectedNote,
   suggestedParts = [],
   created_at,
   completed_at,
@@ -65,13 +63,20 @@ export const OrderCard: FC<OrderCardProps> = ({
   onStart,
   onViewDetail,
 }) => {
-  const priorityStyle = priorityConfig[priority];
-  const statusStyle = statusConfig[status];
+  const priorityStyle = priorityConfig[priority] || priorityConfig['media'];
+  const statusStyle = statusConfig[status] || statusConfig['pendiente'];
 
   return (
-    <div
-      className={`${priorityStyle.container} rounded-lg shadow-sm hover:shadow-md transition-shadow p-4`}
-    >
+    <div className={`${priorityStyle.container} rounded-lg shadow-sm hover:shadow-md transition-shadow p-4`}>
+      
+      {/* Banner de parte rechazado — visible sin hacer click */}
+      {rejectedNote && (
+        <div className="mb-3 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md">
+          <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-0.5">❌ Parte rechazado — debés corregirlo</p>
+          <p className="text-xs text-red-600 dark:text-red-300 line-clamp-2">{rejectedNote}</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
@@ -103,10 +108,7 @@ export const OrderCard: FC<OrderCardProps> = ({
           <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Repuestos sugeridos</p>
           <div className="flex flex-wrap gap-1.5">
             {suggestedParts.map((part) => (
-              <span
-                key={part.id}
-                className="inline-flex items-center text-xs bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2 py-1 rounded border border-gray-200 dark:border-gray-500"
-              >
+              <span key={part.id} className="inline-flex items-center text-xs bg-white dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2 py-1 rounded border border-gray-200 dark:border-gray-500">
                 {part.name}
                 <span className="ml-1 text-gray-500">×{part.stock}</span>
               </span>
@@ -117,15 +119,15 @@ export const OrderCard: FC<OrderCardProps> = ({
 
       {/* Actions */}
       <div className="flex gap-2 pt-2">
-        {status === 'pendiente' && (
+        {(status === 'pendiente' || rejectedNote) && (
           <button
             onClick={onStart}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-medium py-2.5 px-4 rounded-md transition-colors"
+            className={`flex-1 ${rejectedNote ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} active:opacity-80 text-white text-sm font-medium py-2.5 px-4 rounded-md transition-colors`}
           >
-            Crear Parte
+            {rejectedNote ? 'Corregir Parte' : 'Crear Parte'}
           </button>
         )}
-        {status === 'en_progreso' && (
+        {status === 'en_progreso' && !rejectedNote && (
           <button
             onClick={onStart}
             className="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium py-2.5 px-4 rounded-md transition-colors"
@@ -135,13 +137,13 @@ export const OrderCard: FC<OrderCardProps> = ({
         )}
         <button
           onClick={onViewDetail}
-          className="flex-1 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 active:bg-gray-50 dark:active:bg-gray-500 text-gray-700 dark:text-gray-200 text-sm font-medium py-2.5 px-4 rounded-md border border-gray-300 dark:border-gray-600 transition-all shadow-sm hover:shadow-md"
+          className="flex-1 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium py-2.5 px-4 rounded-md border border-gray-300 dark:border-gray-600 transition-all shadow-sm"
         >
           Ver detalle
         </button>
       </div>
 
-      {/* Order ID */}
+      {/* Order ID y fechas */}
       <div className="text-xs text-gray-400 dark:text-gray-500 mt-3 space-y-1">
         <p className="text-right">#{id.toString().padStart(4, '0')}</p>
         {created_at && (

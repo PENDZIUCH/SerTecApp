@@ -21,6 +21,11 @@ interface Order {
   priority: 'urgente' | 'alta' | 'media' | 'baja';
   status: 'pendiente' | 'en_progreso' | 'completado';
   suggestedParts?: Array<{ id: number; name: string; stock: number }>;
+  rejectedNote?: string | null;
+  created_at?: string;
+  completed_at?: string;
+  scheduled_date?: string;
+  notes?: string;
 }
 
 export default function OrdenesPage() {
@@ -100,10 +105,29 @@ export default function OrdenesPage() {
         const pending = newOrders.filter((o: Order) => o.status === 'pendiente' || o.status === 'en_progreso');
         const completed = newOrders.filter((o: Order) => o.status === 'completado');
         
+        // Buscar partes rechazados para órdenes pendientes
+        const pendingWithRejected = await Promise.all(
+          pending.map(async (o: Order) => {
+            try {
+              const parteRes = await fetch(`${API_URL}/api/v1/partes/${o.id}`, {
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+              });
+              if (parteRes.ok) {
+                const parteData = await parteRes.json();
+                if (parteData.success && parteData.data?.status === 'rejected') {
+                  return { ...o, rejectedNote: parteData.data.supervisor_notes || 'Parte rechazado' };
+                }
+              }
+            } catch {}
+            return o;
+          })
+        );
+        // pendingWithRejected reemplaza a pending
+
         // SOLO usar datos del servidor - NUNCA merge con cache viejo
         // Deduplicar por ID por si hay duplicados
         const seen = new Set();
-        const finalOrders = [...pending, ...completed].filter(o => {
+        const finalOrders = [...pendingWithRejected, ...completed].filter(o => {
           if (seen.has(o.id)) return false;
           seen.add(o.id);
           return true;
@@ -489,26 +513,84 @@ export default function OrdenesPage() {
         </div>
       </header>
 
-      {/* Orders list */}
+      {/* Orders list — mobile: tabs, tablet/desktop: dos columnas */}
       <div className="max-w-7xl mx-auto px-4 py-4">
-        {filteredOrders.length > 0 ? (
-          <div className="space-y-3">
-            {filteredOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                {...order}
-                onStart={() => handleStart(order.id)}
-                onViewDetail={() => handleViewDetail(order.id)}
-              />
-            ))}
+
+        {/* Mobile: lista filtrada por tab */}
+        <div className="md:hidden">
+          {filteredOrders.length > 0 ? (
+            <div className="space-y-3">
+              {filteredOrders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  {...order}
+                  rejectedNote={order.rejectedNote}
+                  onStart={() => handleStart(order.id)}
+                  onViewDetail={() => handleViewDetail(order.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500">
+                {filter === 'pending' ? 'No hay órdenes pendientes' : 'No hay órdenes completadas'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Tablet/Desktop: dos columnas sin tabs */}
+        <div className="hidden md:grid md:grid-cols-2 md:gap-6">
+          {/* Columna izquierda: Pendientes */}
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+              Pendientes ({pendingOrders.length})
+            </h2>
+            {pendingOrders.length > 0 ? (
+              <div className="space-y-3">
+                {pendingOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    {...order}
+                    rejectedNote={order.rejectedNote}
+                    onStart={() => handleStart(order.id)}
+                    onViewDetail={() => handleViewDetail(order.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                <p className="text-gray-400 text-sm">Sin órdenes pendientes</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">
-              {filter === 'pending' ? 'No hay órdenes pendientes' : 'No hay órdenes completadas'}
-            </p>
+
+          {/* Columna derecha: Completadas */}
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+              Completadas ({completedOrders.length})
+            </h2>
+            {completedOrders.length > 0 ? (
+              <div className="space-y-3">
+                {completedOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    {...order}
+                    onStart={() => handleStart(order.id)}
+                    onViewDetail={() => handleViewDetail(order.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                <p className="text-gray-400 text-sm">Sin órdenes completadas</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
       </div>
 
       {/* Toast Notifications */}

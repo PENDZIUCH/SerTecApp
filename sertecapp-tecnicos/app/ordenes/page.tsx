@@ -33,6 +33,40 @@ export default function OrdenesPage() {
   const [user, setUser] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const { isOnline: effectiveOnline, forceOffline, toggleForceOffline, realOnline } = useOnlineStatus();
+
+  // Cargar notas de partes rechazados en background — sin bloquear la lista
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const pendingOrds = orders.filter(o => o.status === 'pendiente' || o.status === 'en_progreso');
+    if (pendingOrds.length === 0) return;
+    // Solo procesar órdenes que NO tienen rejectedNote ya cargado
+    const toCheck = pendingOrds.filter(o => o.rejectedNote === undefined);
+    if (toCheck.length === 0) return;
+    toCheck.forEach(async (o) => {
+      try {
+        const res = await fetch(`${API_URL}/api/v1/partes/${o.id}`, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        });
+        if (!res.ok) {
+          // Marcar como null para no volver a intentar
+          setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, rejectedNote: null } : ord));
+          return;
+        }
+        const data = await res.json();
+        if (data.success && data.data?.status === 'rejected') {
+          setOrders(prev => prev.map(ord => ord.id === o.id
+            ? { ...ord, rejectedNote: data.data.supervisor_notes || 'Parte rechazado' }
+            : ord
+          ));
+        } else {
+          setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, rejectedNote: null } : ord));
+        }
+      } catch {
+        setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, rejectedNote: null } : ord));
+      }
+    });
+  }, [orders]);
   const [online, setOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
@@ -105,29 +139,10 @@ export default function OrdenesPage() {
         const pending = newOrders.filter((o: Order) => o.status === 'pendiente' || o.status === 'en_progreso');
         const completed = newOrders.filter((o: Order) => o.status === 'completado');
         
-        // Buscar partes rechazados para órdenes pendientes
-        const pendingWithRejected = await Promise.all(
-          pending.map(async (o: Order) => {
-            try {
-              const parteRes = await fetch(`${API_URL}/api/v1/partes/${o.id}`, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-              });
-              if (parteRes.ok) {
-                const parteData = await parteRes.json();
-                if (parteData.success && parteData.data?.status === 'rejected') {
-                  return { ...o, rejectedNote: parteData.data.supervisor_notes || 'Parte rechazado' };
-                }
-              }
-            } catch {}
-            return o;
-          })
-        );
-        // pendingWithRejected reemplaza a pending
-
         // SOLO usar datos del servidor - NUNCA merge con cache viejo
         // Deduplicar por ID por si hay duplicados
         const seen = new Set();
-        const finalOrders = [...pendingWithRejected, ...completed].filter(o => {
+        const finalOrders = [...pending, ...completed].filter(o => {
           if (seen.has(o.id)) return false;
           seen.add(o.id);
           return true;

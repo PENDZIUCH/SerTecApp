@@ -37,7 +37,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
   };
 
   useEffect(() => {
-    if (order.status === 'completado') {
+    // Cargar parte si está completado O si está pendiente (puede tener parte rechazado)
+    if (order.status === 'completado' || order.status === 'pendiente') {
       loadParte();
     }
   }, [order.id, order.status]);

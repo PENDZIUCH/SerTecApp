@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderCard } from '../components/OrderCard';
+import { ParteForm } from '../components/ParteForm';
 import { cacheOrdenes, getCachedOrdenes, isOnline, setupConnectionListener, syncPendingPartes, getPartesPendientesSync } from '../lib/storage';
 import { API_URL } from '../../lib/config';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
@@ -34,42 +35,10 @@ export default function OrdenesPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const { isOnline: effectiveOnline, forceOffline, toggleForceOffline, realOnline } = useOnlineStatus();
 
-  // Cargar notas de partes rechazados en background — sin bloquear la lista
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    const pendingOrds = orders.filter(o => o.status === 'pendiente' || o.status === 'en_progreso');
-    if (pendingOrds.length === 0) return;
-    // Solo procesar órdenes que NO tienen rejectedNote ya cargado
-    const toCheck = pendingOrds.filter(o => o.rejectedNote === undefined);
-    if (toCheck.length === 0) return;
-    toCheck.forEach(async (o) => {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/partes/${o.id}`, {
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
-        });
-        if (!res.ok) {
-          // Marcar como null para no volver a intentar
-          setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, rejectedNote: null } : ord));
-          return;
-        }
-        const data = await res.json();
-        if (data.success && data.data?.status === 'rejected') {
-          setOrders(prev => prev.map(ord => ord.id === o.id
-            ? { ...ord, rejectedNote: data.data.supervisor_notes || 'Parte rechazado' }
-            : ord
-          ));
-        } else {
-          setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, rejectedNote: null } : ord));
-        }
-      } catch {
-        setOrders(prev => prev.map(ord => ord.id === o.id ? { ...ord, rejectedNote: null } : ord));
-      }
-    });
-  }, [orders]);
   const [online, setOnline] = useState(true);
   const [pendingSync, setPendingSync] = useState(0);
   const [filter, setFilter] = useState<'pending' | 'completed'>('pending');
+  const [parteModalOrderId, setParteModalOrderId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { toasts, showToast, hideToast, updateToast } = useToast();
@@ -139,8 +108,7 @@ export default function OrdenesPage() {
         const pending = newOrders.filter((o: Order) => o.status === 'pendiente' || o.status === 'en_progreso');
         const completed = newOrders.filter((o: Order) => o.status === 'completado');
         
-        // SOLO usar datos del servidor - NUNCA merge con cache viejo
-        // Deduplicar por ID por si hay duplicados
+        // Deduplicar
         const seen = new Set();
         const finalOrders = [...pending, ...completed].filter(o => {
           if (seen.has(o.id)) return false;
@@ -299,7 +267,7 @@ export default function OrdenesPage() {
   };
 
   const handleStart = (orderId: number) => {
-    router.push(`/parte?id=${orderId}`);
+    setParteModalOrderId(String(orderId));
   };
 
   const handleViewDetail = (orderId: number) => {
@@ -555,7 +523,7 @@ export default function OrdenesPage() {
         </div>
 
         {/* Tablet/Desktop: dos columnas sin tabs */}
-        <div className="hidden md:grid md:grid-cols-2 md:gap-6">
+        <div className="hidden md:grid md:grid-cols-2 md:gap-6 md:items-stretch">
           {/* Columna izquierda: Pendientes */}
           <div>
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -636,6 +604,29 @@ export default function OrdenesPage() {
           />
         )}
       </Modal>
+
+      {/* Modal del Parte */}
+      {parteModalOrderId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="bg-white dark:bg-gray-900 w-full md:max-w-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-screen md:max-h-[90vh]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Parte de Trabajo — Orden #{parteModalOrderId.padStart(4, '0')}</h2>
+              <button onClick={() => setParteModalOrderId(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ParteForm
+                orderId={parteModalOrderId}
+                onSuccess={() => { setParteModalOrderId(null); loadPendingOrders(); }}
+                onCancel={() => setParteModalOrderId(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

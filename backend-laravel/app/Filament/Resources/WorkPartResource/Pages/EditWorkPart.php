@@ -18,7 +18,10 @@ class EditWorkPart extends EditRecord
                 ->label('← Volver')
                 ->color('gray')
                 ->url(WorkPartResource::getUrl('index')),
-            Actions\DeleteAction::make()->label('Eliminar'),
+            // Eliminar solo visible para super_admin
+            Actions\DeleteAction::make()
+                ->label('Eliminar')
+                ->visible(fn () => auth()->user()->hasRole('super_admin')),
         ];
     }
 

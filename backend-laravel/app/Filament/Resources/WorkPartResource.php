@@ -211,6 +211,12 @@ class WorkPartResource extends Resource
                             ->required()
                             ->placeholder('Indicar qué debe corregir el técnico...')
                             ->rows(3),
+                        Forms\Components\Select::make('nuevo_tecnico_id')
+                            ->label('Técnico asignado')
+                            ->options(fn () => \App\Models\User::role('técnico')->pluck('name', 'id'))
+                            ->default(fn (WorkPart $record) => $record->workOrder->assigned_tech_id)
+                            ->searchable()
+                            ->required(),
                     ])
                     ->action(function (WorkPart $record, array $data) {
                         DB::transaction(function () use ($record, $data) {
@@ -218,11 +224,13 @@ class WorkPartResource extends Resource
                                 'status' => 'rejected',
                                 'supervisor_notes' => $data['supervisor_notes'],
                             ]);
-                            // La orden vuelve a pendiente para que el técnico la retome
-                            $record->workOrder->update([
-                                'status' => 'pending',
-                                'completed_at' => null,
-                            ]);
+                            // La orden vuelve a pendiente
+                            $orderData = ['status' => 'pending', 'completed_at' => null];
+                            // Reasignar técnico si se seleccionó uno diferente
+                            if (!empty($data['nuevo_tecnico_id'])) {
+                                $orderData['assigned_tech_id'] = $data['nuevo_tecnico_id'];
+                            }
+                            $record->workOrder->update($orderData);
                         });
 
                         // Notificar al técnico

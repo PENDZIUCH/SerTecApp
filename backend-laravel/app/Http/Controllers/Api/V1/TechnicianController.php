@@ -15,7 +15,7 @@ class TechnicianController extends Controller
     {
         \Log::info("Buscando órdenes para técnico ID: {$tecnicoId}");
 
-        $orders = WorkOrder::with(['customer', 'parts' => function($q) {
+        $orders = WorkOrder::with(['customer', 'workParts' => function($q) {
                 $q->latest()->limit(1);
             }])
             ->where('assigned_tech_id', $tecnicoId)
@@ -46,8 +46,8 @@ class TechnicianController extends Controller
                     'serial' => $order->equipment->serial_number ?? 'Sin serial',
                 ] : null,
                 'notes' => $order->notes,
-                'rejectedNote' => optional($order->parts->first())->status === 'rejected'
-                    ? optional($order->parts->first())->supervisor_notes
+                'rejectedNote' => optional($order->workParts->sortByDesc('created_at')->first())->status === 'rejected'
+                    ? optional($order->workParts->sortByDesc('created_at')->first())->supervisor_notes
                     : null,
             ];
         });

@@ -104,11 +104,17 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let pixels = 0;
-    for (let i = 3; i < imageData.data.length; i += 4) {
-      if (imageData.data[i] > 0) pixels++;
+    // Contar pixels dibujados (no blancos con alpha > 0)
+    let drawnPixels = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const a = imageData.data[i + 3];
+      // Pixel dibujado: tiene alpha y no es blanco puro
+      if (a > 0 && (r < 250 || g < 250 || b < 250)) drawnPixels++;
     }
-    if (pixels > 50) setFirma(canvas.toDataURL());
+    if (drawnPixels > 50) setFirma(canvas.toDataURL());
     else setFirma(null);
   };
 
@@ -117,8 +123,7 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     setFirma(null);
   };
 
@@ -126,6 +131,13 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
     e.preventDefault();
     if (!diagnostico.trim() || !trabajoRealizado.trim()) { showToast('Completá el diagnóstico y el trabajo realizado', 'error'); return; }
     if (!firma) { showToast('La firma del cliente es obligatoria', 'error'); return; }
+    // Bloquear si no hubo cambios respecto al parte rechazado
+    if (parteRechazado &&
+        diagnostico.trim() === (parteRechazado.diagnosis || '').trim() &&
+        trabajoRealizado.trim() === (parteRechazado.work_done || '').trim()) {
+      showToast('Debés modificar el diagnóstico o el trabajo realizado para corregir el parte', 'error');
+      return;
+    }
     if (!orderId) { showToast('Error: no hay ID de orden', 'error'); return; }
     if (saving) return;
     setSaving(true);
@@ -226,9 +238,9 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
             <canvas
-              ref={(el) => { (canvasRef as React.MutableRefObject<HTMLCanvasElement|null>).current = el; if (el) { const ctx = el.getContext('2d'); if (ctx) { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, el.width, el.height); } } }}
+              ref={(el) => { (canvasRef as React.MutableRefObject<HTMLCanvasElement|null>).current = el; }}
               width={600} height={180}
-              style={{ width: '100%', height: 'auto', aspectRatio: '10/3', backgroundColor: '#ffffff', touchAction: 'none', display: 'block' }}
+              style={{ width: '100%', height: 'auto', aspectRatio: '10/3', background: 'white', touchAction: 'none', display: 'block' }}
               onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
               onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing}
             />

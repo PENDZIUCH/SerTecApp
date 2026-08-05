@@ -78,6 +78,11 @@ class WorkOrder extends Model
         return $this->hasMany(WorkOrderFile::class);
     }
 
+    public function workParts()
+    {
+        return $this->hasMany(\App\Models\WorkPart::class);
+    }
+
     public function partsUsed()
     {
         return $this->hasMany(WoPartUsed::class);

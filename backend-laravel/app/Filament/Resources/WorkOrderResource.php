@@ -248,6 +248,13 @@ class WorkOrderResource extends Resource
             ->bulkActions([Tables\Actions\DeleteBulkAction::make()]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            \App\Filament\Resources\WorkOrderResource\RelationManagers\WorkPartsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [

@@ -130,7 +130,15 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
       </div>
 
       {/* PARTE COMPLETADO */}
-      {order.status === 'completado' && (
+      {/* Banner rechazado — viene del servidor sin esperar loadParte */}
+      {(order as any).rejectedNote && (
+        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700">
+          <p className="text-sm font-semibold text-red-700 dark:text-red-400">❌ Parte Rechazado</p>
+          <p className="text-sm text-red-600 dark:text-red-300 mt-1">{(order as any).rejectedNote}</p>
+        </div>
+      )}
+
+      {(order.status === 'completado' || (parte && parte.status === 'rejected')) && (
         <>
           {loadingParte ? (
             <div className="flex justify-center py-4">
@@ -162,7 +170,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
 
               {/* Estado de aprobación */
               }
-              {parte.status && parte.status !== 'pending_approval' && (
+              {parte.status === 'approved' && (
                 <div className={`p-3 rounded-lg ${parte.status === 'approved' ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700'}`}>
                   <p className={`text-sm font-medium ${parte.status === 'approved' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                     {parte.status === 'approved' ? '✅ Parte Aprobado' : '❌ Parte Rechazado'}
@@ -196,7 +204,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
           onClick={onStart}
           className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-semibold py-3 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
         >
-          {order.status === 'en_progreso' ? 'Continuar Parte' : 'Crear Parte'}
+          {parte && parte.status === 'rejected' ? 'Corregir Parte' : order.status === 'en_progreso' ? 'Continuar Parte' : 'Crear Parte'}
         </button>
       )}
 

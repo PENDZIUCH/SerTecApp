@@ -20,6 +20,30 @@ class AppServiceProvider extends ServiceProvider
         $this->configureUrlScheme();
         
         WoPartUsed::observe(WoPartsUsedObserver::class);
+
+        // Cargar configuración de email desde la DB
+        $this->configureMailFromDb();
+    }
+
+    private function configureMailFromDb(): void
+    {
+        try {
+            $host = \App\Models\SystemSetting::get('mail_host');
+            if ($host) {
+                config([
+                    'mail.mailer'                  => 'smtp',
+                    'mail.mailers.smtp.host'       => $host,
+                    'mail.mailers.smtp.port'       => \App\Models\SystemSetting::get('mail_port', 465),
+                    'mail.mailers.smtp.username'   => \App\Models\SystemSetting::get('mail_username'),
+                    'mail.mailers.smtp.password'   => \App\Models\SystemSetting::get('mail_password'),
+                    'mail.mailers.smtp.encryption' => \App\Models\SystemSetting::get('mail_encryption', 'ssl'),
+                    'mail.from.address'            => \App\Models\SystemSetting::get('mail_from_address'),
+                    'mail.from.name'               => \App\Models\SystemSetting::get('mail_from_name', 'SerTecApp'),
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Silencioso — la tabla puede no existir en migraciones iniciales
+        }
     }
     
     private function configureUrlScheme(): void

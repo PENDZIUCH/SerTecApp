@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ParteCompletadoMail;
+use Illuminate\Support\Facades\Mail;
 use App\Models\WorkOrder;
 use App\Models\WorkPart;
 use Illuminate\Http\Request;
@@ -95,6 +97,17 @@ class TechnicianController extends Controller
             $order->save();
 
             DB::commit();
+
+            // Email al cliente con el resumen del parte
+            try {
+                $customerEmail = $order->customer->email ?? null;
+                if ($customerEmail && config('mail.host')) {
+                    $parteConRelaciones = $parte->load(['workOrder.customer', 'technician']);
+                    Mail::to($customerEmail)->send(new ParteCompletadoMail($parteConRelaciones));
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error enviando email de parte completado: ' . $e->getMessage());
+            }
 
             // Notificaciones en bloque separado — si fallan no afectan el guardado
             try {

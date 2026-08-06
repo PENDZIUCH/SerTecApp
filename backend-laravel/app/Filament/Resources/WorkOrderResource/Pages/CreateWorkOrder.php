@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\WorkOrderResource\Pages;
 
 use App\Filament\Resources\WorkOrderResource;
+use App\Mail\OrdenCreadaMail;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Mail;
 
 class CreateWorkOrder extends CreateRecord
 {
@@ -18,7 +20,17 @@ class CreateWorkOrder extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $record = $this->record;
+        $record = $this->record->load(['customer', 'assignedTech']);
+
+        // Email al cliente
+        try {
+            $email = $record->customer->email ?? null;
+            if ($email && config('mail.host')) {
+                Mail::to($email)->send(new OrdenCreadaMail($record));
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Error enviando email de orden creada: ' . $e->getMessage());
+        }
 
         // Notificar al técnico asignado
         if ($record->assigned_tech_id) {

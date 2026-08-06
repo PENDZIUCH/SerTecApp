@@ -29,7 +29,7 @@ class MagicLinkController extends Controller
         return response()->json([
             'success' => true,
             'token' => $token,
-            'url' => "https://pro.pendziuch.com/l?t={$token}",
+            'url' => "https://sertecapp.pendziuch.com/l?t={$token}",
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

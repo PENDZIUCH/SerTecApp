@@ -67,6 +67,7 @@ class ConfiguracionEmail extends Page
                         Forms\Components\TextInput::make('mail_password')
                             ->label('Contraseña')
                             ->password()
+                            ->revealable()
                             ->required(),
                     ])->columns(2),
 
@@ -102,33 +103,49 @@ class ConfiguracionEmail extends Page
     {
         $data = $this->form->getState();
 
-        try {
-            config([
-                'mail.mailer'                  => 'smtp',
-                'mail.mailers.smtp.host'       => $data['mail_host'],
-                'mail.mailers.smtp.port'       => $data['mail_port'],
-                'mail.mailers.smtp.username'   => $data['mail_username'],
-                'mail.mailers.smtp.password'   => $data['mail_password'],
-                'mail.mailers.smtp.encryption' => $data['mail_encryption'],
-                'mail.from.address'            => $data['mail_from_address'],
-                'mail.from.name'               => $data['mail_from_name'],
-            ]);
+        config([
+            'mail.mailer'                  => 'smtp',
+            'mail.mailers.smtp.host'       => $data['mail_host'],
+            'mail.mailers.smtp.port'       => (int) $data['mail_port'],
+            'mail.mailers.smtp.username'   => $data['mail_username'],
+            'mail.mailers.smtp.password'   => $data['mail_password'],
+            'mail.mailers.smtp.encryption' => $data['mail_encryption'] ?: null,
+            'mail.from.address'            => $data['mail_from_address'],
+            'mail.from.name'               => $data['mail_from_name'],
+        ]);
 
-            Mail::raw('Email de prueba desde SerTecApp. Si recibís este mensaje, la configuración es correcta.', function ($message) use ($data) {
-                $message->to($data['mail_username'])
-                        ->subject('Prueba de email — SerTecApp');
-            });
+        // Limpiar mailer cacheado para forzar nueva conexión
+        app()->forgetInstance('swift.mailer');
+        app()->forgetInstance('swift.transport');
+
+        try {
+            Mail::raw(
+                'Email de prueba desde SerTecApp. Si recibís este mensaje la configuración SMTP es correcta.',
+                function ($message) use ($data) {
+                    $message->to($data['mail_username'])
+                            ->subject('✅ Prueba de email — SerTecApp — ' . now()->format('H:i:s'));
+                }
+            );
 
             Notification::make()
-                ->title('Email de prueba enviado')
-                ->body('Revisá tu bandeja: ' . $data['mail_username'])
+                ->title('✅ Email enviado correctamente')
+                ->body('Revisá tu bandeja de entrada y spam en: ' . $data['mail_username'])
                 ->success()
+                ->persistent()
+                ->send();
+        } catch (\Symfony\Component\Mailer\Exception\TransportException $e) {
+            Notification::make()
+                ->title('❌ Error de conexión SMTP')
+                ->body('No se pudo conectar al servidor. Verificá host, puerto y cifrado. Detalle: ' . $e->getMessage())
+                ->danger()
+                ->persistent()
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
-                ->title('Error al enviar')
+                ->title('❌ Error al enviar')
                 ->body($e->getMessage())
                 ->danger()
+                ->persistent()
                 ->send();
         }
     }

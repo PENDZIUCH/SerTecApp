@@ -206,6 +206,31 @@ git checkout v0.1-stable  # vuelve al estado estable
 O desde local hacer `git push --force origin v0.1-stable:development` y re-deployar.
 
 
+
+## Variables críticas del .env — se verifican en cada deploy
+
+El script `deploy-sertecapp.sh` fuerza estas variables después de restaurar el `.env`:
+
+```bash
+# QUEUE_CONNECTION debe ser sync — no hay workers permanentes en Hostinger
+sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+
+# MAIL_MAILER debe ser smtp — sendmail está deshabilitado en Hostinger  
+sed -i 's/MAIL_MAILER=sendmail/MAIL_MAILER=smtp/' .env
+```
+
+### Por qué QUEUE_CONNECTION=sync es crítico
+- Hostinger hosting compartido no permite workers permanentes (`php artisan queue:work`)
+- Con `QUEUE_CONNECTION=database`, las notificaciones (emails de recuperación de contraseña, notificaciones de Filament) se encolan pero nunca se procesan
+- Con `QUEUE_CONNECTION=sync`, todo se ejecuta inmediatamente en el mismo request
+
+### Síntoma si QUEUE_CONNECTION=database
+- El email de prueba funciona (usa `Mail::raw()` directamente)
+- El recupero de contraseña y notificaciones de Filament NO llegan
+- El log muestra el email preparado pero nunca enviado
+
+---
+
 ## Configuración de Email SMTP en Hostinger
 
 ### Cuenta de email

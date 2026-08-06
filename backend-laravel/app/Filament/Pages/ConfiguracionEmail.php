@@ -99,11 +99,39 @@ class ConfiguracionEmail extends Page
         $data = $this->form->getState();
 
         foreach ($data as $key => $value) {
-            SystemSetting::set($key, $value);
+            if ($key !== 'test_email') {
+                SystemSetting::set($key, $value);
+            }
         }
+
+        // Escribir al .env para que Laravel lo lea nativamente
+        $envPath = base_path('.env');
+        $envContent = file_get_contents($envPath);
+
+        $map = [
+            'MAIL_MAILER'       => 'smtp',
+            'MAIL_HOST'         => $data['mail_host'] ?? '',
+            'MAIL_PORT'         => $data['mail_port'] ?? '465',
+            'MAIL_USERNAME'     => $data['mail_username'] ?? '',
+            'MAIL_PASSWORD'     => $data['mail_password'] ?? '',
+            'MAIL_ENCRYPTION'   => $data['mail_encryption'] ?? 'ssl',
+            'MAIL_FROM_ADDRESS' => $data['mail_from_address'] ?? '',
+            'MAIL_FROM_NAME'    => '"' . ($data['mail_from_name'] ?? 'SerTecApp') . '"',
+        ];
+
+        foreach ($map as $envKey => $envValue) {
+            if (preg_match("/^{$envKey}=/m", $envContent)) {
+                $envContent = preg_replace("/^{$envKey}=.*/m", "{$envKey}={$envValue}", $envContent);
+            } else {
+                $envContent .= "\n{$envKey}={$envValue}";
+            }
+        }
+
+        file_put_contents($envPath, $envContent);
 
         Notification::make()
             ->title('Configuración guardada')
+            ->body('Recargá la página antes de hacer la prueba.')
             ->success()
             ->send();
     }

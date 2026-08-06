@@ -41,6 +41,15 @@ class ConfiguracionEmail extends Page
     {
         return $form
             ->schema([
+                Forms\Components\Section::make('Prueba de envío')
+                    ->schema([
+                        Forms\Components\TextInput::make('test_email')
+                            ->label('Enviar prueba a este email')
+                            ->email()
+                            ->placeholder('tu@email.com')
+                            ->helperText('Dejalo vacío para enviarlo al usuario SMTP configurado'),
+                    ]),
+
                 Forms\Components\Section::make('Servidor SMTP')
                     ->schema([
                         Forms\Components\TextInput::make('mail_host')
@@ -120,17 +129,18 @@ class ConfiguracionEmail extends Page
         Mail::forgetMailers();
 
         try {
+            $destino = !empty($data['test_email']) ? $data['test_email'] : $data['mail_username'];
             Mail::raw(
                 'Email de prueba desde SerTecApp. Si recibís este mensaje la configuración SMTP es correcta.',
-                function ($message) use ($data) {
-                    $message->to($data['mail_username'])
+                function ($message) use ($data, $destino) {
+                    $message->to($destino)
                             ->subject('✅ Prueba de email — SerTecApp — ' . now()->format('H:i:s'));
                 }
             );
 
             Notification::make()
                 ->title('✅ Email enviado correctamente')
-                ->body('Revisá tu bandeja de entrada y spam en: ' . $data['mail_username'])
+                ->body('Revisá tu bandeja de entrada y spam en: ' . $destino)
                 ->success()
                 ->persistent()
                 ->send();

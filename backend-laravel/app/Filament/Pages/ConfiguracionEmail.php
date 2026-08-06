@@ -27,6 +27,7 @@ class ConfiguracionEmail extends Page
     public function mount(): void
     {
         $this->form->fill([
+            'mail_mailer'       => SystemSetting::get('mail_mailer', 'smtp'),
             'mail_host'         => SystemSetting::get('mail_host', ''),
             'mail_port'         => SystemSetting::get('mail_port', '465'),
             'mail_username'     => SystemSetting::get('mail_username', ''),
@@ -34,6 +35,7 @@ class ConfiguracionEmail extends Page
             'mail_encryption'   => SystemSetting::get('mail_encryption', 'ssl'),
             'mail_from_address' => SystemSetting::get('mail_from_address', ''),
             'mail_from_name'    => SystemSetting::get('mail_from_name', 'SerTecApp'),
+            'test_email'        => '',
         ]);
     }
 
@@ -50,35 +52,47 @@ class ConfiguracionEmail extends Page
                             ->helperText('Dejalo vacío para enviarlo al usuario SMTP configurado'),
                     ]),
 
+                Forms\Components\Section::make('Driver de correo')
+                    ->schema([
+                        Forms\Components\Select::make('mail_mailer')
+                            ->label('Método de envío')
+                            ->options([
+                                'smtp'     => 'SMTP (configuración propia)',
+                                'sendmail' => 'Sendmail (servidor de Hostinger)',
+                            ])
+                            ->default('smtp')
+                            ->live()
+                            ->required(),
+                    ]),
+
                 Forms\Components\Section::make('Servidor SMTP')
                     ->schema([
                         Forms\Components\TextInput::make('mail_host')
                             ->label('Host SMTP')
-                            ->placeholder('smtp.hostinger.com')
-                            ->required(),
+                            ->placeholder('smtp.hostinger.com'),
                         Forms\Components\TextInput::make('mail_port')
                             ->label('Puerto')
                             ->placeholder('465')
-                            ->numeric()
-                            ->required(),
+                            ->numeric(),
                         Forms\Components\Select::make('mail_encryption')
                             ->label('Cifrado')
-                            ->options(['ssl' => 'SSL', 'tls' => 'TLS', '' => 'Ninguno'])
-                            ->required(),
-                    ])->columns(3),
+                            ->options(['ssl' => 'SSL', 'tls' => 'TLS', '' => 'Ninguno']),
+                    ])
+                    ->columns(3)
+                    ->visible(fn (Forms\Get $get) => $get('mail_mailer') === 'smtp'),
 
                 Forms\Components\Section::make('Credenciales')
                     ->schema([
                         Forms\Components\TextInput::make('mail_username')
                             ->label('Usuario (email)')
-                            ->email()
-                            ->required(),
+                            ->email(),
                         Forms\Components\TextInput::make('mail_password')
                             ->label('Contraseña')
                             ->password()
-                            ->revealable()
-                            ->required(),
-                    ])->columns(2),
+                            ->revealable(),
+                    ])
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('mail_mailer') === 'smtp'),
 
                 Forms\Components\Section::make('Remitente')
                     ->schema([
@@ -108,16 +122,21 @@ class ConfiguracionEmail extends Page
         $envPath = base_path('.env');
         $envContent = file_get_contents($envPath);
 
+        $mailer = $data['mail_mailer'] ?? 'smtp';
+
         $map = [
-            'MAIL_MAILER'       => 'smtp',
-            'MAIL_HOST'         => $data['mail_host'] ?? '',
-            'MAIL_PORT'         => $data['mail_port'] ?? '465',
-            'MAIL_USERNAME'     => $data['mail_username'] ?? '',
-            'MAIL_PASSWORD'     => $data['mail_password'] ?? '',
-            'MAIL_ENCRYPTION'   => $data['mail_encryption'] ?? 'ssl',
+            'MAIL_MAILER'       => $mailer,
             'MAIL_FROM_ADDRESS' => $data['mail_from_address'] ?? '',
             'MAIL_FROM_NAME'    => '"' . ($data['mail_from_name'] ?? 'SerTecApp') . '"',
         ];
+
+        if ($mailer === 'smtp') {
+            $map['MAIL_HOST']       = $data['mail_host'] ?? '';
+            $map['MAIL_PORT']       = $data['mail_port'] ?? '465';
+            $map['MAIL_USERNAME']   = $data['mail_username'] ?? '';
+            $map['MAIL_PASSWORD']   = $data['mail_password'] ?? '';
+            $map['MAIL_ENCRYPTION'] = $data['mail_encryption'] ?? 'ssl';
+        }
 
         foreach ($map as $envKey => $envValue) {
             if (preg_match("/^{$envKey}=/m", $envContent)) {
@@ -139,44 +158,29 @@ class ConfiguracionEmail extends Page
     public function testEmail(): void
     {
         $data = $this->form->getState();
+        $destino = !empty($data['test_email']) ? $data['test_email'] : ($data['mail_username'] ?? $data['mail_from_address']);
 
-        config([
-            'mail.mailer'                  => 'smtp',
-            'mail.mailers.smtp.host'       => $data['mail_host'],
-            'mail.mailers.smtp.port'       => (int) $data['mail_port'],
-            'mail.mailers.smtp.username'   => $data['mail_username'],
-            'mail.mailers.smtp.password'   => $data['mail_password'],
-            'mail.mailers.smtp.encryption' => $data['mail_encryption'] ?: null,
-            'mail.from.address'            => $data['mail_from_address'],
-            'mail.from.name'               => $data['mail_from_name'],
-        ]);
-
-        // Limpiar mailer cacheado para forzar nueva conexión (Laravel 11/Symfony Mailer)
-        app()->forgetInstance('mailer');
-        app()->forgetInstance('mail.manager');
-        Mail::forgetMailers();
+        if (empty($destino)) {
+            Notification::make()
+                ->title('Ingresá un email de destino')
+                ->danger()
+                ->send();
+            return;
+        }
 
         try {
-            $destino = !empty($data['test_email']) ? $data['test_email'] : $data['mail_username'];
             Mail::raw(
-                'Email de prueba desde SerTecApp. Si recibís este mensaje la configuración SMTP es correcta.',
-                function ($message) use ($data, $destino) {
+                'Email de prueba desde SerTecApp. Si recibís este mensaje la configuración es correcta.',
+                function ($message) use ($destino) {
                     $message->to($destino)
                             ->subject('✅ Prueba de email — SerTecApp — ' . now()->format('H:i:s'));
                 }
             );
 
             Notification::make()
-                ->title('✅ Email enviado correctamente')
-                ->body('Revisá tu bandeja de entrada y spam en: ' . $destino)
+                ->title('✅ Email enviado')
+                ->body('Revisá tu bandeja en: ' . $destino)
                 ->success()
-                ->persistent()
-                ->send();
-        } catch (\Symfony\Component\Mailer\Exception\TransportException $e) {
-            Notification::make()
-                ->title('❌ Error de conexión SMTP')
-                ->body('No se pudo conectar al servidor. Verificá host, puerto y cifrado. Detalle: ' . $e->getMessage())
-                ->danger()
                 ->persistent()
                 ->send();
         } catch (\Exception $e) {

@@ -21,15 +21,19 @@ git fetch origin development >> "$LOG" 2>&1
 log "git fetch completado"
 
 # Extraer el contenido exacto de backend-laravel/ del remote
-# git archive lee del objeto git directamente — ignora fechas y archivos locales
-# --strip-components=1 elimina el prefijo backend-laravel/
-# El resultado se extrae en LARAVEL_DIR con los paths correctos
 git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
 log "git archive extraído correctamente"
 
-# Restaurar .env (git archive no lo toca porque está en .gitignore)
+# Restaurar .env
 cp /tmp/sertecapp_env_backup "$LARAVEL_DIR/.env"
 log ".env restaurado"
+
+# Asegurar variables críticas en .env
+# QUEUE_CONNECTION debe ser sync en Hostinger — no hay workers permanentes
+sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' "$LARAVEL_DIR/.env"
+# MAIL_MAILER debe ser smtp — sendmail está deshabilitado en Hostinger
+sed -i 's/MAIL_MAILER=sendmail/MAIL_MAILER=smtp/' "$LARAVEL_DIR/.env"
+log "Variables críticas del .env verificadas"
 
 # Artisan
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1

@@ -27,7 +27,6 @@ class ConfiguracionEmail extends Page
     public function mount(): void
     {
         $this->form->fill([
-            'mail_mailer'       => SystemSetting::get('mail_mailer', 'smtp'),
             'mail_host'         => SystemSetting::get('mail_host', ''),
             'mail_port'         => SystemSetting::get('mail_port', '465'),
             'mail_username'     => SystemSetting::get('mail_username', ''),
@@ -48,51 +47,38 @@ class ConfiguracionEmail extends Page
                         Forms\Components\TextInput::make('test_email')
                             ->label('Enviar prueba a este email')
                             ->email()
-                            ->placeholder('tu@email.com')
-                            ->helperText('Dejalo vacío para enviarlo al usuario SMTP configurado'),
-                    ]),
-
-                Forms\Components\Section::make('Driver de correo')
-                    ->schema([
-                        Forms\Components\Select::make('mail_mailer')
-                            ->label('Método de envío')
-                            ->options([
-                                'smtp'     => 'SMTP (configuración propia)',
-                                'sendmail' => 'Sendmail (servidor de Hostinger)',
-                            ])
-                            ->default('smtp')
-                            ->live()
-                            ->required(),
+                            ->placeholder('tu@gmail.com'),
                     ]),
 
                 Forms\Components\Section::make('Servidor SMTP')
                     ->schema([
                         Forms\Components\TextInput::make('mail_host')
                             ->label('Host SMTP')
-                            ->placeholder('smtp.hostinger.com'),
+                            ->placeholder('smtp.hostinger.com')
+                            ->required(),
                         Forms\Components\TextInput::make('mail_port')
                             ->label('Puerto')
                             ->placeholder('465')
-                            ->numeric(),
+                            ->numeric()
+                            ->required(),
                         Forms\Components\Select::make('mail_encryption')
                             ->label('Cifrado')
-                            ->options(['ssl' => 'SSL', 'tls' => 'TLS', '' => 'Ninguno']),
-                    ])
-                    ->columns(3)
-                    ->visible(fn (Forms\Get $get) => $get('mail_mailer') === 'smtp'),
+                            ->options(['ssl' => 'SSL', 'tls' => 'TLS', '' => 'Ninguno'])
+                            ->required(),
+                    ])->columns(3),
 
                 Forms\Components\Section::make('Credenciales')
                     ->schema([
                         Forms\Components\TextInput::make('mail_username')
                             ->label('Usuario (email)')
-                            ->email(),
+                            ->email()
+                            ->required(),
                         Forms\Components\TextInput::make('mail_password')
                             ->label('Contraseña')
                             ->password()
-                            ->revealable(),
-                    ])
-                    ->columns(2)
-                    ->visible(fn (Forms\Get $get) => $get('mail_mailer') === 'smtp'),
+                            ->revealable()
+                            ->required(),
+                    ])->columns(2),
 
                 Forms\Components\Section::make('Remitente')
                     ->schema([
@@ -118,25 +104,20 @@ class ConfiguracionEmail extends Page
             }
         }
 
-        // Escribir al .env para que Laravel lo lea nativamente
+        // Escribir al .env
         $envPath = base_path('.env');
         $envContent = file_get_contents($envPath);
 
-        $mailer = $data['mail_mailer'] ?? 'smtp';
-
         $map = [
-            'MAIL_MAILER'       => $mailer,
+            'MAIL_MAILER'       => 'smtp',
+            'MAIL_HOST'         => $data['mail_host'] ?? '',
+            'MAIL_PORT'         => $data['mail_port'] ?? '465',
+            'MAIL_USERNAME'     => $data['mail_username'] ?? '',
+            'MAIL_PASSWORD'     => $data['mail_password'] ?? '',
+            'MAIL_ENCRYPTION'   => $data['mail_encryption'] ?? 'ssl',
             'MAIL_FROM_ADDRESS' => $data['mail_from_address'] ?? '',
             'MAIL_FROM_NAME'    => '"' . ($data['mail_from_name'] ?? 'SerTecApp') . '"',
         ];
-
-        if ($mailer === 'smtp') {
-            $map['MAIL_HOST']       = $data['mail_host'] ?? '';
-            $map['MAIL_PORT']       = $data['mail_port'] ?? '465';
-            $map['MAIL_USERNAME']   = $data['mail_username'] ?? '';
-            $map['MAIL_PASSWORD']   = $data['mail_password'] ?? '';
-            $map['MAIL_ENCRYPTION'] = $data['mail_encryption'] ?? 'ssl';
-        }
 
         foreach ($map as $envKey => $envValue) {
             if (preg_match("/^{$envKey}=/m", $envContent)) {
@@ -158,22 +139,18 @@ class ConfiguracionEmail extends Page
     public function testEmail(): void
     {
         $data = $this->form->getState();
-        $destino = !empty($data['test_email']) ? $data['test_email'] : ($data['mail_username'] ?? $data['mail_from_address']);
+        $destino = !empty($data['test_email']) ? $data['test_email'] : ($data['mail_username'] ?? '');
 
         if (empty($destino)) {
-            Notification::make()
-                ->title('Ingresá un email de destino')
-                ->danger()
-                ->send();
+            Notification::make()->title('Ingresá un email de destino')->danger()->send();
             return;
         }
 
         try {
             Mail::raw(
-                'Email de prueba desde SerTecApp. Si recibís este mensaje la configuración es correcta.',
+                'Email de prueba desde SerTecApp. Si recibís este mensaje la configuración SMTP es correcta.',
                 function ($message) use ($destino) {
-                    $message->to($destino)
-                            ->subject('✅ Prueba de email — SerTecApp — ' . now()->format('H:i:s'));
+                    $message->to($destino)->subject('✅ Prueba de email — SerTecApp — ' . now()->format('H:i:s'));
                 }
             );
 

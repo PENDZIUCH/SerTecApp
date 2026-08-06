@@ -28,6 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('sertecapp')
             ->path('sertecapp')
             ->login()
+            ->passwordReset()
             ->brandName('SerTecApp')
             ->favicon(asset('favicon.ico'))
             ->sidebarCollapsibleOnDesktop()

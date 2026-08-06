@@ -205,6 +205,43 @@ git checkout v0.1-stable  # vuelve al estado estable
 ```
 O desde local hacer `git push --force origin v0.1-stable:development` y re-deployar.
 
+
+## Configuración de Email SMTP en Hostinger
+
+### Cuenta de email
+Crear en hPanel → Email → Crear cuenta: `mail@pendziuch.com`
+
+### Configurar desde el admin
+Super_admin → Administración → Configuración Email:
+
+| Campo | Valor |
+|---|---|
+| Host SMTP | `smtp.hostinger.com` |
+| Puerto | `465` |
+| Cifrado | `SSL` |
+| Usuario | `mail@pendziuch.com` |
+| Contraseña | La que le pusiste en hPanel |
+| Email remitente | `mail@pendziuch.com` |
+
+Guardás → **recargás la página** → probás con Gmail como destino.
+
+### ⚠️ Error crítico
+**NUNCA usar Sendmail** — Hostinger lo deshabilita y deja `MAIL_MAILER=sendmail` en el `.env`, lo que rompe el SMTP.
+
+Si el email deja de funcionar:
+```bash
+grep MAIL_MAILER /home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel/.env
+```
+Debe decir `MAIL_MAILER=smtp`. Si no:
+```bash
+cd /home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel && sed -i 's/MAIL_MAILER=sendmail/MAIL_MAILER=smtp/' .env && php artisan config:clear
+```
+
+### Lo que NO funciona en Hostinger
+- Sendmail — deshabilitado
+- Envío entre cuentas del mismo dominio — no confiable
+- Siempre probar con cuenta externa (Gmail)
+
 ---
 
 ## Referencia rápida

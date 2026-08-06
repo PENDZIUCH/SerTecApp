@@ -114,9 +114,10 @@ class ConfiguracionEmail extends Page
             'mail.from.name'               => $data['mail_from_name'],
         ]);
 
-        // Limpiar mailer cacheado para forzar nueva conexión
-        app()->forgetInstance('swift.mailer');
-        app()->forgetInstance('swift.transport');
+        // Limpiar mailer cacheado para forzar nueva conexión (Laravel 11/Symfony Mailer)
+        app()->forgetInstance('mailer');
+        app()->forgetInstance('mail.manager');
+        Mail::forgetMailers();
 
         try {
             Mail::raw(

@@ -18,18 +18,18 @@ class ParteCompletadoMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Parte de Servicio #{$this->parte->work_order_id} — Trabajo Completado",
+            subject: 'Parte de Servicio #' . str_pad($this->parte->work_order_id, 4, '0', STR_PAD_LEFT) . ' — Trabajo Completado',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.parte-completado',
+            view: 'emails.parte-completado',
             with: [
-                'parte' => $this->parte,
-                'order' => $this->parte->workOrder,
-                'customer' => $this->parte->workOrder->customer,
+                'parte'      => $this->parte,
+                'order'      => $this->parte->workOrder,
+                'customer'   => $this->parte->workOrder->customer,
                 'technician' => $this->parte->technician,
             ]
         );

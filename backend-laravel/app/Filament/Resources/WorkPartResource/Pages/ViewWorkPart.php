@@ -9,6 +9,8 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\DB;
+use App\Mail\ParteRechazadoMail;
+use Illuminate\Support\Facades\Mail;
 
 class ViewWorkPart extends ViewRecord
 {
@@ -102,6 +104,17 @@ class ViewWorkPart extends ViewRecord
                                 ->body('Tu parte de la Orden #' . $this->record->work_order_id . ' fue rechazado. Motivo: ' . $data['supervisor_notes'])
                                 ->danger()
                                 ->sendToDatabase($tecnico);
+                        }
+                    } catch (\Exception $e) {}
+
+                    // Email al cliente
+                    try {
+                        $customerEmail = $this->record->workOrder->customer->email ?? null;
+                        if ($customerEmail) {
+                            $nuevoTecnico = !empty($data['nuevo_tecnico_id'])
+                                ? \App\Models\User::find($data['nuevo_tecnico_id'])?->name
+                                : $this->record->workOrder->assignedTech?->name;
+                            Mail::to($customerEmail)->send(new ParteRechazadoMail($this->record->workOrder, $nuevoTecnico));
                         }
                     } catch (\Exception $e) {}
 

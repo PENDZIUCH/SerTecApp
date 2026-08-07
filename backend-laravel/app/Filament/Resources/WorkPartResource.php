@@ -11,6 +11,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
+use App\Mail\ParteRechazadoMail;
+use Illuminate\Support\Facades\Mail;
 
 class WorkPartResource extends Resource
 {
@@ -242,6 +244,17 @@ class WorkPartResource extends Resource
                                     ->body('Tu parte de la Orden #' . $record->work_order_id . ' fue rechazado. Motivo: ' . $data['supervisor_notes'])
                                     ->danger()
                                     ->sendToDatabase($tecnico);
+                            }
+                        } catch (\Exception $e) {}
+
+                        // Email al cliente
+                        try {
+                            $customerEmail = $record->workOrder->customer->email ?? null;
+                            if ($customerEmail) {
+                                $nuevoTecnico = !empty($data['nuevo_tecnico_id'])
+                                    ? \App\Models\User::find($data['nuevo_tecnico_id'])?->name
+                                    : $record->workOrder->assignedTech?->name;
+                                Mail::to($customerEmail)->send(new ParteRechazadoMail($record->workOrder, $nuevoTecnico));
                             }
                         } catch (\Exception $e) {}
 

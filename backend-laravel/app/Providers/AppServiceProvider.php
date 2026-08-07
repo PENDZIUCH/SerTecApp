@@ -23,6 +23,14 @@ class AppServiceProvider extends ServiceProvider
 
         // Cargar configuración de email desde la DB
         $this->configureMailFromDb();
+
+        // Cargar APP_NAME desde la DB
+        try {
+            $appName = \App\Models\SystemSetting::get('app_name');
+            if ($appName) {
+                config(['app.name' => $appName]);
+            }
+        } catch (\Exception $e) {}
     }
 
     private function configureMailFromDb(): void

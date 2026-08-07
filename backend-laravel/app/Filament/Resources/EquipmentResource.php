@@ -6,12 +6,18 @@ use App\Filament\Resources\EquipmentResource\Pages;
 use App\Models\Equipment;
 use Filament\Forms;
 use Filament\Forms\Form;
+use App\Services\ModuleManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
 class EquipmentResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('equipment');
+    }
+
     protected static ?string $model = Equipment::class;
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $navigationLabel = 'Equipos';

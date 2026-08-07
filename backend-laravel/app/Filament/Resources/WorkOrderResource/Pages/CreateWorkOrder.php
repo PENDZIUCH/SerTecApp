@@ -25,7 +25,7 @@ class CreateWorkOrder extends CreateRecord
         // Email al cliente
         try {
             $email = $record->customer->email ?? null;
-            if ($email && config('mail.host')) {
+            if ($email) {
                 Mail::to($email)->send(new OrdenCreadaMail($record));
             }
         } catch (\Exception $e) {

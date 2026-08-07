@@ -101,7 +101,7 @@ class TechnicianController extends Controller
             // Email al cliente con el resumen del parte
             try {
                 $customerEmail = $order->customer->email ?? null;
-                if ($customerEmail && config('mail.host')) {
+                if ($customerEmail) {
                     $parteConRelaciones = $parte->load(['workOrder.customer', 'technician']);
                     Mail::to($customerEmail)->send(new ParteCompletadoMail($parteConRelaciones));
                 }

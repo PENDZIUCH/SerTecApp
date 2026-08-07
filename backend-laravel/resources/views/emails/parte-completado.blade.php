@@ -113,7 +113,13 @@
   <div class="section-body">
     <p style="font-size:13px; color:#666; margin:0 0 12px">El cliente presta conformidad con el trabajo realizado mediante la firma a continuación:</p>
     <img src="{{ $parte->signature }}" alt="Firma del cliente" class="firma-img">
-    <p style="font-size:12px; color:#999; margin:8px 0 0">Firmado el {{ $parte->created_at->format('d/m/Y') }} a las {{ $parte->created_at->format('H:i') }} hs.</p>
+    <p style="font-size:12px; color:#999; margin:8px 0 0">
+      Firmado el {{ $parte->created_at->format('d/m/Y') }} a las {{ $parte->created_at->format('H:i') }} hs.
+      @if($parte->latitude && $parte->longitude)
+        &nbsp;·&nbsp;
+        <a href="https://www.google.com/maps?q={{ $parte->latitude }},{{ $parte->longitude }}" target="_blank" style="color:#4a90d9; text-decoration:none;">📍 Ver ubicación en Google Maps</a>
+      @endif
+    </p>
   </div>
 </div>
 @endif

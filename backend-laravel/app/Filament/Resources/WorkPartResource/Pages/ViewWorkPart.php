@@ -3,14 +3,11 @@
 namespace App\Filament\Resources\WorkPartResource\Pages;
 
 use App\Filament\Resources\WorkPartResource;
-use App\Models\WorkPart;
+use App\Services\WorkPartService;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Illuminate\Support\Facades\DB;
-use App\Mail\ParteRechazadoMail;
-use Illuminate\Support\Facades\Mail;
 
 class ViewWorkPart extends ViewRecord
 {
@@ -37,30 +34,7 @@ class ViewWorkPart extends ViewRecord
                         ->rows(3),
                 ])
                 ->action(function (array $data) {
-                    DB::transaction(function () use ($data) {
-                        $this->record->update([
-                            'status'           => 'approved',
-                            'approved_at'      => now(),
-                            'supervisor_notes' => $data['supervisor_notes'] ?? null,
-                        ]);
-                        $this->record->workOrder->update([
-                            'status'       => 'completed',
-                            'completed_at' => now(),
-                        ]);
-                    });
-
-                    try {
-                        $tecnico = $this->record->technician;
-                        if ($tecnico) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('✅ Parte Aprobado')
-                                ->body('Tu parte de la Orden #' . $this->record->work_order_id . ' fue aprobado.' .
-                                    ($data['supervisor_notes'] ? ' Nota: ' . $data['supervisor_notes'] : ''))
-                                ->success()
-                                ->sendToDatabase($tecnico);
-                        }
-                    } catch (\Exception $e) {}
-
+                    app(WorkPartService::class)->approve($this->record, $data);
                     Notification::make()->title('Parte Aprobado')->success()->send();
                     $this->redirect(WorkPartResource::getUrl('index'));
                 }),
@@ -84,40 +58,7 @@ class ViewWorkPart extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (array $data) {
-                    DB::transaction(function () use ($data) {
-                        $this->record->update([
-                            'status'           => 'rejected',
-                            'supervisor_notes' => $data['supervisor_notes'],
-                        ]);
-                        $orderData = ['status' => 'pending', 'completed_at' => null];
-                        if (!empty($data['nuevo_tecnico_id'])) {
-                            $orderData['assigned_tech_id'] = $data['nuevo_tecnico_id'];
-                        }
-                        $this->record->workOrder->update($orderData);
-                    });
-
-                    try {
-                        $tecnico = $this->record->technician;
-                        if ($tecnico) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('❌ Parte Rechazado')
-                                ->body('Tu parte de la Orden #' . $this->record->work_order_id . ' fue rechazado. Motivo: ' . $data['supervisor_notes'])
-                                ->danger()
-                                ->sendToDatabase($tecnico);
-                        }
-                    } catch (\Exception $e) {}
-
-                    // Email al cliente
-                    try {
-                        $customerEmail = $this->record->workOrder->customer->email ?? null;
-                        if ($customerEmail) {
-                            $nuevoTecnico = !empty($data['nuevo_tecnico_id'])
-                                ? \App\Models\User::find($data['nuevo_tecnico_id'])?->name
-                                : $this->record->workOrder->assignedTech?->name;
-                            Mail::to($customerEmail)->send(new ParteRechazadoMail($this->record->workOrder, $nuevoTecnico));
-                        }
-                    } catch (\Exception $e) {}
-
+                    app(WorkPartService::class)->reject($this->record, $data);
                     Notification::make()->title('Parte Rechazado — Orden volvió a Pendiente')->warning()->send();
                     $this->redirect(WorkPartResource::getUrl('index'));
                 }),

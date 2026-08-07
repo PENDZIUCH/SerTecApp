@@ -71,21 +71,8 @@ class ConfiguracionGeneral extends Page
             SystemSetting::set($key, $value);
         }
 
-        // Escribir APP_NAME al .env
-        $envPath = base_path('.env');
-        $envContent = file_get_contents($envPath);
-
-        $appName = $data['app_name'] ?? 'SerTecApp';
-        if (preg_match('/^APP_NAME=/m', $envContent)) {
-            $envContent = preg_replace('/^APP_NAME=.*/m', 'APP_NAME="' . $appName . '"', $envContent);
-        } else {
-            $envContent .= "\nAPP_NAME=\"{$appName}\"";
-        }
-
-        file_put_contents($envPath, $envContent);
-
-        // Actualizar en runtime
-        config(['app.name' => $appName]);
+        // Actualizar en runtime sin tocar el .env (evita invalidar sesión CSRF)
+        config(['app.name' => $data['app_name'] ?? 'SerTecApp']);
 
         Notification::make()
             ->title('Configuración guardada')

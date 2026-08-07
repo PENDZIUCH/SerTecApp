@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+use App\Services\ModuleManager;
 
 use App\Filament\Resources\WorkOrderResource\Pages;
 use App\Filament\Resources\WorkPartResource;
@@ -13,6 +14,11 @@ use Filament\Tables\Table;
 
 class WorkOrderResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('work_orders');
+    }
+
     protected static ?string $model = WorkOrder::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'Órdenes de Trabajo';

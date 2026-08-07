@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+use App\Services\ModuleManager;
 
 use App\Filament\Resources\PartResource\Pages;
 use App\Models\Part;
@@ -12,6 +13,11 @@ use Filament\Tables\Table;
 
 class PartResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('parts');
+    }
+
     protected static ?string $model = Part::class;
     protected static ?string $navigationIcon = 'heroicon-o-cube';
     protected static ?string $navigationLabel = 'Repuestos';

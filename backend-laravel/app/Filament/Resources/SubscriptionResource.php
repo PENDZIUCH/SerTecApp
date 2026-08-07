@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+use App\Services\ModuleManager;
 
 use App\Filament\Resources\SubscriptionResource\Pages;
 use App\Models\Subscription;
@@ -12,6 +13,11 @@ use Filament\Tables\Table;
 
 class SubscriptionResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('subscriptions');
+    }
+
     protected static ?string $model = Subscription::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar';
     protected static ?string $navigationLabel = 'Suscripciones';

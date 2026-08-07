@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+use App\Services\ModuleManager;
 
 use App\Filament\Resources\CustomerResource\Pages;
 use App\Models\Customer;
@@ -12,6 +13,11 @@ use Filament\Tables\Table;
 
 class CustomerResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('customers');
+    }
+
     protected static ?string $model = Customer::class;
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'Clientes';

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+use App\Services\ModuleManager;
 
 use App\Filament\Resources\WorkPartResource\Pages;
 use App\Models\WorkPart;
@@ -14,6 +15,11 @@ use Filament\Tables\Table;
 
 class WorkPartResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('work_orders');
+    }
+
     protected static ?string $model = WorkPart::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'Partes Pendientes';

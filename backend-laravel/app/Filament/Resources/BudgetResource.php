@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources;
+use App\Services\ModuleManager;
 
 use App\Filament\Resources\BudgetResource\Pages;
 use App\Models\Budget;
@@ -12,6 +13,11 @@ use Filament\Tables\Table;
 
 class BudgetResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('budgets');
+    }
+
     protected static ?string $model = Budget::class;
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationLabel = 'Presupuestos';

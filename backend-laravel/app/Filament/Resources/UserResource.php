@@ -199,6 +199,26 @@ class UserResource extends Resource
                                     ->url($whatsappUrl)
                                     ->openUrlInNewTab()
                                     ->visible(!empty($record->phone)),
+                                \Filament\Notifications\Actions\Action::make('email_acceso')
+                                    ->label('Enviar por Email')
+                                    ->button()
+                                    ->color('info')
+                                    ->visible(!empty($record->email))
+                                    ->action(function () use ($record, $autoLoginUrl) {
+                                        try {
+                                            \Illuminate\Support\Facades\Mail::to($record->email)->send(new \App\Mail\AccesoUsuarioMail($record, $autoLoginUrl));
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Email enviado a ' . $record->email)
+                                                ->success()
+                                                ->send();
+                                        } catch (\Exception $e) {
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Error al enviar email')
+                                                ->body($e->getMessage())
+                                                ->danger()
+                                                ->send();
+                                        }
+                                    }),
                             ])
                             ->send();
                     }),

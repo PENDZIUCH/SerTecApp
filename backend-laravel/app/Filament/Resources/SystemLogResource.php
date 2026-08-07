@@ -21,7 +21,7 @@ class SystemLogResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
     protected static ?string $navigationLabel = 'Logs del sistema';
-    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?string $navigationGroup = 'Administración';
     protected static ?int $navigationSort = 90;
     protected static ?string $modelLabel = 'Log';
     protected static ?string $pluralModelLabel = 'Logs del sistema';

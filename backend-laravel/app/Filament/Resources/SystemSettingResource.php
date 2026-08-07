@@ -21,7 +21,7 @@ class SystemSettingResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $navigationLabel = 'Ajustes raw';
-    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?string $navigationGroup = 'Administración';
     protected static ?int $navigationSort = 95;
     protected static ?string $modelLabel = 'Ajuste';
     protected static ?string $pluralModelLabel = 'Ajustes raw';

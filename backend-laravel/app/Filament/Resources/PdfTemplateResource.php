@@ -21,7 +21,7 @@ class PdfTemplateResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
     protected static ?string $navigationLabel = 'Plantillas PDF';
-    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?string $navigationGroup = 'Administración';
     protected static ?int $navigationSort = 85;
     protected static ?string $modelLabel = 'Plantilla PDF';
     protected static ?string $pluralModelLabel = 'Plantillas PDF';

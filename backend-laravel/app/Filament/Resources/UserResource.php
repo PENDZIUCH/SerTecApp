@@ -209,6 +209,31 @@ class UserResource extends Resource
                             ])
                             ->send();
                     }),
+                Tables\Actions\Action::make('enviar_acceso_email')
+                    ->label('Enviar Acceso por Email')
+                    ->icon('heroicon-o-envelope')
+                    ->color('info')
+                    ->visible(fn (User $record) => !empty($record->email))
+                    ->requiresConfirmation()
+                    ->modalHeading('Enviar acceso por email')
+                    ->modalDescription(fn (User $record) => 'Se enviará un link de acceso automático a ' . $record->email)
+                    ->action(function (User $record) {
+                        $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;
+                        $accessUrl = 'https://sertecapp.pendziuch.com/l?t=' . $token;
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($record->email)->send(new \App\Mail\AccesoUsuarioMail($record, $accessUrl));
+                            \Filament\Notifications\Notification::make()
+                                ->title('Email enviado a ' . $record->email)
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Error al enviar email')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
                 Tables\Actions\Action::make('whatsapp')
                     ->label('WhatsApp')
                     ->icon('heroicon-o-chat-bubble-left-right')

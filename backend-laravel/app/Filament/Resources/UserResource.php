@@ -142,22 +142,9 @@ class UserResource extends Resource
                         $record->password = \Illuminate\Support\Facades\Hash::make($newPassword);
                         $record->save();
                         
-                        // Generar token JWT REAL desde el backend
-                        $response = \Illuminate\Support\Facades\Http::post('https://sertecapp.pendziuch.com/api/v1/magic-link/generate', [
-                            'user_id' => $record->id
-                        ]);
-                        
-                        if (!$response->successful()) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Error')
-                                ->body('No se pudo generar el link de acceso')
-                                ->danger()
-                                ->send();
-                            return;
-                        }
-                        
-                        $data = $response->json();
-                        $autoLoginUrl = $data['url'];
+                        // Generar token directamente sin HTTP request interno
+                        $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;
+                        $autoLoginUrl = 'https://sertecapp.pendziuch.com/l?t=' . $token;
                         
                         // Preparar WhatsApp link
                         $phone = preg_replace('/[^0-9]/', '', $record->phone);

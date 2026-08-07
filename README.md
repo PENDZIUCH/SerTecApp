@@ -1,249 +1,59 @@
-# 🔧 SerTecApp - Sistema de Gestión de Servicio Técnico
+<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-## 📋 Descripción
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+</p>
 
-SerTecApp es un sistema completo de gestión para servicios técnicos de equipamiento deportivo (gimnasios). Permite gestionar clientes, abonos, órdenes de trabajo, repuestos, facturación y más, con capacidad de trabajo offline.
+## About Laravel
 
-## 🎯 Características Principales
+Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-### ✨ Funcionalidades Core
-- **Gestión de Clientes Abonados**: Control de clientes con contratos de mantenimiento mensual
-- **Órdenes de Trabajo**: Sistema completo de partes de trabajo con seguimiento
-- **Control de Abonos**: Planillas por frecuencia (1, 2, 3 visitas mensuales)
-- **Gestión de Repuestos**: Inventario y uso en trabajos
-- **Taller/Stock**: Control de equipos en reparación
-- **Facturación**: Integración lista para API de Tango Software
-- **Trabajo Offline**: PWA con sincronización automática cuando hay conexión
+- [Simple, fast routing engine](https://laravel.com/docs/routing).
+- [Powerful dependency injection container](https://laravel.com/docs/container).
+- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
+- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
+- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
+- [Robust background job processing](https://laravel.com/docs/queues).
+- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-### 🎨 Diseño y UX
-- Interfaz moderna y responsive
-- Dark mode y light mode
-- Optimizado para móviles y tablets (técnicos en campo)
-- Instalable como app (PWA)
+Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-### 🔐 Seguridad
-- Autenticación de usuarios
-- Roles y permisos
-- Backup automático de datos
-- Cifrado de información sensible
+## Learning Laravel
 
-## 🏗️ Arquitectura
+Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
 
-### Stack Tecnológico
+If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-#### Frontend (PWA)
-- **Next.js 15** - Framework React con App Router
-- **TypeScript** - Tipado estático
-- **Tailwind CSS** - Estilos utility-first
-- **shadcn/ui** - Componentes UI modernos
-- **IndexedDB** - Storage offline
-- **Service Workers** - Capacidades PWA
+## Laravel Sponsors
 
-#### Backend (API REST)
-- **PHP 8.2+** - Lenguaje principal
-- **Laravel 11** - Framework backend
-- **MySQL 8.0** - Base de datos
-- **Composer** - Gestor de dependencias
+We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-#### Deployment
-- **Frontend**: Vercel (gratis, CDN global)
-- **Backend**: Hostinger (plan actual)
-- **Database**: MySQL en Hostinger
+### Premium Partners
 
-## 📁 Estructura del Proyecto
+- **[Vehikl](https://vehikl.com)**
+- **[Tighten Co.](https://tighten.co)**
+- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
+- **[64 Robots](https://64robots.com)**
+- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
+- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
+- **[Redberry](https://redberry.international/laravel-development)**
+- **[Active Logic](https://activelogic.com)**
 
-```
-SerTecApp/
-├── frontend/              # Aplicación Next.js PWA
-│   ├── app/              # App Router (páginas)
-│   ├── components/       # Componentes React
-│   │   ├── layout/      # Layout y navegación
-│   │   ├── ui/          # Componentes UI reutilizables
-│   │   ├── forms/       # Formularios
-│   │   └── tables/      # Tablas de datos
-│   ├── lib/             # Utilidades y configuración
-│   ├── services/        # API calls y servicios
-│   ├── types/           # TypeScript types
-│   └── hooks/           # React hooks personalizados
-│
-├── backend/              # API PHP Laravel
-│   ├── api/             # Endpoints REST
-│   ├── config/          # Configuraciones
-│   ├── models/          # Modelos de datos
-│   ├── controllers/     # Controladores
-│   ├── middleware/      # Middleware (auth, cors, etc)
-│   └── utils/           # Utilidades PHP
-│
-├── database/            # Scripts SQL y migraciones
-│   ├── migrations/      # Migraciones de BD
-│   ├── seeders/         # Datos de prueba
-│   └── schema.sql       # Esquema completo
-│
-└── docs/               # Documentación completa
-    ├── API.md          # Documentación de endpoints
-    ├── DATABASE.md     # Esquema de base de datos
-    ├── DEPLOYMENT.md   # Guía de deployment
-    └── DEVELOPMENT.md  # Guía para desarrolladores
-```
+## Contributing
 
-## 🚀 Instalación y Desarrollo
+Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
-### Requisitos Previos
-- Node.js 18+ y npm
-- PHP 8.2+ 
-- MySQL 8.0+
-- Composer
-- Laragon (recomendado para Windows) o MAMP (Mac)
+## Code of Conduct
 
-### Instalación Frontend
+In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## Security Vulnerabilities
 
-La app estará en `http://localhost:3000`
+If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
-### Instalación Backend
+## License
 
-```bash
-cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan db:seed
-php artisan serve
-```
-
-La API estará en `http://localhost:8000`
-
-## 📊 Modelo de Datos Principal
-
-### Entidades Core
-
-**Clientes**
-- Datos básicos (nombre, contacto, dirección)
-- Tipo: abonado o esporádico
-- Frecuencia de visitas (1, 2, 3 mensuales)
-- Estado: activo, inactivo, moroso
-
-**Órdenes de Trabajo**
-- Número de parte
-- Cliente
-- Fecha
-- Técnico asignado
-- Equipo atendido
-- Descripción del trabajo
-- Repuestos utilizados
-- Estado: pendiente, en progreso, completado
-- Firma del cliente (digital)
-
-**Abonos**
-- Cliente
-- Frecuencia (visitas mensuales)
-- Monto
-- Fecha de inicio
-- Estado
-
-**Repuestos**
-- Código
-- Descripción
-- Stock actual
-- Precio
-- Proveedor
-
-**Equipos en Taller**
-- Cliente/Origen
-- Equipo
-- Estado
-- Fecha ingreso
-- Observaciones
-
-## 🔌 Integración Tango Software
-
-El sistema está preparado para integrar con la API de Tango para facturación:
-
-```typescript
-// Endpoint simulado (mock) incluido
-POST /api/tango/factura
-{
-  "cliente_id": 123,
-  "items": [...],
-  "total": 50000
-}
-```
-
-Una vez aprobada la integración real, solo se cambia la URL del endpoint.
-
-## 🎨 Sistema de Colores (Abonos)
-
-- **Verde**: 1 visita mensual
-- **Azul**: 2 visitas mensuales  
-- **Morado**: 3 visitas mensuales
-
-## 📱 Capacidades PWA
-
-- ✅ Instalable en dispositivos
-- ✅ Funciona offline
-- ✅ Sincronización automática en background
-- ✅ Notificaciones push
-- ✅ Caché inteligente
-- ✅ Actualización automática
-
-## 🔄 Flujo de Trabajo Típico
-
-1. **Técnico sin conexión** → Crea orden de trabajo offline
-2. **Datos guardados** → IndexedDB local en el dispositivo
-3. **Conexión restaurada** → Sincronización automática
-4. **Backend actualizado** → Datos persistidos en MySQL
-5. **Facturación** → Envío a Tango (cuando esté integrado)
-
-## 📈 Roadmap y Fases
-
-### Fase 1 - MVP (Actual)
-- ✅ Estructura del proyecto
-- 🚧 Frontend básico
-- 🚧 Backend API
-- 🚧 Offline storage
-- 🚧 CRUD completo
-
-### Fase 2 - SaaS
-- Multi-tenant (varios clientes)
-- Panel de administración
-- Facturación automática
-- Reportes avanzados
-- Integración Tango real
-
-### Fase 3 - Expansión
-- App móvil nativa (React Native)
-- Dashboard analytics
-- Módulo de inventario avanzado
-- Sistema de tickets
-- WhatsApp integration
-
-## 👥 Equipo y Colaboración
-
-**Proyecto desarrollado por:**
-- Hugo Pendziuch (Fundador/Developer)
-- Claude AI (Arquitectura y Desarrollo)
-
-**Para colaboradores:**
-Todo el código está documentado y sigue estándares profesionales. Lee `/docs/DEVELOPMENT.md` para contribuir.
-
-## 📄 Licencia
-
-Propietario: Pendziuch.com
-Todos los derechos reservados.
-
-## 🤝 Soporte
-
-Para preguntas o soporte:
-- Web: pendziuch.com
-
----
-
-**Versión**: 1.0.0-alpha  
-**Última actualización**: Noviembre 2025  
-**Estado**: En desarrollo activo
+The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

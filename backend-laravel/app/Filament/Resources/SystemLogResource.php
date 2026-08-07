@@ -19,7 +19,12 @@ class SystemLogResource extends Resource
 {
     protected static ?string $model = SystemLog::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static ?string $navigationLabel = 'Logs del sistema';
+    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?int $navigationSort = 90;
+    protected static ?string $modelLabel = 'Log';
+    protected static ?string $pluralModelLabel = 'Logs del sistema';
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->check() && auth()->user()->hasRole('super_admin');

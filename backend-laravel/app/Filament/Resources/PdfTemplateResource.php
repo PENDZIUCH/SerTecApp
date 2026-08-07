@@ -19,7 +19,17 @@ class PdfTemplateResource extends Resource
 {
     protected static ?string $model = PdfTemplate::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-duplicate';
+    protected static ?string $navigationLabel = 'Plantillas PDF';
+    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?int $navigationSort = 85;
+    protected static ?string $modelLabel = 'Plantilla PDF';
+    protected static ?string $pluralModelLabel = 'Plantillas PDF';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->check() && auth()->user()->hasRole('super_admin');
+    }
 
     public static function form(Form $form): Form
     {

@@ -19,7 +19,12 @@ class SystemSettingResource extends Resource
 {
     protected static ?string $model = SystemSetting::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
+    protected static ?string $navigationLabel = 'Ajustes raw';
+    protected static ?string $navigationGroup = 'Administracion';
+    protected static ?int $navigationSort = 95;
+    protected static ?string $modelLabel = 'Ajuste';
+    protected static ?string $pluralModelLabel = 'Ajustes raw';
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->check() && auth()->user()->hasRole('super_admin');

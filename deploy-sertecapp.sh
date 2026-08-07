@@ -22,6 +22,7 @@ log "git fetch completado"
 
 # Extraer el contenido exacto de backend-laravel/ del remote
 git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
+git archive origin/development backend-laravel/lang/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1 2>/dev/null || true
 log "git archive extraído correctamente"
 
 # Restaurar .env

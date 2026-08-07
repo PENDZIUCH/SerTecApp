@@ -8,7 +8,7 @@ IF "%MSG%"=="" SET MSG=fix: actualizacion de codigo
 echo.
 echo [1/3] Commiteando en git...
 cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp"
-git add backend-laravel/app/ backend-laravel/config/ backend-laravel/routes/ backend-laravel/resources/ backend-laravel/database/migrations/ CLAUDE.md DEPLOY_CI_GUIDE.md deploy.bat deploy-sertecapp.sh sertecapp-tecnicos/
+git add backend-laravel/app/ backend-laravel/config/ backend-laravel/routes/ backend-laravel/resources/ backend-laravel/database/migrations/ backend-laravel/lang/ CLAUDE.md DEPLOY_CI_GUIDE.md deploy.bat deploy-sertecapp.sh sertecapp-tecnicos/
 git diff --cached --quiet && (echo     Sin cambios nuevos.) || (git commit -m "%MSG%" && echo     OK)
 
 echo.

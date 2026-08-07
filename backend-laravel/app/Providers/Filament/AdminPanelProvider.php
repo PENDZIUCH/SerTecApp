@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('sertecapp')
             ->login()
             ->passwordReset()
-            ->brandName('SerTecApp')
+            ->brandName(fn () => \App\Models\SystemSetting::get('app_name', 'SerTecApp'))
             ->favicon(asset('favicon.ico'))
             ->sidebarCollapsibleOnDesktop()
             ->colors([

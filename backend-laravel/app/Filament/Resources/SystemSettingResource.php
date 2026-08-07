@@ -20,11 +20,11 @@ class SystemSettingResource extends Resource
     protected static ?string $model = SystemSetting::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
-    protected static ?string $navigationLabel = 'Ajustes raw';
+    protected static ?string $navigationLabel = 'Variables del sistema';
     protected static ?string $navigationGroup = 'Administración';
     protected static ?int $navigationSort = 95;
-    protected static ?string $modelLabel = 'Ajuste';
-    protected static ?string $pluralModelLabel = 'Ajustes raw';
+    protected static ?string $modelLabel = 'Variable';
+    protected static ?string $pluralModelLabel = 'Variables del sistema';
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->check() && auth()->user()->hasRole('super_admin');

@@ -34,6 +34,8 @@ log ".env restaurado"
 sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' "$LARAVEL_DIR/.env"
 # MAIL_MAILER debe ser smtp — sendmail está deshabilitado en Hostinger
 sed -i 's/MAIL_MAILER=sendmail/MAIL_MAILER=smtp/' "$LARAVEL_DIR/.env"
+# PWA_URL debe apuntar a la PWA de esta instancia
+grep -q 'PWA_URL' "$LARAVEL_DIR/.env" || echo 'PWA_URL=https://sertecapp.pendziuch.com' >> "$LARAVEL_DIR/.env"
 log "Variables críticas del .env verificadas"
 
 # Artisan

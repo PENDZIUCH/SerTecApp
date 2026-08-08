@@ -280,3 +280,44 @@ cd /home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel && se
 | Admin panel | `https://demo.pendziuch.com/sertecapp/login` |
 | Webhook secret | `SerTecDeploy2026!` |
 | Tag estable | `v0.1-stable` |
+
+
+---
+
+## Incidente 2026-08-08 — .env corrupto por PWA_URL sin salto de linea
+
+### Que paso
+Al agregar PWA_URL al .env de Hostinger via SSH con `echo >> .env`, la linea
+se pegó sin salto de linea al final del valor de APP_NAME que tenia comillas.
+El .env quedó:
+  APP_NAME="[Servicio Técnico] FitnessCompany.com"PWA_URL=https://...
+En vez de:
+  APP_NAME="[Servicio Técnico] FitnessCompany.com"
+  PWA_URL=https://...
+
+Laravel no pudo parsear el .env y devolvió 500 en toda la app.
+
+### Causa raiz
+`echo 'PWA_URL=...' >> .env` no garantiza salto de linea previo.
+Si el archivo no termina en newline, la linea nueva se pega a la anterior.
+
+### Solucion aplicada
+Se corrigió el .env manualmente via SSH con sed.
+Se actualizó deploy-sertecapp.sh para usar `printf '\nPWA_URL=...\n'`
+y agregar un sed de corrección que detecta si PWA_URL quedó pegado.
+
+### Regla para el futuro
+NUNCA agregar variables al .env de produccion con `echo >>`.
+SIEMPRE usar `printf '\nVAR=valor\n' >> .env` o editar el archivo directamente.
+
+### Estado al cerrar el incidente
+- development en produccion: dd63c35 (estado pre-arquitectura, verificado)
+- core/v1 en GitHub: todo el trabajo de arquitectura del 2026-08-08
+- El trabajo de core/v1 NO fue mergeado a development
+- Pendiente: merge de core/v1 a development cuando se resuelva el problema
+  de canAccess() que hace queries a la DB durante el boot de Filament
+
+### Causa real del 500 (descubierta post-incidente)
+El error 500 NO fue por el merge de codigo — fue por el .env corrupto.
+El codigo de core/v1 puede ser correcto. Antes de descartar el merge,
+hay que probarlo con el .env en buen estado.

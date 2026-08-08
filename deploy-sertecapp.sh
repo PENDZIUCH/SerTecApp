@@ -1,7 +1,6 @@
 #!/bin/bash
 # deploy-sertecapp.sh
 # Usa git archive para extraer contenido EXACTO del remote
-# Elimina el problema de fechas/rsync definitivamente
 
 LARAVEL_DIR="/home/u283281385/domains/demo.pendziuch.com/public_html/backend-laravel"
 LOG="/tmp/sertecapp_deploy.log"
@@ -12,31 +11,33 @@ log "=== DEPLOY INICIADO ==="
 
 cd "$LARAVEL_DIR"
 
-# Backup del .env antes de cualquier cambio
 cp .env /tmp/sertecapp_env_backup
 log ".env respaldado"
 
-# Traer últimos cambios del remote
 git fetch origin development >> "$LOG" 2>&1
 log "git fetch completado"
 
-# Extraer el contenido exacto de backend-laravel/ del remote
 git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
 git archive origin/development backend-laravel/lang/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1 2>/dev/null || true
-log "git archive extraído correctamente"
+log "git archive extraido correctamente"
 
-# Restaurar .env
 cp /tmp/sertecapp_env_backup "$LARAVEL_DIR/.env"
 log ".env restaurado"
 
-# Asegurar variables críticas en .env
-# QUEUE_CONNECTION debe ser sync en Hostinger — no hay workers permanentes
+# Asegurar variables criticas en .env
 sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' "$LARAVEL_DIR/.env"
-# MAIL_MAILER debe ser smtp — sendmail está deshabilitado en Hostinger
 sed -i 's/MAIL_MAILER=sendmail/MAIL_MAILER=smtp/' "$LARAVEL_DIR/.env"
-log "Variables críticas del .env verificadas"
 
-# Artisan
+# PWA_URL — agregar con salto de linea correcto si no existe
+if ! grep -q 'PWA_URL' "$LARAVEL_DIR/.env"; then
+    printf '\nPWA_URL=https://sertecapp.pendziuch.com\n' >> "$LARAVEL_DIR/.env"
+fi
+
+# Corregir si PWA_URL quedó pegado a otra linea (sin salto de linea previo)
+sed -i 's/\([^[:space:]]\)PWA_URL/\1\nPWA_URL/g' "$LARAVEL_DIR/.env"
+
+log "Variables criticas del .env verificadas"
+
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1
 /usr/bin/php artisan cache:clear >> "$LOG" 2>&1
 /usr/bin/php artisan view:clear >> "$LOG" 2>&1

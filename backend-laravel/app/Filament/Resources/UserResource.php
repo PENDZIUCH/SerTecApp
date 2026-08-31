@@ -29,30 +29,19 @@ class UserResource extends Resource
             Forms\Components\Section::make('Información Personal')
                 ->schema([
                     Forms\Components\TextInput::make('name')
-                        ->label('Nombre')
-                        ->required()
-                        ->maxLength(255),
+                        ->label('Nombre')->required()->maxLength(255),
                     Forms\Components\TextInput::make('email')
-                        ->label('Email')
-                        ->email()
-                        ->required()
-                        ->unique(ignoreRecord: true)
-                        ->maxLength(255),
+                        ->label('Email')->email()->required()
+                        ->unique(ignoreRecord: true)->maxLength(255),
                     Forms\Components\TextInput::make('phone')
-                        ->label('Teléfono')
-                        ->tel()
-                        ->placeholder('+54 11 1234-5678')
-                        ->maxLength(20)
-                        ->helperText('Formato: +54 11 xxxx-xxxx'),
+                        ->label('Teléfono')->tel()
+                        ->placeholder('+54 11 1234-5678')->maxLength(20),
                     Forms\Components\TextInput::make('password')
-                        ->label('Contraseña')
-                        ->password()
-                        ->revealable()
+                        ->label('Contraseña')->password()->revealable()
                         ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                         ->dehydrated(fn ($state) => filled($state))
                         ->required(fn (string $context): bool => $context === 'create')
-                        ->default(fn () => \Illuminate\Support\Str::random(12))
-                        ->helperText('Contraseña generada automáticamente. Puedes cambiarla.'),
+                        ->default(fn () => \Illuminate\Support\Str::random(12)),
                 ])->columns(2),
 
             Forms\Components\Section::make('Rol y Permisos')
@@ -60,19 +49,19 @@ class UserResource extends Resource
                     Forms\Components\Select::make('roles')
                         ->label('Rol')
                         ->relationship('roles', 'name')
-                        ->options(Role::pluck('name', 'id'))
-                        ->searchable()
-                        ->preload()
-                        ->required()
-                        ->helperText('Selecciona el rol del usuario (administrador, técnico, supervisor, cliente)'),
+                        ->options(function () {
+                            if (auth()->check() && auth()->user()->hasRole('supervisor')) {
+                                return Role::whereIn('name', ['técnico', 'tecnico'])->pluck('name', 'id');
+                            }
+                            return Role::pluck('name', 'id');
+                        })
+                        ->searchable()->preload()->required(),
                 ]),
 
             Forms\Components\Section::make('Estado')
                 ->schema([
                     Forms\Components\Toggle::make('is_active')
-                        ->label('Usuario Activo')
-                        ->default(true)
-                        ->helperText('Usuarios inactivos no pueden iniciar sesión'),
+                        ->label('Usuario Activo')->default(true),
                 ]),
         ]);
     }
@@ -81,230 +70,113 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nombre')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable()
-                    ->sortable()
-                    ->copyable()
-                    ->copyMessage('Email copiado'),
-                Tables\Columns\TextColumn::make('phone')
-                    ->label('Teléfono')
-                    ->searchable()
-                    ->toggleable()
+                Tables\Columns\TextColumn::make('name')->label('Nombre')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('email')->label('Email')->searchable()->sortable()->copyable(),
+                Tables\Columns\TextColumn::make('phone')->label('Teléfono')->searchable()->toggleable()
                     ->formatStateUsing(fn ($state) => $state ?? '-'),
-                Tables\Columns\TextColumn::make('roles.name')
-                    ->label('Rol')
-                    ->badge()
-                    ->colors([
-                        'danger' => 'administrador',
-                        'warning' => 'supervisor',
-                        'success' => 'técnico',
-                        'info' => 'cliente',
-                    ])
+                Tables\Columns\TextColumn::make('roles.name')->label('Rol')->badge()
+                    ->colors(['danger' => 'administrador', 'warning' => 'supervisor', 'success' => 'técnico', 'info' => 'cliente'])
                     ->searchable(),
-                Tables\Columns\IconColumn::make('is_active')
-                    ->label('Activo')
-                    ->boolean()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime('d/m/Y H:i')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\IconColumn::make('is_active')->label('Activo')->boolean()->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Creado')
+                    ->dateTime('d/m/Y H:i')->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                Tables\Filters\SelectFilter::make('roles')
-                    ->label('Rol')
-                    ->relationship('roles', 'name')
-                    ->preload(),
-                Tables\Filters\TernaryFilter::make('is_active')
-                    ->label('Estado')
-                    ->boolean()
-                    ->trueLabel('Solo activos')
-                    ->falseLabel('Solo inactivos')
-                    ->native(false),
+                Tables\Filters\SelectFilter::make('roles')->label('Rol')->relationship('roles', 'name')->preload(),
+                Tables\Filters\TernaryFilter::make('is_active')->label('Estado')->boolean()
+                    ->trueLabel('Solo activos')->falseLabel('Solo inactivos')->native(false),
             ])
             ->actions([
                 Tables\Actions\Action::make('reset_password')
-                    ->label('Nueva Clave')
-                    ->icon('heroicon-o-key')
-                    ->color('warning')
+                    ->label('Nueva Clave')->icon('heroicon-o-key')->color('warning')
+                    ->visible(fn () => auth()->user()->hasAnyRole(['administrador', 'super_admin']))
                     ->requiresConfirmation()
-                    ->modalHeading('Generar Nueva Contraseña')
-                    ->modalDescription('Se generará una contraseña aleatoria.')
                     ->action(function (User $record) {
-                        $newPassword = \Illuminate\Support\Str::random(12);
-                        $record->password = \Illuminate\Support\Facades\Hash::make($newPassword);
-                        $record->save();
-                        
-                        // Generar token directamente sin HTTP request interno
                         $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;
-                        $autoLoginUrl = 'https://sertecapp.pendziuch.com/l?t=' . $token;
-                        
-                        // Preparar WhatsApp link
-                        $phone = preg_replace('/[^0-9]/', '', $record->phone);
+                        $autoLoginUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com') . '/l?t=' . $token;
+                        $phone = preg_replace('/[^0-9]/', '', $record->phone ?? '');
                         if (!str_starts_with($phone, '54')) {
-                            if (str_starts_with($phone, '11')) {
-                                $phone = '54' . $phone;
-                            } elseif (str_starts_with($phone, '9')) {
-                                $phone = '54' . $phone;
-                            } else {
-                                $phone = '549' . $phone;
-                            }
+                            $phone = str_starts_with($phone, '11') ? '54' . $phone : '549' . $phone;
                         }
-                        
-                        $whatsappMessage = urlencode(
-                            "Hola {$record->name}!\n\n" .
-                            "Tu acceso a la app de Fitness Company:\n\n" .
-                            "{$autoLoginUrl}\n\n" .
-                            "(Guarda este link para acceder siempre)"
-                        );
+                        $whatsappMessage = urlencode("Hola {$record->name}!\n\nTu acceso a la app:\n\n{$autoLoginUrl}\n\n(Guardá este link para acceder siempre)");
                         $whatsappUrl = "https://wa.me/{$phone}?text={$whatsappMessage}";
-                        
                         \Filament\Notifications\Notification::make()
                             ->title('Link generado')
                             ->body("Link: {$autoLoginUrl}")
-                            ->success()
-                            ->persistent()
+                            ->success()->persistent()
                             ->actions([
                                 \Filament\Notifications\Actions\Action::make('copy')
-                                    ->label('Copiar Link')
-                                    ->button()
-                                    ->color('gray')
-                                    ->extraAttributes([
-                                        'x-on:click' => "navigator.clipboard.writeText('{$autoLoginUrl}'); \$tooltip('Link copiado!', { timeout: 2000 })"
-                                    ]),
+                                    ->label('Copiar Link')->button()->color('gray')
+                                    ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{$autoLoginUrl}'); \$tooltip('Copiado!', { timeout: 2000 })"]),
                                 \Filament\Notifications\Actions\Action::make('whatsapp')
-                                    ->label('Enviar WhatsApp')
-                                    ->button()
-                                    ->color('success')
-                                    ->url($whatsappUrl)
-                                    ->openUrlInNewTab()
+                                    ->label('WhatsApp')->button()->color('success')
+                                    ->url($whatsappUrl)->openUrlInNewTab()
                                     ->visible(!empty($record->phone)),
                                 \Filament\Notifications\Actions\Action::make('email_acceso')
-                                    ->label('Enviar por Email')
-                                    ->button()
-                                    ->color('info')
+                                    ->label('Enviar por Email')->button()->color('info')
                                     ->visible(!empty($record->email))
                                     ->action(function () use ($record, $autoLoginUrl) {
                                         try {
-                                            \Illuminate\Support\Facades\Mail::to($record->email)->send(new \App\Mail\AccesoUsuarioMail($record, $autoLoginUrl));
+                                            \Illuminate\Support\Facades\Mail::to($record->email)
+                                                ->send(new \App\Mail\AccesoUsuarioMail($record, $autoLoginUrl));
                                             \Filament\Notifications\Notification::make()
-                                                ->title('Email enviado a ' . $record->email)
-                                                ->success()
-                                                ->send();
+                                                ->title('Email enviado')->success()->send();
                                         } catch (\Exception $e) {
                                             \Filament\Notifications\Notification::make()
-                                                ->title('Error al enviar email')
-                                                ->body($e->getMessage())
-                                                ->danger()
-                                                ->send();
+                                                ->title('Error')->body($e->getMessage())->danger()->send();
                                         }
                                     }),
-                            ])
-                            ->send();
+                            ])->send();
                     }),
+
                 Tables\Actions\Action::make('enviar_acceso_email')
-                    ->label('Enviar Acceso por Email')
-                    ->icon('heroicon-o-envelope')
-                    ->color('info')
-                    ->visible(fn (User $record) => !empty($record->email))
+                    ->label('Enviar Acceso por Email')->icon('heroicon-o-envelope')->color('info')
+                    ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin']))
                     ->requiresConfirmation()
-                    ->modalHeading('Enviar acceso por email')
-                    ->modalDescription(fn (User $record) => 'Se enviará un link de acceso automático a ' . $record->email)
                     ->action(function (User $record) {
                         $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;
-                        $accessUrl = 'https://sertecapp.pendziuch.com/l?t=' . $token;
+                        $accessUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com') . '/l?t=' . $token;
                         try {
-                            \Illuminate\Support\Facades\Mail::to($record->email)->send(new \App\Mail\AccesoUsuarioMail($record, $accessUrl));
-                            \Filament\Notifications\Notification::make()
-                                ->title('Email enviado a ' . $record->email)
-                                ->success()
-                                ->send();
+                            \Illuminate\Support\Facades\Mail::to($record->email)
+                                ->send(new \App\Mail\AccesoUsuarioMail($record, $accessUrl));
+                            \Filament\Notifications\Notification::make()->title('Email enviado')->success()->send();
                         } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()
-                                ->title('Error al enviar email')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
+                            \Filament\Notifications\Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
                         }
                     }),
-                Tables\Actions\Action::make('whatsapp')
-                    ->label('WhatsApp')
-                    ->icon('heroicon-o-chat-bubble-left-right')
-                    ->color('success')
-                    ->visible(fn (User $record) => !empty($record->phone))
-                    ->url(function (User $record) {
-                        // Limpiar el telefono dejando solo numeros
-                        $phone = preg_replace('/[^0-9]/', '', $record->phone);
-                        
-                        // Formato Argentina:
-                        // Fijos CABA/GBA: 5411 + numero (ej: 541112345678)
-                        // Celulares: 549 + codigo area + numero (ej: 5491112345678)
-                        
-                        if (!str_starts_with($phone, '54')) {
-                            // Si empieza con 11 (fijo CABA)
-                            if (str_starts_with($phone, '11')) {
-                                $phone = '54' . $phone;
-                            }
-                            // Si empieza con 9 (celular con 9 adelante)
-                            elseif (str_starts_with($phone, '9')) {
-                                $phone = '54' . $phone;
-                            }
-                            // Otros casos (asumir celular sin 9)
-                            else {
-                                $phone = '549' . $phone;
-                            }
-                        }
-                        
-                        $message = urlencode(
-                            "Hola {$record->name}!\n\n" .
-                            "Tu acceso a la app de Fitness Company:\n\n" .
-                            "Usuario: {$record->email}\n" .
-                            "Contrasena: (solicitar al supervisor)\n\n" .
-                            "Descargar app: https://pro.pendziuch.com"
-                        );
-                        return "https://wa.me/{$phone}?text={$message}";
-                    })
-                    ->openUrlInNewTab(),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
-                    ->visible(fn (User $record) => $record->id !== 1)
+                    ->visible(fn (User $record) => $record->id !== 1 && !$record->hasAnyRole(['administrador', 'super_admin']))
                     ->requiresConfirmation(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make()
-                        ->action(function ($records) {
-                            // Prevenir borrado del super admin (ID 1)
-                            $records->filter(fn ($record) => $record->id !== 1)->each->delete();
-                        }),
+                        ->action(fn ($records) => $records->filter(fn ($r) => $r->id !== 1 && !$r->hasAnyRole(['administrador', 'super_admin']))->each->delete()),
                 ]),
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
+    public static function getRelations(): array { return []; }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUsers::route('/'),
+            'index'  => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
+            'edit'   => Pages\EditUser::route('/{record}/edit'),
         ];
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('roles');
+        $query = parent::getEloquentQuery()->with('roles');
+        if (auth()->check() && auth()->user()->hasRole('supervisor')) {
+            $query->whereHas('roles', fn ($q) => $q->whereIn('name', ['técnico', 'tecnico']));
+        }
+        return $query;
     }
 
     public static function canViewAny(): bool
@@ -314,20 +186,21 @@ class UserResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()->hasRole('administrador');
+        return auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']);
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()->hasRole('administrador');
+        if (auth()->user()->hasRole('supervisor')) {
+            return $record->hasAnyRole(['técnico', 'tecnico']);
+        }
+        return auth()->user()->hasAnyRole(['administrador', 'super_admin']);
     }
 
     public static function canDelete($record): bool
     {
-        // No permitir borrar super admin (primer usuario)
-        if ($record->id === 1) {
-            return false;
-        }
-        return auth()->user()->hasRole('administrador');
+        if ($record->id === 1) return false;
+        if ($record->hasAnyRole(['administrador', 'super_admin'])) return false;
+        return auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']);
     }
 }

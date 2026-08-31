@@ -321,3 +321,54 @@ SIEMPRE usar `printf '\nVAR=valor\n' >> .env` o editar el archivo directamente.
 El error 500 NO fue por el merge de codigo — fue por el .env corrupto.
 El codigo de core/v1 puede ser correcto. Antes de descartar el merge,
 hay que probarlo con el .env en buen estado.
+
+---
+
+## Incidente 2026-08-11 — Emails no llegaban post-deploy + permisos de supervisor mal definidos
+
+### Problema 1: Emails no llegaban después del incidente del .env
+
+**Síntoma:** Después de arreglar el .env corrupto con sed, los emails dejaron de llegar.
+
+**Causa:** El cache de Laravel (config:cache) había guardado la configuración rota del .env.
+Cuando el .env se corrigió con sed, el cache quedó con la config vieja hasta que se limpió manualmente.
+
+**Solución aplicada:** Correr manualmente:
+```
+php artisan config:clear && php artisan cache:clear
+```
+
+**Regla permanente — ANTES DE CUALQUIER DEMO O REUNIÓN CON CLIENTE:**
+```
+ssh -i "C:\Users\Hugo Pendziuch\.ssh\hostinger_sertecapp" -p 65002 u283281385@147.79.103.125 "cd ~/domains/demo.pendziuch.com/public_html/backend-laravel && php artisan config:clear && php artisan cache:clear && echo LISTO"
+```
+Si devuelve LISTO, el sistema está limpio. Correrlo siempre 5 minutos antes de una reunión.
+
+---
+
+### Problema 2: Supervisor no podía ver ni gestionar usuarios
+
+**Síntoma:** El supervisor entraba al admin y no veía el módulo de Usuarios aunque se le dieran permisos en Shield.
+
+**Causa:** El UserResource tenía canViewAny(), canCreate(), canEdit() y canDelete() con rol 'administrador' hardcodeado. Shield no tiene efecto cuando hay métodos can* explícitos en el Resource.
+
+**Comportamiento correcto del supervisor (implementado 2026-08-11):**
+- VE: solo técnicos (no ve admins ni super_admin)
+- CREA: usuarios con rol técnico únicamente (no tiene opción de elegir otro rol)
+- EDITA: solo técnicos
+- BORRA: solo técnicos (no puede borrar admins ni super_admin ni el usuario ID=1)
+
+**Regla para el futuro:**
+Cuando se definen permisos por rol en Filament, los métodos can* del Resource
+siempre tienen prioridad sobre Shield. Si hay métodos can* definidos, Shield
+no tiene efecto. Definir los permisos en los métodos can*, no en Shield.
+
+---
+
+### Lección aprendida
+
+Antes de mostrar el sistema a un cliente:
+1. Correr config:clear + cache:clear (ver comando arriba)
+2. Probar el flujo completo: crear orden → completar parte → aprobar
+3. Probar el acceso con cada rol que va a usar el cliente (admin, supervisor, técnico)
+4. Verificar que llegan los emails a una cuenta externa (Gmail)

@@ -309,7 +309,7 @@ class UserResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()->hasRole('administrador');
+        return auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']);
     }
 
     public static function canCreate(): bool

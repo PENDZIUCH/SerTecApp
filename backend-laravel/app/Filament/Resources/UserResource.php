@@ -89,45 +89,64 @@ class UserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('reset_password')
-                    ->label('Nueva Clave')->icon('heroicon-o-key')->color('warning')
+                    ->label('Enviar Acceso')->icon('heroicon-o-key')->color('warning')
                     ->visible(fn () => auth()->user()->hasAnyRole(['administrador', 'super_admin']))
                     ->requiresConfirmation()
+                    ->modalHeading('Generar y enviar acceso')
+                    ->modalDescription('Se generará una contraseña temporal y un magic link para este usuario.')
                     ->action(function (User $record) {
-                        $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;
-                        $autoLoginUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com') . '/l?t=' . $token;
+                        // Generar contraseña temporal
+                        $tempPass = \Illuminate\Support\Str::random(8);
+                        $record->update(['password' => \Illuminate\Support\Facades\Hash::make($tempPass)]);
+
+                        // Magic link PWA
+                        $token = $record->createToken('magic-link', ['*'], now()->addDays(365))->plainTextToken;
+                        $pwaUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com');
+                        $magicLink = $pwaUrl . '/l?t=' . $token;
+
+                        // WhatsApp
                         $phone = preg_replace('/[^0-9]/', '', $record->phone ?? '');
-                        if (!str_starts_with($phone, '54')) {
-                            $phone = str_starts_with($phone, '11') ? '54' . $phone : '549' . $phone;
+                        if (!empty($phone)) {
+                            if (!str_starts_with($phone, '54')) {
+                                $phone = str_starts_with($phone, '11') ? '54' . $phone : '549' . $phone;
+                            }
+                            $msg = urlencode(
+                                "Hola {$record->name}!\n\n" .
+                                "Tus datos de acceso a la app SerTecApp:\n\n" .
+                                "Email: {$record->email}\n" .
+                                "Contraseña: {$tempPass}\n\n" .
+                                "Acceso directo (un solo clic):\n{$magicLink}\n\n" .
+                                "Tip: si usás siempre el mismo dispositivo, el sistema te va a recordar automáticamente."
+                            );
+                            $whatsappUrl = "https://wa.me/{$phone}?text={$msg}";
                         }
-                        $whatsappMessage = urlencode("Hola {$record->name}!\n\nTu acceso a la app:\n\n{$autoLoginUrl}\n\n(Guardá este link para acceder siempre)");
-                        $whatsappUrl = "https://wa.me/{$phone}?text={$whatsappMessage}";
+
                         \Filament\Notifications\Notification::make()
-                            ->title('Link generado')
-                            ->body("Link: {$autoLoginUrl}")
+                            ->title('Acceso generado para ' . $record->name)
+                            ->body("Email: {$record->email} | Pass: {$tempPass}")
                             ->success()->persistent()
-                            ->actions([
-                                \Filament\Notifications\Actions\Action::make('copy')
-                                    ->label('Copiar Link')->button()->color('gray')
-                                    ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{$autoLoginUrl}'); \$tooltip('Copiado!', { timeout: 2000 })"]),
-                                \Filament\Notifications\Actions\Action::make('whatsapp')
-                                    ->label('WhatsApp')->button()->color('success')
-                                    ->url($whatsappUrl)->openUrlInNewTab()
-                                    ->visible(!empty($record->phone)),
-                                \Filament\Notifications\Actions\Action::make('email_acceso')
+                            ->actions(array_filter([
+                                \Filament\Notifications\Actions\Action::make('copy_link')
+                                    ->label('Copiar magic link')->button()->color('gray')
+                                    ->extraAttributes(['x-on:click' => "navigator.clipboard.writeText('{$magicLink}'); \$tooltip('Copiado!', { timeout: 2000 })"]),
+                                !empty($record->phone) ? \Filament\Notifications\Actions\Action::make('whatsapp')
+                                    ->label('Enviar por WhatsApp')->button()->color('success')
+                                    ->url($whatsappUrl ?? '#')->openUrlInNewTab() : null,
+                                !empty($record->email) ? \Filament\Notifications\Actions\Action::make('email_acceso')
                                     ->label('Enviar por Email')->button()->color('info')
-                                    ->visible(!empty($record->email))
-                                    ->action(function () use ($record, $autoLoginUrl) {
+                                    ->action(function () use ($record, $magicLink, $tempPass) {
                                         try {
                                             \Illuminate\Support\Facades\Mail::to($record->email)
-                                                ->send(new \App\Mail\AccesoUsuarioMail($record, $autoLoginUrl));
+                                                ->send(new \App\Mail\AccesoUsuarioMail($record, $magicLink));
                                             \Filament\Notifications\Notification::make()
-                                                ->title('Email enviado')->success()->send();
+                                                ->title('Email enviado a ' . $record->email)->success()->send();
                                         } catch (\Exception $e) {
                                             \Filament\Notifications\Notification::make()
-                                                ->title('Error')->body($e->getMessage())->danger()->send();
+                                                ->title('Error al enviar')->body($e->getMessage())->danger()->send();
                                         }
-                                    }),
-                            ])->send();
+                                    }) : null,
+                            ]))
+                            ->send();
                     }),
 
                 Tables\Actions\Action::make('enviar_acceso_email')

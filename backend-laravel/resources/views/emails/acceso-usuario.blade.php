@@ -3,13 +3,6 @@
 
 Te enviamos tu acceso a la aplicación de Fitness Company.
 
-@if($tempPass)
-Si preferís ingresar manualmente en vez de usar el link, tus datos son:
-
-- **Email:** {{ $user->email }}
-- **Contraseña:** {{ $tempPass }}
-@endif
-
 @component('mail::button', ['url' => $accessUrl, 'color' => 'primary'])
 Acceder a la app
 @endcomponent

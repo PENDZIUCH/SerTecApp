@@ -115,7 +115,8 @@ class UserResource extends Resource
                                 "Tus datos de acceso a la app SerTecApp:\n\n" .
                                 "Email: {$record->email}\n" .
                                 "Contraseña: {$tempPass}\n\n" .
-                                "Acceso directo (un solo clic):\n{$magicLink}\n\n" .
+                                "Página para ingresar con usuario y contraseña:\n{$pwaUrl}\n\n" .
+                                "O si preferís, acceso directo sin escribir nada (un solo clic):\n{$magicLink}\n\n" .
                                 "Tip: si usás siempre el mismo dispositivo, el sistema te va a recordar automáticamente."
                             );
                             $whatsappUrl = "https://wa.me/{$phone}?text={$msg}";

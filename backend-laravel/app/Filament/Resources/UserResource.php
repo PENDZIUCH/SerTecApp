@@ -90,7 +90,7 @@ class UserResource extends Resource
             ->actions([
                 Tables\Actions\Action::make('reset_password')
                     ->label('Enviar Acceso')->icon('heroicon-o-key')->color('warning')
-                    ->visible(fn () => auth()->user()->hasAnyRole(['administrador', 'super_admin']))
+                    ->visible(fn () => auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->modalHeading('Generar y enviar acceso')
                     ->modalDescription('Se generará una contraseña temporal y un magic link para este usuario.')
@@ -151,7 +151,7 @@ class UserResource extends Resource
 
                 Tables\Actions\Action::make('enviar_acceso_email')
                     ->label('Enviar Acceso por Email')->icon('heroicon-o-envelope')->color('info')
-                    ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin']))
+                    ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->action(function (User $record) {
                         $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;

@@ -150,6 +150,43 @@ class UserResource extends Resource
                             ->send();
                     }),
 
+                Tables\Actions\Action::make('enviar_whatsapp')
+                    ->label('Enviar por WhatsApp')->link()->color('success')
+                    ->visible(fn (User $record) => !empty($record->phone) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
+                    ->requiresConfirmation()
+                    ->modalDescription('Se generará una contraseña temporal y se enviará por WhatsApp junto con el magic link.')
+                    ->action(function (User $record) {
+                        $tempPass = \Illuminate\Support\Str::random(8);
+                        $record->update(['password' => \Illuminate\Support\Facades\Hash::make($tempPass)]);
+                        $token = $record->createToken('magic-link', ['*'], now()->addDays(365))->plainTextToken;
+                        $pwaUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com');
+                        $magicLink = $pwaUrl . '/l?t=' . $token;
+
+                        $phone = preg_replace('/[^0-9]/', '', $record->phone);
+                        if (!str_starts_with($phone, '54')) {
+                            $phone = str_starts_with($phone, '11') ? '54' . $phone : '549' . $phone;
+                        }
+                        $msg = urlencode(
+                            "Hola {$record->name}!\n\n" .
+                            "Estos son tus datos de acceso a SerTecApp:\n\n" .
+                            "Email: {$record->email}\n" .
+                            "Contraseña: {$tempPass}\n\n" .
+                            "Página para ingresar con usuario y contraseña:\n{$pwaUrl}\n\n" .
+                            "O acceso directo sin escribir nada (un solo clic):\n{$magicLink}"
+                        );
+                        $whatsappUrl = "https://wa.me/{$phone}?text={$msg}";
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Datos generados para ' . $record->name)
+                            ->success()->persistent()
+                            ->actions([
+                                \Filament\Notifications\Actions\Action::make('abrir_whatsapp')
+                                    ->label('Abrir WhatsApp')->button()->color('success')
+                                    ->url($whatsappUrl)->openUrlInNewTab(),
+                            ])
+                            ->send();
+                    }),
+
                 Tables\Actions\Action::make('enviar_acceso_email')
                     ->label('Enviar datos por email')->link()->color('info')
                     ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))

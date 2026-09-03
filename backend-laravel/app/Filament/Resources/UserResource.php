@@ -150,6 +150,27 @@ class UserResource extends Resource
                             ->send();
                     }),
 
+                Tables\Actions\Action::make('enviar_acceso_email')
+                    ->label('Enviar datos por email')->link()->color('info')
+                    ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
+                    ->requiresConfirmation()
+                    ->modalDescription('Se generará una contraseña temporal y se enviará por email junto con el magic link.')
+                    ->action(function (User $record) {
+                        $tempPass = \Illuminate\Support\Str::random(8);
+                        $record->update(['password' => \Illuminate\Support\Facades\Hash::make($tempPass)]);
+                        $token = $record->createToken('magic-link', ['*'], now()->addDays(365))->plainTextToken;
+                        $accessUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com') . '/l?t=' . $token;
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($record->email)
+                                ->send(new \App\Mail\AccesoUsuarioMail($record, $accessUrl, $tempPass));
+                            \Filament\Notifications\Notification::make()
+                                ->title('Email enviado a ' . $record->email)->success()->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Error al enviar')->body($e->getMessage())->danger()->send();
+                        }
+                    }),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn (User $record) => $record->id !== 1 && !$record->hasAnyRole(['administrador', 'super_admin']))

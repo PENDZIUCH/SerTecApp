@@ -15,7 +15,8 @@ class AccesoUsuarioMail extends Mailable
 
     public function __construct(
         public User $user,
-        public string $accessUrl
+        public string $accessUrl,
+        public ?string $tempPass = null
     ) {}
 
     public function envelope(): Envelope
@@ -32,6 +33,7 @@ class AccesoUsuarioMail extends Mailable
             with: [
                 'user'      => $this->user,
                 'accessUrl' => $this->accessUrl,
+                'tempPass'  => $this->tempPass,
             ]
         );
     }

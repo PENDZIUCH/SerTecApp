@@ -137,7 +137,7 @@ class UserResource extends Resource
                                     ->action(function () use ($record, $magicLink, $tempPass) {
                                         try {
                                             \Illuminate\Support\Facades\Mail::to($record->email)
-                                                ->send(new \App\Mail\AccesoUsuarioMail($record, $magicLink));
+                                                ->send(new \App\Mail\AccesoUsuarioMail($record, $magicLink, $tempPass));
                                             \Filament\Notifications\Notification::make()
                                                 ->title('Email enviado a ' . $record->email)->success()->send();
                                         } catch (\Exception $e) {

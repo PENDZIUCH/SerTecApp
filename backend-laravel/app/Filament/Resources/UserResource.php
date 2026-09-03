@@ -149,22 +149,6 @@ class UserResource extends Resource
                             ->send();
                     }),
 
-                Tables\Actions\Action::make('enviar_acceso_email')
-                    ->label('Enviar Acceso por Email')->icon('heroicon-o-envelope')->color('info')
-                    ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
-                    ->requiresConfirmation()
-                    ->action(function (User $record) {
-                        $token = $record->createToken('magic-link', ['*'], now()->addDays(30))->plainTextToken;
-                        $accessUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com') . '/l?t=' . $token;
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($record->email)
-                                ->send(new \App\Mail\AccesoUsuarioMail($record, $accessUrl));
-                            \Filament\Notifications\Notification::make()->title('Email enviado')->success()->send();
-                        } catch (\Exception $e) {
-                            \Filament\Notifications\Notification::make()->title('Error')->body($e->getMessage())->danger()->send();
-                        }
-                    }),
-
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()
                     ->visible(fn (User $record) => $record->id !== 1 && !$record->hasAnyRole(['administrador', 'super_admin']))

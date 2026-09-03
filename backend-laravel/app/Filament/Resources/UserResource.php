@@ -41,9 +41,7 @@ class UserResource extends Resource
                         ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                         ->dehydrated(fn ($state) => filled($state))
                         ->required(fn (string $context): bool => $context === 'create')
-                        ->default(fn () => \Illuminate\Support\Str::random(12))
-                        ->formatStateUsing(fn () => null)
-                        ->helperText(fn (string $context) => $context === 'edit' ? 'Dejar vacío para no cambiarla.' : null),
+                        ->default(fn () => \Illuminate\Support\Str::random(12)),
                 ])->columns(2),
 
             Forms\Components\Section::make('Rol y Permisos')

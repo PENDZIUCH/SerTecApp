@@ -41,7 +41,6 @@ log "Variables criticas del .env verificadas"
 /usr/bin/php artisan config:clear >> "$LOG" 2>&1
 /usr/bin/php artisan cache:clear >> "$LOG" 2>&1
 /usr/bin/php artisan view:clear >> "$LOG" 2>&1
-/usr/bin/php artisan app:hash-legacy-passwords >> "$LOG" 2>&1
 chmod -R 775 storage bootstrap/cache 2>/dev/null
 
 log "=== DEPLOY COMPLETADO ==="

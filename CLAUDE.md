@@ -1,30 +1,56 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-04-16
+> Última actualización: 2026-09-03
+> **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
 
 ## ⚠️ REGLAS CRÍTICAS
 
+0. **Antes de decir nada sobre el estado del proyecto: verificar en vivo** (`git log`, `git reflog`, `curl` a las URLs, leer código fuente). Las secciones de "estado" de este archivo se desactualizan — úsalas como punto de partida, no como verdad absoluta. Nunca narrar una conclusión sin haberla chequeado contra algo real en esta sesión.
 1. **NUNCA tocar `.env` sin preguntar.** Puede romper la DB en uso.
 2. **NUNCA asumir que algo funciona sin verificarlo.** Siempre confirmar.
 3. **NUNCA hacer acciones destructivas sin OK explícito del usuario.**
 4. **Si el usuario dice que algo funcionaba, creerle.**
 5. **Pasar URLs siempre como links** `[texto](url)`, nunca como texto plano.
-6. **Antes de cualquier deploy a Hostinger: usar el skill `/deploy-hostinger`.**
+6. **NUNCA mergear ramas (`git merge`) sin mostrar antes `git diff --stat <rama1>..<rama2>` y pedir confirmación si el diff toca más de ~20 archivos o carpetas fuera del alcance del feature.** Un merge mal hecho puede arrastrar código legacy de vuelta al repo sin que nadie lo note hasta días después.
+7. **Un commit firmado con el nombre/email de Hugo en `git log` NO prueba que Hugo lo haya hecho.** Hugo no usa git manualmente. Cualquier commit hecho por una sesión de Claude vía terminal en su máquina queda firmado con la identidad de git configurada localmente. Nunca atribuirle a Hugo una acción solo por la autoría del commit.
+8. **`backend-laravel/` (deploy a Hostinger vía push a `development`) y `sertecapp-tecnicos/` (deploy a Cloudflare Pages vía `wrangler pages deploy`) son pipelines INDEPENDIENTES.** Un push que dispara el webhook de Hostinger NO publica cambios del frontend Next.js. Si se toca `sertecapp-tecnicos/`, hay que build+deploy a Cloudflare aparte y decirlo explícitamente.
+9. **Antes de cualquier deploy a Hostinger: usar el skill `/deploy-hostinger`.**
+10. **Al cerrar cualquier sesión donde se avanzó algo real: actualizar este archivo antes de terminar.** No dejarlo para "la próxima" — la próxima sesión no tiene memoria de esta conversación.
 
 ---
 
-## Estado actual (2026-04-16) ✅
+## 📋 Incidente 2026-09-02/03 — merge que ensució `main` (RESUELTO)
+
+Una sesión de Claude hizo `git merge development` sobre `main` para subir 3 features (ojito PWA, sesión persistente, permisos supervisor) y arrastró 509 archivos / +27.193 líneas de una carpeta Laravel legacy en la raíz (`app/`, `config/`, `database/`, `routes/`, `resources/`, `storage/`, `bootstrap/`, `public/`, `tests/`, `artisan`, `composer.json` — sin `vendor/` ni `.env`, no ejecutable, no relacionada con `backend-laravel/` que es el Laravel real). Después un `reset` dejó `main` y `development` en el mismo commit.
+
+**Corregido el 2026-09-03:**
+- Carpeta legacy movida a `ARCHIVOS/laravel-legacy-julio/` (commit `a1b6e52`), confirmado sin impacto en producción.
+- `test-sertecapp.bat` creado en la raíz para chequear infraestructura completa en 1 llamado (ver reglas de testing rápido).
+- Confirmado: ojito PWA + sesión persistente + permisos supervisor SIGUEN sin buildear/deployar a Cloudflare Pages — código listo, no publicado.
+- `main` = lo vivo en `sertecapp.pendziuch.com`/Hostinger. `development` = prueba/local. Idea futura: subdominio de staging separado.
+- Ver reglas 6, 7 y 8 arriba — nacieron de este incidente.
+
+---
+
+## Estado actual verificado (2026-09-02) ✅
+
+**Dos frontends PWA — a propósito, no es un error:**
+
+| Frontend | URL | API a la que apunta | Rol |
+|---|---|---|---|
+| **Activo (actualizar siempre acá)** | [https://sertecapp.pendziuch.com](https://sertecapp.pendziuch.com) | `https://demo.pendziuch.com` (Hostinger, MySQL) | El que se sigue desarrollando |
+| Backup de demo (congelado a propósito) | [https://sertecapp-tecnicos.pages.dev](https://sertecapp-tecnicos.pages.dev) | `https://sertecapp-worker.pendziuch.workers.dev` (Worker viejo + D1/SQLite) | No tocar ni preocuparse si queda "atrás" |
 
 | Entorno | URL | Estado |
 |---------|-----|--------|
-| **Admin panel (Hostinger)** | [https://demo.pendziuch.com/sertecapp/login](https://demo.pendziuch.com/sertecapp/login) | ✅ Funciona |
-| **API REST (Hostinger)** | [https://demo.pendziuch.com/api/v1](https://demo.pendziuch.com/api/v1) | ✅ Funciona |
-| Admin panel (local) | [http://localhost:8000/sertecapp/login](http://localhost:8000/sertecapp/login) | ✅ Funciona |
-| PWA técnicos (prod) | [https://sertecapp-tecnicos.pages.dev](https://sertecapp-tecnicos.pages.dev) | ✅ Live |
-| API Cloudflare Workers | [https://sertecapp-worker.pendziuch.workers.dev](https://sertecapp-worker.pendziuch.workers.dev) | ✅ Live |
+| Admin panel (Hostinger) | [https://demo.pendziuch.com/sertecapp/login](https://demo.pendziuch.com/sertecapp/login) | ✅ Funciona |
+| API REST (Hostinger) | [https://demo.pendziuch.com/api/v1](https://demo.pendziuch.com/api/v1) | ✅ Funciona |
+| Admin panel (local) | [http://localhost:8000/sertecapp/login](http://localhost:8000/sertecapp/login) | Verificar si está levantado (`netstat`) antes de asumir |
+
+**Git:** `main` y `development` sincronizados en el mismo commit al 2026-09-02 18:41 (verificar con `git log -1` en cada uno — no asumir que están desalineados).
 
 **Login producción:** `pendziuch@gmail.com` / `SerTecApp2026!`
 
@@ -261,3 +287,24 @@ Traducir Pages de todos los resources:
 - Part (Repuestos)
 - Visit (Visitas)
 - User (Usuarios)
+
+---
+
+## Sesión 2026-09-02 — avances y aprendizajes
+
+### Avances (commits en `development`, ya en `main` también)
+- `3ff27ea` — login PWA con sesión persistente ("Hola Juan") + WhatsApp con email, pass temporal y magic link
+- `3785486` — ojito mostrar/ocultar contraseña en login PWA
+
+### Incidente: merge a `main` y reversión
+Se hizo `merge development → main` (18:29) y después se pidió deshacerlo con `reset` (18:41).
+Resultado: **`main` y `development` quedaron sincronizados en `3785486`, sin pérdida de commits.** Si en una futura sesión algo parece "faltar", correr `git log -1` en ambas ramas antes de asumir que se perdió trabajo — probablemente no se perdió nada.
+
+### Aclaración importante: los dos frontends PWA no están en conflicto
+`sertecapp.pendziuch.com` (activo, Hostinger/MySQL) y `sertecapp-tecnicos.pages.dev` (backup de demo congelado, Worker viejo + D1/SQLite) apuntan a APIs distintas a propósito — ver tabla en "Estado actual verificado" arriba. Confirmado comparando `.env.production.local` (`NEXT_PUBLIC_API_URL=https://demo.pendziuch.com`) contra el JS bundle servido en pages.dev (que llama a `sertecapp-worker.pendziuch.workers.dev`).
+
+### Cabos sueltos detectados (no resueltos todavía)
+- `backend-laravel/deploy.bat` — vacío (0 bytes), creado 06/08. **Intento fallido, nunca se completó.** Candidato a borrar (pendiente OK de Hugo).
+- `backend-laravel/fix_wps.py` — script Python del 08/08 que intentaba generar `app/Services/WorkPartService.php` (lógica de: técnico envía parte → notifica supervisor → aprobar/rechazar → emails). **Intento fallido:** el PHP embebido tiene las variables rotas (faltan los `$`), y `WorkPartService.php` **no existe en ningún lado del repo hoy**. Candidato a borrar (pendiente OK de Hugo).
+- **🔴 Duplicación de `app/Filament/` sin resolver — más grave de lo que se pensaba.** Verificado en vivo: existen DOS copias, `app/Filament/` (raíz del repo) y `backend-laravel/app/Filament/`, y **ya están desincronizadas** (`WorkPartResource.php` es distinto entre las dos). Este es el mismo problema documentado en la sección "Problema pendiente — estructura del repo" más abajo — sigue sin resolverse a pesar de que se le dedicó tiempo antes. Riesgo: Hostinger puede estar sirviendo código viejo sin que se note. **Prioridad para próxima sesión de trabajo real.**
+- El repo raíz tiene ~15 archivos `.md` sueltos de sesiones de deploy anteriores (`RESUMEN_SOLUCION_DEPLOY.md`, `SOLUCION_DEPLOY_DEVELOPMENT.md`, `CHECKLIST_DEPLOY.md`, `CLAUDE_ES_UN_BOLUDO.md`, etc.) — información dispersa que compite con este archivo como fuente de verdad. Sugerido: mover a `docs/archivo/` y dejar `CLAUDE.md` como único punto de entrada (pendiente OK de Hugo).

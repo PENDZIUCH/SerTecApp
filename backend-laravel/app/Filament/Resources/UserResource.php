@@ -50,10 +50,26 @@ class UserResource extends Resource
                         ->label('Rol')
                         ->relationship('roles', 'name')
                         ->options(function () {
+                            $query = Role::query();
                             if (auth()->check() && auth()->user()->hasRole('supervisor')) {
-                                return Role::whereIn('name', ['técnico', 'tecnico'])->pluck('name', 'id');
+                                return $query->whereIn('name', ['técnico', 'tecnico'])->pluck('name', 'id');
                             }
-                            return Role::pluck('name', 'id');
+                            // Solo un super_admin puede ver/asignar el rol super_admin.
+                            // No confiar solo en esto: ver la regla de validacion mas abajo.
+                            if (!auth()->check() || !auth()->user()->hasRole('super_admin')) {
+                                $query->where('name', '!=', 'super_admin');
+                            }
+                            return $query->pluck('name', 'id');
+                        })
+                        ->rule(function () {
+                            return function (string $attribute, $value, \Closure $fail) {
+                                if (auth()->check() && auth()->user()->hasRole('super_admin')) {
+                                    return;
+                                }
+                                if (Role::find($value)?->name === 'super_admin') {
+                                    $fail('Solo un usuario con rol super_admin puede asignar el rol super_admin.');
+                                }
+                            };
                         })
                         ->searchable()->preload()->required(),
                 ]),
@@ -90,7 +106,8 @@ class UserResource extends Resource
             ->actions([
                 Tables\Actions\Action::make('reset_password')
                     ->label('Enviar Acceso')->icon('heroicon-o-key')->color('warning')
-                    ->visible(fn () => auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
+                    ->visible(fn (User $record) => !static::isProtectedSuperAdmin($record)
+                        && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->modalHeading('Generar y enviar acceso')
                     ->modalDescription('Se generará una contraseña temporal y un magic link para este usuario.')
@@ -152,7 +169,8 @@ class UserResource extends Resource
 
                 Tables\Actions\Action::make('enviar_whatsapp')
                     ->label('Enviar por WhatsApp')->link()->color('success')
-                    ->visible(fn (User $record) => !empty($record->phone) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
+                    ->visible(fn (User $record) => !empty($record->phone) && !static::isProtectedSuperAdmin($record)
+                        && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->modalDescription('Se generará una contraseña temporal y se enviará por WhatsApp junto con el magic link.')
                     ->action(function (User $record) {
@@ -189,7 +207,8 @@ class UserResource extends Resource
 
                 Tables\Actions\Action::make('enviar_acceso_email')
                     ->label('Enviar datos por email')->link()->color('info')
-                    ->visible(fn (User $record) => !empty($record->email) && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
+                    ->visible(fn (User $record) => !empty($record->email) && !static::isProtectedSuperAdmin($record)
+                        && auth()->user()->hasAnyRole(['administrador', 'super_admin', 'supervisor']))
                     ->requiresConfirmation()
                     ->modalDescription('Se generará una contraseña temporal y se enviará por email junto con el magic link.')
                     ->action(function (User $record) {
@@ -256,7 +275,21 @@ class UserResource extends Resource
         if (auth()->user()->hasRole('supervisor')) {
             return $record->hasAnyRole(['técnico', 'tecnico']);
         }
+        // Un administrador no puede editar (ni resetear password/rol de) un super_admin.
+        // Evita que se auto-otorgue el rol o manipule cuentas super_admin existentes.
+        if (static::isProtectedSuperAdmin($record)) {
+            return false;
+        }
         return auth()->user()->hasAnyRole(['administrador', 'super_admin']);
+    }
+
+    /**
+     * true si $record es super_admin y el usuario logueado no lo es -
+     * en ese caso ninguna accion de edicion/reset de password debe estar disponible.
+     */
+    protected static function isProtectedSuperAdmin($record): bool
+    {
+        return $record->hasRole('super_admin') && !auth()->user()->hasRole('super_admin');
     }
 
     public static function canDelete($record): bool

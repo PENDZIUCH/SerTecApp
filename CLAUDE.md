@@ -312,3 +312,49 @@ Raíz limpia: `CLAUDE.md`, `README.md`, `ARCHITECTURE.md`, `deploy-sertecapp.sh`
 - `scripts-viejos/` — deploy scripts duplicados/abandonados, scripts de debug/migración de un solo uso, logs sueltos.
 
 **Regla para el futuro: si algo en `ARCHIVOS/` parece hacer falta de nuevo, moverlo de vuelta con `git mv` (no copiar) para no volver a duplicar.**
+
+---
+
+## Sesión 2026-09-04 (continuación) — auditoría de seguridad completa + fixes
+
+Motivo: antes de pensar en un dominio de producción real o vender esto como Core, había que estar seguros de que no es explotable. Auditoría de solo lectura primero (3 agentes en paralelo: backend/Filament, API REST, PWA), 16 hallazgos, 5 críticos explotables sin cuenta. Plan aprobado por Hugo, ejecutado en 3 fases, todo commiteado y deployado a `demo.pendziuch.com` el mismo día.
+
+### Fase A — accesos públicos/indebidos puntuales (commit `6d1dea8`)
+- `magic-link/generate` y los 3 endpoints de técnico (`ordenes/tecnico/{tecnico}`, `partes/{workOrderId}`, `POST partes`) pasaron a requerir `auth:sanctum` — antes eran **100% públicos** (el código tenía el comentario literal "SIN AUTH para testing"). Cualquiera sin cuenta podía leer PII de clientes/firmas o forjar el cierre de una orden.
+- `ConfiguracionEmail`/`ConfiguracionGeneral`: `canAccess()` ahora protege la ruta real (antes solo ocultaban el link del menú — un técnico podía entrar directo por URL y ver/cambiar las credenciales SMTP).
+- `budgets/{budget}/pdf`: agrega chequeo de rol admin-tier.
+- `UserController` (API): `index`/`show`/`destroy` sin ningún chequeo antes — cualquier técnico podía listar todo el staff o borrar cualquier cuenta.
+- `WorkPartResource` + `ViewWorkPart`: un técnico podía autoaprobar su propio parte (las acciones Aprobar/Rechazar solo miraban el estado, no el rol).
+- `cors.php`: acotado el wildcard `*.pages.dev` (dominio compartido gratuito) al subdominio propio.
+
+### Fase B — IDOR sistémico en la API REST (commit `71250cc`, el hallazgo más grave)
+Las Policies de Filament (`app/Policies/*.php`) usaban nombres de permiso estilo Shield (`view_any_work::order`) que **no existen** en la tabla de permisos, y los controllers ni siquiera las consultaban. En la práctica: cualquier token Sanctum autenticado, incluido el de un técnico, podía ver/editar/borrar órdenes, clientes, visitas, presupuestos, suscripciones, taller y repuestos de cualquiera.
+
+Reescritas las 8 Policies (`WorkOrder`, `Visit`, `WorkshopItem`, `Customer`, `Part`, `Equipment`, `Budget`, `Subscription`) con el mismo patrón `hasAnyRole()` que ya usa el resto del código:
+- `administrador`/`super_admin`/`supervisor`: acceso total, **cero cambio de comportamiento**.
+- `técnico` en modelos con `assigned_tech_id` (WorkOrder/Visit/Workshop): solo sus propios registros, nunca borra vía API.
+- `técnico` en modelos sin dueño (Customer/Part/Equipment/Budget): solo lectura, igual que ya usaba.
+- `técnico`: sin acceso a Subscription (no es parte de su flujo).
+
+Cada controller agrega `authorizeResource()` en el constructor. `index()` de WorkOrder/Visit/Workshop scopea por `assigned_tech_id` para técnico. Verificado con datos reales de producción vía tinker (no solo lectura de código): técnico puede actualizar su propia orden, NO puede tocar la de otro, NO puede borrar, SÍ puede ver clientes, NO puede editarlos; admin mantiene acceso total intacto.
+
+**Efecto colateral encontrado y corregido de paso:** casi todos los `FormRequest` (`Store/UpdateCustomerRequest`, `Store/UpdateEquipmentRequest`, `StorePartRequest`, `StoreVisitRequest`, `Store/UpdateWorkOrderRequest`) llamaban a permisos Spatie (`customers.create`, etc.) nunca asignados a los roles reales — esos endpoints estaban bloqueados para todo el mundo, incluido `super_admin`, si alguna vez se llegaban a usar. Se corrigieron para delegar a las Policies nuevas.
+
+**También se cerró en `StoreUserRequest`/`UpdateUserRequest` el mismo hueco de auto-escalación a `super_admin`** corregido más temprano en Filament (ver sección arriba), pero que seguía abierto por la API directa — el array `roles` no validaba quién podía asignar `super_admin`.
+
+### Fase C — hardening adicional (commit `2b0f898`)
+- `User` model: hook `booted()` que revoca todos los tokens Sanctum cuando `is_active` pasa a `false` (cubre tanto Filament como la API). Antes un técnico desactivado seguía con acceso hasta 365 días.
+- PWA: borrado `app/l/AutoLoginContent.tsx` (código muerto, decodificaba `email:password` en Base64 desde la URL).
+- PWA: sacado un `console.log` que volcaba el perfil completo del usuario en `/ordenes`.
+- PWA: corregido un typo de dominio en `next.config.ts` (el `runtimeCaching` del Service Worker apuntaba a `sertecapp.pendziuch.com` en vez de `demo.pendziuch.com` — era un no-op, quedó bien apuntado) + purga de Cache Storage agregada al logout/"Limpiar Caché" en `ordenes` y `admin`.
+
+**⚠️ Los cambios de PWA (Fase C) están commiteados en `development` pero NO deployados a Cloudflare Pages** — ese pipeline es manual (`wrangler pages deploy`, regla 8 de este archivo). Falta build + deploy cuando Hugo lo pida.
+
+### Verificado después de cada fase
+`demo.pendziuch.com` (login admin, API health, login API) y `sertecapp.pendziuch.com` siguen respondiendo 200 tras las 3 fases. Los 4 endpoints que pasaron a requerir auth devuelven 401 sin token. La lógica de Policies se probó contra datos reales de producción (técnico real, orden propia/ajena) vía tinker de solo lectura, sin dejar residuos.
+
+### Explícitamente fuera de esta sesión (documentado, backlog real)
+- **Rediseño completo Roles↔Permisos**: el panel "Roles" de Filament sigue sin controlar de verdad lo que cada rol puede hacer (las Policies ahora usan `hasAnyRole()` hardcodeado, no los permisos Spatie que se editan ahí — mismo motivo por el que Hugo vio "Administrador" sin nada tildado en Roles pero con acceso a Usuarios igual). Se hace junto con la convergencia a `core/v1` para no reescribir la lógica dos veces.
+- **Convergencia con `core/v1`**: existe esa rama (última actividad 2026-08-08, antes de todo lo de hoy) con un sistema de módulos (`ModuleManager`) pensado para vender esto como Core a otros clientes — 85% del código ya es genérico según su propio `MODULES.md`. Decisión tomada con Hugo: converger a un solo código (traer la arquitectura de módulos de `core/v1` sobre `development`, no mantener dos ramas sincronizadas a mano) — pendiente de ejecutar.
+- **Magic link de larga vida (30-365 días) viajando en texto plano por WhatsApp/email** — cambiarlo a un token de un solo uso de corta vida cambia el flujo de UX, se planifica aparte con Hugo antes de tocarlo.
+- PDF de presupuestos (`routes/web.php`) da 500 en vez de un redirect prolijo para un usuario sin sesión — bug preexistente de manejo de errores, no vinculado a esta auditoría, no es un hueco de seguridad (igual bloquea el acceso), queda anotado por si molesta.

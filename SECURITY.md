@@ -19,9 +19,9 @@ Auditoría de 3 agentes en paralelo (backend/Filament, API REST, PWA Next.js) so
 | 7 | FormRequests escritos pero nunca usados (bypass de validación/permiso) | Alto | ✅ Wireados a los controllers |
 | 8 | Sin revocación de tokens al desactivar un usuario | Alto | ✅ Hook en el modelo `User` |
 | 9 | Técnico podía autoaprobar su propio parte de trabajo | Alto | ✅ Chequeo de rol en `visible()` |
-| 10 | `NotificationResource` sin ninguna protección (barrido posterior) | Alto | ✅ Scoping por usuario + `canCreate` restringido |
+| 10 | `NotificationResource` sin ninguna protección (barrido posterior) | Alto | ✅ Resource+Model+Policy borrados — era código muerto desconectado de la tabla real, la campanita real usa el sistema nativo de Filament |
 | 11 | CORS con wildcard `*.pages.dev` (dominio compartido) | Medio | ✅ Acotado al proyecto propio |
-| 12 | Policies de Filament con permisos que nunca existieron (fallaban cerrado, pero desconectadas) | Medio | ✅ Reescritas con `hasAnyRole()` — el rediseño completo Roles↔Permisos sigue pendiente, ver abajo |
+| 12 | Policies de Filament desconectadas del panel de Roles (mezcla inconsistente: unas hardcodeadas, otras sí leían permisos reales) | Medio | ✅ Unificado — las 9 Policies + Usuarios ahora consultan permisos Shield reales, sincronizados con `SyncShieldPermissionsSeeder`. El panel de Roles controla el acceso de verdad en todo el sistema |
 | 13 | Service Worker cacheaba contra el dominio equivocado (typo) | Medio | ✅ Corregido + purga de caché en logout |
 | 14 | Auto-escalación a `super_admin` vía Filament (dropdown de rol sin filtrar) | Crítico | ✅ 3 capas: opciones filtradas, validación server-side, helper reusado |
 | 15 | El mismo hueco de auto-escalación, abierto también por la API directa | Crítico | ✅ `StoreUserRequest`/`UpdateUserRequest` con la misma regla |
@@ -29,14 +29,13 @@ Auditoría de 3 agentes en paralelo (backend/Filament, API REST, PWA Next.js) so
 
 ## Cobertura de regresión
 
-24 tests automatizados (154 aserciones) en `backend-laravel/tests/Feature/` fijan el comportamiento de los fixes críticos y altos — correr con `php artisan test tests/Feature/<Archivo>.php` (no con `php artisan test` a secas, ver nota sobre Pest roto en `CLAUDE.md`). `test-sertecapp.bat` en la raíz hace un chequeo de humo contra producción en un solo comando.
+25 tests automatizados (157 aserciones) en `backend-laravel/tests/Feature/` fijan el comportamiento de los fixes críticos y altos — correr con `php artisan test tests/Feature/<Archivo>.php` (no con `php artisan test` a secas, ver nota sobre Pest roto en `CLAUDE.md`). `test-sertecapp.bat` en la raíz hace un chequeo de humo contra producción en un solo comando.
 
 ## Backlog real (conocido, documentado, no oculto)
 
 1. **Magic link en texto plano** (hallazgo #16) — decisión de producto pendiente con Hugo.
-2. **Rediseño Roles↔Permisos**: el panel "Roles" de Filament sigue sin controlar de verdad el acceso (las Policies usan roles hardcodeados, no los permisos que se editan ahí). Se hace junto con la limpieza de `PermissionsSeeder.php` (asigna permisos a roles en inglés que no son los reales en producción).
-3. **`NotificationResource`/`App\Models\Notification`**: código muerto, no coincide con el esquema real de la tabla. Decidir: borrar o arreglar el esquema.
-4. **Dependencias**: Composer/npm no auditados en esta pasada (fuera de alcance). `pestphp/pest` referenciado en tests pero nunca instalado — decisión de Hugo si se agrega.
+2. **`PermissionsSeeder.php` (el viejo, dot-notation)** quedó vestigial — técnico/administrador/supervisor ya tienen los permisos Shield equivalentes vía `SyncShieldPermissionsSeeder`. No hace daño dejarlo, pero ya no es la fuente de verdad.
+3. **Dependencias**: Composer/npm no auditados en esta pasada (fuera de alcance). `pestphp/pest` referenciado en tests pero nunca instalado — decisión de Hugo si se agrega.
 
 ## Lo que esto NO es
 

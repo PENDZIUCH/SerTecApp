@@ -46,9 +46,23 @@ export default function OrdenesPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  // Purga el Cache Storage del Service Worker - localStorage.clear() no lo toca,
+  // y en un dispositivo compartido entre tecnicos podia quedar data del anterior.
+  const purgeServiceWorkerCache = async () => {
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {
+      // no bloquear el logout/limpieza si el navegador no soporta Cache Storage
+    }
+  };
+
   const handleClearCache = () => {
     if (confirm('¿Limpiar caché y datos locales? Deberás volver a iniciar sesión.')) {
       localStorage.clear();
+      purgeServiceWorkerCache();
       router.push('/');
     }
   };
@@ -148,8 +162,7 @@ export default function OrdenesPage() {
     }
 
     const user = JSON.parse(userData);
-    console.log('USER DATA:', user);
-    
+
     // Limpiar cache si cambió el usuario O es primera vez
     const cachedUserId = localStorage.getItem('cached_user_id');
     const userChanged = cachedUserId && cachedUserId !== user.id.toString();
@@ -263,6 +276,7 @@ export default function OrdenesPage() {
   const handleLogout = () => {
     // Limpiar TODO el localStorage al cerrar sesión
     localStorage.clear();
+    purgeServiceWorkerCache();
     router.push('/');
   };
 

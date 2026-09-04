@@ -48,6 +48,17 @@ class User extends Authenticatable implements CanResetPasswordContract, Filament
         return $this->hasAnyRole(['super_admin', 'admin', 'administrador', 'supervisor', 'técnico']);
     }
 
+    protected static function booted(): void
+    {
+        // Al desactivar un usuario (desde Filament o la API) se revocan sus tokens
+        // Sanctum ya emitidos - antes seguian valiendo hasta 365 dias despues.
+        static::updated(function (self $user) {
+            if ($user->wasChanged('is_active') && !$user->is_active) {
+                $user->tokens()->delete();
+            }
+        });
+    }
+
     public function workOrdersAssigned()
     {
         return $this->hasMany(WorkOrder::class, 'assigned_tech_id');

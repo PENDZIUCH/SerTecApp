@@ -14,7 +14,7 @@ if (isProd) {
     buildExcludes: [/middleware-manifest\.json$/],
     runtimeCaching: [
       {
-        urlPattern: /^https:\/\/sertecapp\.pendziuch\.com\/api\/.*/i,
+        urlPattern: /^https:\/\/demo\.pendziuch\.com\/api\/.*/i,
         handler: 'NetworkFirst',
         options: {
           cacheName: 'api-cache-v2',

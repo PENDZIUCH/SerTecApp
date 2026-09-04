@@ -120,7 +120,13 @@ export default function AdminPage() {
     } catch (e) { setFormError('Error de conexión'); } finally { setSaving(false); }
   };
 
-  const logout = () => { localStorage.clear(); router.push('/'); };
+  const logout = () => {
+    localStorage.clear();
+    if (typeof caches !== 'undefined') {
+      caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
+    }
+    router.push('/');
+  };
 
   if (vista === 'tecnico') {
     const pendientes = ordenesTecnico.filter(o => o.status === 'pendiente' || o.status === 'en_progreso');

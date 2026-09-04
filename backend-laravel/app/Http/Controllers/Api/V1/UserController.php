@@ -17,19 +17,18 @@ class UserController extends Controller
         private UserService $userService
     ) {}
 
-    /** Solo staff admin-tier gestiona usuarios via API. */
-    private function assertAdminTier(Request $request): void
+    /**
+     * super_admin pasa siempre via Gate::before; administrador/supervisor
+     * tienen estos permisos via SyncShieldPermissionsSeeder.
+     */
+    private function assertPermission(Request $request, string $permission): void
     {
-        abort_unless(
-            $request->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor']),
-            403,
-            'No autorizado'
-        );
+        abort_unless($request->user()->can($permission), 403, 'No autorizado');
     }
 
     public function index(Request $request)
     {
-        $this->assertAdminTier($request);
+        $this->assertPermission($request, 'view_any_user');
 
         $query = User::with('roles');
 
@@ -54,7 +53,7 @@ class UserController extends Controller
 
     public function show(Request $request, User $user)
     {
-        $this->assertAdminTier($request);
+        $this->assertPermission($request, 'view_user');
 
         return new UserResource($user->load('roles', 'permissions'));
     }
@@ -68,7 +67,7 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user): JsonResponse
     {
-        $this->assertAdminTier($request);
+        $this->assertPermission($request, 'delete_user');
         abort_if($user->id === 1 || $user->hasAnyRole(['administrador', 'super_admin']), 403, 'No se puede eliminar esta cuenta');
 
         $this->userService->delete($user);

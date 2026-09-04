@@ -10,11 +10,6 @@ class VisitPolicy
 {
     use HandlesAuthorization;
 
-    private function isAdminTier(User $user): bool
-    {
-        return $user->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
-    }
-
     private function isOwnTechnician(User $user, Visit $visit): bool
     {
         return $user->hasAnyRole(['técnico', 'tecnico']) && $visit->assigned_tech_id === $user->id;
@@ -22,34 +17,38 @@ class VisitPolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
+        return $user->can('view_any_visit');
     }
 
     public function view(User $user, Visit $visit): bool
     {
-        return $this->isAdminTier($user) || $this->isOwnTechnician($user, $visit);
+        if (!$user->can('view_visit')) return false;
+        if ($user->hasAnyRole(['técnico', 'tecnico'])) return $this->isOwnTechnician($user, $visit);
+        return true;
     }
 
     public function create(User $user): bool
     {
-        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
+        return $user->can('create_visit');
     }
 
     public function update(User $user, Visit $visit): bool
     {
-        return $this->isAdminTier($user) || $this->isOwnTechnician($user, $visit);
+        if (!$user->can('update_visit')) return false;
+        if ($user->hasAnyRole(['técnico', 'tecnico'])) return $this->isOwnTechnician($user, $visit);
+        return true;
     }
 
     public function delete(User $user, Visit $visit): bool
     {
-        return $this->isAdminTier($user);
+        return $user->can('delete_visit');
     }
 
-    public function deleteAny(User $user): bool { return $this->isAdminTier($user); }
-    public function forceDelete(User $user, Visit $visit): bool { return $this->isAdminTier($user); }
-    public function forceDeleteAny(User $user): bool { return $this->isAdminTier($user); }
-    public function restore(User $user, Visit $visit): bool { return $this->isAdminTier($user); }
-    public function restoreAny(User $user): bool { return $this->isAdminTier($user); }
-    public function replicate(User $user, Visit $visit): bool { return $this->isAdminTier($user); }
-    public function reorder(User $user): bool { return $this->isAdminTier($user); }
+    public function deleteAny(User $user): bool { return $user->can('delete_any_visit'); }
+    public function forceDelete(User $user, Visit $visit): bool { return $user->can('force_delete_visit'); }
+    public function forceDeleteAny(User $user): bool { return $user->can('force_delete_any_visit'); }
+    public function restore(User $user, Visit $visit): bool { return $user->can('restore_visit'); }
+    public function restoreAny(User $user): bool { return $user->can('restore_any_visit'); }
+    public function replicate(User $user, Visit $visit): bool { return $user->can('replicate_visit'); }
+    public function reorder(User $user): bool { return $user->can('reorder_visit'); }
 }

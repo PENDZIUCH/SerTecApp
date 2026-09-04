@@ -10,30 +10,16 @@ class BudgetPolicy
 {
     use HandlesAuthorization;
 
-    private function isAdminTier(User $user): bool
-    {
-        return $user->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
-    }
-
-    // Un tecnico puede ver presupuestos (los necesita para su trabajo) pero no crearlos/editarlos/aprobarlos.
-    public function viewAny(User $user): bool
-    {
-        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
-    }
-
-    public function view(User $user, Budget $budget): bool
-    {
-        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
-    }
-
-    public function create(User $user): bool { return $this->isAdminTier($user); }
-    public function update(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
-    public function delete(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
-    public function deleteAny(User $user): bool { return $this->isAdminTier($user); }
-    public function forceDelete(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
-    public function forceDeleteAny(User $user): bool { return $this->isAdminTier($user); }
-    public function restore(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
-    public function restoreAny(User $user): bool { return $this->isAdminTier($user); }
-    public function replicate(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
-    public function reorder(User $user): bool { return $this->isAdminTier($user); }
+    public function viewAny(User $user): bool { return $user->can('view_any_budget'); }
+    public function view(User $user, Budget $budget): bool { return $user->can('view_budget'); }
+    public function create(User $user): bool { return $user->can('create_budget'); }
+    public function update(User $user, Budget $budget): bool { return $user->can('update_budget'); }
+    public function delete(User $user, Budget $budget): bool { return $user->can('delete_budget'); }
+    public function deleteAny(User $user): bool { return $user->can('delete_any_budget'); }
+    public function forceDelete(User $user, Budget $budget): bool { return $user->can('force_delete_budget'); }
+    public function forceDeleteAny(User $user): bool { return $user->can('force_delete_any_budget'); }
+    public function restore(User $user, Budget $budget): bool { return $user->can('restore_budget'); }
+    public function restoreAny(User $user): bool { return $user->can('restore_any_budget'); }
+    public function replicate(User $user, Budget $budget): bool { return $user->can('replicate_budget'); }
+    public function reorder(User $user): bool { return $user->can('reorder_budget'); }
 }

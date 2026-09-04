@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Gate;
 use App\Models\WoPartUsed;
 use App\Observers\WoPartsUsedObserver;
 
@@ -16,6 +17,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // super_admin pasa cualquier chequeo de autorizacion sin depender de
+        // que tenga los 226 permisos Shield bien sincronizados a mano.
+        Gate::before(fn ($user) => $user->hasRole('super_admin') ? true : null);
+
         // Auto-detectar entorno y forzar esquema correcto
         $this->configureUrlScheme();
         

@@ -11,18 +11,17 @@ use App\Models\User;
 use App\Models\Visit;
 use App\Models\WorkOrder;
 use App\Models\WorkshopItem;
-use App\Services\ModuleManager;
+use Database\Seeders\SyncShieldPermissionsSeeder;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * Congela el comportamiento de las Policies reescritas en la auditoria de
- * seguridad del 2026-09-04: administrador/super_admin/supervisor mantienen
- * acceso total, un tecnico solo toca sus propios registros (en los modelos
- * con assigned_tech_id) o solo puede ver (en los que no tienen dueno), y
- * nunca puede borrar via API. Si alguien reintroduce el hueco original
- * (options()/canX() sin filtrar por rol o por pertenencia), estos tests
- * fallan.
+ * Congela el comportamiento real de Roles<->Permisos unificado el
+ * 2026-09-04 (tarde): las Policies consultan permisos Shield reales
+ * (poblados por SyncShieldPermissionsSeeder, el mismo que corre en
+ * produccion) en vez de hasAnyRole() hardcodeado. super_admin pasa todo
+ * via Gate::before. tecnico queda restringido a sus propios registros en
+ * los modelos con dueno, y nunca puede borrar via API.
  */
 class SecurityPoliciesTest extends TestCase
 {
@@ -39,6 +38,8 @@ class SecurityPoliciesTest extends TestCase
         foreach (['super_admin', 'administrador', 'supervisor', 'técnico'] as $role) {
             Role::create(['name' => $role, 'guard_name' => 'web']);
         }
+        // Mismo seeder que corre en produccion - si alguien lo rompe, esto falla.
+        (new SyncShieldPermissionsSeeder())->run();
 
         $this->superAdmin = User::factory()->create();
         $this->superAdmin->assignRole('super_admin');
@@ -70,9 +71,9 @@ class SecurityPoliciesTest extends TestCase
         foreach ($this->ownedModels() as $label => $factory) {
             $record = $factory();
             foreach ([$this->superAdmin, $this->administrador, $this->supervisor] as $actor) {
-                $this->assertTrue($actor->can('view', $record), "$label: $actor->id debería poder ver");
-                $this->assertTrue($actor->can('update', $record), "$label: $actor->id debería poder editar");
-                $this->assertTrue($actor->can('delete', $record), "$label: $actor->id debería poder borrar");
+                $this->assertTrue($actor->can('view', $record), "$label: debería poder ver");
+                $this->assertTrue($actor->can('update', $record), "$label: debería poder editar");
+                $this->assertTrue($actor->can('delete', $record), "$label: debería poder borrar");
             }
         }
     }
@@ -84,7 +85,7 @@ class SecurityPoliciesTest extends TestCase
 
             $this->assertTrue($this->tecnicoDueno->can('view', $record), "$label: el dueño debería poder ver");
             $this->assertTrue($this->tecnicoDueno->can('update', $record), "$label: el dueño debería poder editar");
-            $this->assertFalse($this->tecnicoDueno->can('delete', $record), "$label: el dueño NUNCA debería poder borrar via API");
+            $this->assertFalse($this->tecnicoDueno->can('delete', $record), "$label: el dueño NUNCA debería poder borrar via API (sin permiso delete)");
 
             $this->assertFalse($this->otroTecnico->can('view', $record), "$label: IDOR - otro tecnico no debería poder ver");
             $this->assertFalse($this->otroTecnico->can('update', $record), "$label: IDOR - otro tecnico no debería poder editar");
@@ -108,7 +109,7 @@ class SecurityPoliciesTest extends TestCase
             $record = $factory();
 
             $this->assertTrue($this->tecnicoDueno->can('view', $record), "$label: tecnico debería poder ver (lo necesita para trabajar)");
-            $this->assertFalse($this->tecnicoDueno->can('update', $record), "$label: tecnico NO debería poder editar");
+            $this->assertFalse($this->tecnicoDueno->can('update', $record), "$label: tecnico NO debería poder editar (sin permiso update)");
             $this->assertFalse($this->tecnicoDueno->can('delete', $record), "$label: tecnico NO debería poder borrar");
 
             foreach ([$this->superAdmin, $this->administrador, $this->supervisor] as $actor) {
@@ -128,5 +129,31 @@ class SecurityPoliciesTest extends TestCase
         foreach ([$this->superAdmin, $this->administrador, $this->supervisor] as $actor) {
             $this->assertTrue($actor->can('view', $subscription), 'admin-tier debería ver suscripciones');
         }
+    }
+
+    public function test_revoking_a_permission_from_a_role_actually_revokes_access(): void
+    {
+        // Esto es justo lo que antes NO se podia probar (estaba hardcodeado):
+        // que destildar un permiso en el panel de Roles tenga efecto real.
+        $order = WorkOrder::factory()->create(['assigned_tech_id' => $this->tecnicoDueno->id]);
+        $this->assertTrue($this->administrador->can('update', $order));
+
+        Role::findByName('administrador')->revokePermissionTo('update_work::order');
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $fresh = User::find($this->administrador->id);
+
+        $this->assertFalse($fresh->can('update', $order), 'sacarle el permiso debería sacarle el acceso de verdad');
+    }
+
+    public function test_super_admin_bypasses_everything_via_gate_before_even_without_explicit_permissions(): void
+    {
+        $bareSuperAdmin = User::factory()->create();
+        $bareSuperAdmin->assignRole('super_admin');
+        // No se le asigna ningun permiso explicito - Gate::before debe alcanzar.
+
+        $order = WorkOrder::factory()->create(['assigned_tech_id' => $this->tecnicoDueno->id]);
+        $this->assertTrue($bareSuperAdmin->can('update', $order));
+        $this->assertTrue($bareSuperAdmin->can('delete', $order));
+        $this->assertTrue($bareSuperAdmin->can('viewAny', Subscription::class));
     }
 }

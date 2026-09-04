@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\SyncShieldPermissionsSeeder;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -25,6 +26,7 @@ class UserEscalationGuardTest extends TestCase
         foreach (['super_admin', 'administrador', 'técnico'] as $role) {
             Role::create(['name' => $role, 'guard_name' => 'web']);
         }
+        (new SyncShieldPermissionsSeeder())->run();
 
         $this->administrador = User::factory()->create();
         $this->administrador->assignRole('administrador');

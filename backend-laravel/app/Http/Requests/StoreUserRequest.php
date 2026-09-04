@@ -8,7 +8,9 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
+        // super_admin pasa siempre via Gate::before; administrador/supervisor
+        // tienen create_user via SyncShieldPermissionsSeeder.
+        return $this->user()->can('create_user');
     }
 
     public function rules(): array

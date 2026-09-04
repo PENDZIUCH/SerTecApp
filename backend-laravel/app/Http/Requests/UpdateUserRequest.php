@@ -11,9 +11,9 @@ class UpdateUserRequest extends FormRequest
     {
         $target = $this->route('user');
         if ($target && $target->hasRole('super_admin') && !$this->user()->hasRole('super_admin')) {
-            return false; // un no-super_admin no edita (ni resetea password de) una cuenta super_admin
+            return false; // un no-super_admin no edita (ni resetea password de) una cuenta super_admin - no negociable
         }
-        return $this->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
+        return $this->user()->can('update_user');
     }
 
     public function rules(): array

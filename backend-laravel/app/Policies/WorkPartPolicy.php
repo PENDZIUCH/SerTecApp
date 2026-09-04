@@ -10,6 +10,11 @@ class WorkPartPolicy
 {
     use HandlesAuthorization;
 
+    private function isOwnTechnician(User $user, WorkPart $workPart): bool
+    {
+        return $user->hasAnyRole(['técnico', 'tecnico']) && $workPart->technician_id === $user->id;
+    }
+
     /**
      * Determine whether the user can view any models.
      */
@@ -23,7 +28,9 @@ class WorkPartPolicy
      */
     public function view(User $user, WorkPart $workPart): bool
     {
-        return $user->can('view_work::part');
+        if (!$user->can('view_work::part')) return false;
+        if ($user->hasAnyRole(['técnico', 'tecnico'])) return $this->isOwnTechnician($user, $workPart);
+        return true;
     }
 
     /**
@@ -39,7 +46,9 @@ class WorkPartPolicy
      */
     public function update(User $user, WorkPart $workPart): bool
     {
-        return $user->can('update_work::part');
+        if (!$user->can('update_work::part')) return false;
+        if ($user->hasAnyRole(['técnico', 'tecnico'])) return $this->isOwnTechnician($user, $workPart);
+        return true;
     }
 
     /**

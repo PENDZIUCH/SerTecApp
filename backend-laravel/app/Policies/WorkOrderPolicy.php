@@ -10,10 +10,9 @@ class WorkOrderPolicy
 {
     use HandlesAuthorization;
 
-    private function isAdminTier(User $user): bool
-    {
-        return $user->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
-    }
+    // super_admin pasa siempre via Gate::before en AppServiceProvider.
+    // administrador/supervisor tienen estos permisos via SyncShieldPermissionsSeeder.
+    // tecnico los tiene salvo delete, y ademas queda restringido a lo suyo.
 
     private function isOwnTechnician(User $user, WorkOrder $workOrder): bool
     {
@@ -22,35 +21,38 @@ class WorkOrderPolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
+        return $user->can('view_any_work::order');
     }
 
     public function view(User $user, WorkOrder $workOrder): bool
     {
-        return $this->isAdminTier($user) || $this->isOwnTechnician($user, $workOrder);
+        if (!$user->can('view_work::order')) return false;
+        if ($user->hasAnyRole(['técnico', 'tecnico'])) return $this->isOwnTechnician($user, $workOrder);
+        return true;
     }
 
     public function create(User $user): bool
     {
-        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
+        return $user->can('create_work::order');
     }
 
     public function update(User $user, WorkOrder $workOrder): bool
     {
-        return $this->isAdminTier($user) || $this->isOwnTechnician($user, $workOrder);
+        if (!$user->can('update_work::order')) return false;
+        if ($user->hasAnyRole(['técnico', 'tecnico'])) return $this->isOwnTechnician($user, $workOrder);
+        return true;
     }
 
     public function delete(User $user, WorkOrder $workOrder): bool
     {
-        // Un tecnico nunca borra ordenes via API, solo staff admin-tier.
-        return $this->isAdminTier($user);
+        return $user->can('delete_work::order');
     }
 
-    public function deleteAny(User $user): bool { return $this->isAdminTier($user); }
-    public function forceDelete(User $user, WorkOrder $workOrder): bool { return $this->isAdminTier($user); }
-    public function forceDeleteAny(User $user): bool { return $this->isAdminTier($user); }
-    public function restore(User $user, WorkOrder $workOrder): bool { return $this->isAdminTier($user); }
-    public function restoreAny(User $user): bool { return $this->isAdminTier($user); }
-    public function replicate(User $user, WorkOrder $workOrder): bool { return $this->isAdminTier($user); }
-    public function reorder(User $user): bool { return $this->isAdminTier($user); }
+    public function deleteAny(User $user): bool { return $user->can('delete_any_work::order'); }
+    public function forceDelete(User $user, WorkOrder $workOrder): bool { return $user->can('force_delete_work::order'); }
+    public function forceDeleteAny(User $user): bool { return $user->can('force_delete_any_work::order'); }
+    public function restore(User $user, WorkOrder $workOrder): bool { return $user->can('restore_work::order'); }
+    public function restoreAny(User $user): bool { return $user->can('restore_any_work::order'); }
+    public function replicate(User $user, WorkOrder $workOrder): bool { return $user->can('replicate_work::order'); }
+    public function reorder(User $user): bool { return $user->can('reorder_work::order'); }
 }

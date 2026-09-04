@@ -10,7 +10,8 @@ return [
         'https://demo.pendziuch.com',
     ],
     'allowed_origins_patterns' => [
-        '/^https:\/\/.*\.pages\.dev$/',
+        // Solo previews del proyecto propio en Cloudflare Pages, no cualquier *.pages.dev
+        '/^https:\/\/[a-z0-9-]+\.sertecapp-tecnicos\.pages\.dev$/',
         '/^https:\/\/.*\.pendziuch\.com$/',
     ],
     'allowed_headers' => ['*'],

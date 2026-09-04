@@ -29,7 +29,8 @@ class ViewWorkPart extends ViewRecord
                 ->label('Aprobar')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
-                ->visible(fn () => $this->record->status === 'pending_approval')
+                ->visible(fn () => $this->record->status === 'pending_approval'
+                    && auth()->user()->hasAnyRole(['supervisor', 'administrador', 'super_admin']))
                 ->form([
                     Forms\Components\Textarea::make('supervisor_notes')
                         ->label('Notas para el técnico (opcional)')
@@ -69,7 +70,8 @@ class ViewWorkPart extends ViewRecord
                 ->label('Rechazar')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
-                ->visible(fn () => $this->record->status === 'pending_approval')
+                ->visible(fn () => $this->record->status === 'pending_approval'
+                    && auth()->user()->hasAnyRole(['supervisor', 'administrador', 'super_admin']))
                 ->form([
                     Forms\Components\Textarea::make('supervisor_notes')
                         ->label('Motivo del rechazo (obligatorio)')

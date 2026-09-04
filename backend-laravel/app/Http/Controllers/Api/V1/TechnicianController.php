@@ -13,8 +13,12 @@ use Illuminate\Support\Facades\Validator;
 
 class TechnicianController extends Controller
 {
-    public function getOrders($tecnicoId)
+    public function getOrders(Request $request, $tecnicoId)
     {
+        if (!$this->canActAsTechnician($request, $tecnicoId)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
         \Log::info("Buscando órdenes para técnico ID: {$tecnicoId}");
 
         $orders = WorkOrder::with(['customer', 'workParts' => function($q) {
@@ -61,6 +65,10 @@ class TechnicianController extends Controller
 
     public function saveParte(Request $request)
     {
+        if (!$this->canActAsTechnician($request, $request->input('tecnico_id'))) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'orden_id'         => 'required|exists:work_orders,id',
             'tecnico_id'       => 'required|exists:users,id',
@@ -198,8 +206,13 @@ class TechnicianController extends Controller
         }
     }
 
-    public function getParte($workOrderId)
+    public function getParte(Request $request, $workOrderId)
     {
+        $order = WorkOrder::find($workOrderId);
+        if (!$order || !$this->canActAsTechnician($request, $order->assigned_tech_id)) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
         try {
             $parte = WorkPart::where('work_order_id', $workOrderId)->latest()->first();
 
@@ -222,6 +235,18 @@ class TechnicianController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al obtener el parte', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * true si el usuario autenticado ES el tecnico $tecnicoId, o tiene rol admin-tier.
+     * Cierra el IDOR: antes cualquiera (ni siquiera autenticado) podia pasar cualquier id.
+     */
+    private function canActAsTechnician(Request $request, $tecnicoId): bool
+    {
+        $user = $request->user();
+        if (!$user) return false;
+        if ($user->hasAnyRole(['super_admin', 'administrador', 'supervisor'])) return true;
+        return $tecnicoId !== null && (int) $user->id === (int) $tecnicoId;
     }
 
     private function mapPriority($priority)

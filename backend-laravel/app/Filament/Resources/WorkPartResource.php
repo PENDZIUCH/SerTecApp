@@ -163,7 +163,8 @@ class WorkPartResource extends Resource
                     ->label('Aprobar')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (WorkPart $record) => $record->status === 'pending_approval')
+                    ->visible(fn (WorkPart $record) => $record->status === 'pending_approval'
+                        && auth()->user()->hasAnyRole(['supervisor', 'administrador', 'super_admin']))
                     ->form([
                         Forms\Components\Textarea::make('supervisor_notes')
                             ->label('Notas para el técnico (opcional)')
@@ -206,7 +207,8 @@ class WorkPartResource extends Resource
                     ->label('Rechazar')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (WorkPart $record) => $record->status === 'pending_approval')
+                    ->visible(fn (WorkPart $record) => $record->status === 'pending_approval'
+                        && auth()->user()->hasAnyRole(['supervisor', 'administrador', 'super_admin']))
                     ->form([
                         Forms\Components\Textarea::make('supervisor_notes')
                             ->label('Motivo del rechazo (obligatorio)')

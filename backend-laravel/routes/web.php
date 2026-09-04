@@ -8,6 +8,11 @@ Route::get('/', function () {
 });
 
 Route::get('/budgets/{budget}/pdf', function (Budget $budget) {
+    abort_unless(
+        auth()->check() && auth()->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor']),
+        403
+    );
+
     $budget->load(['customer', 'items.part']);
     
     $html = view('budgets.pdf', compact('budget'))->render();

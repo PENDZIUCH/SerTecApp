@@ -23,18 +23,20 @@ Route::get('health', function () {
 Route::prefix('v1')->group(function () {
     
     Route::post('login', [AuthController::class, 'login']);
-    Route::post('magic-link/generate', [MagicLinkController::class, 'generate']);
     Route::get('magic-link/verify', [MagicLinkController::class, 'verify'])->middleware('auth:sanctum');
-    
-    // PWA Endpoints para técnicos (SIN AUTH para testing)
-    Route::get('ordenes/tecnico/{tecnico}', [TechnicianController::class, 'getOrders']);
-    Route::post('partes', [TechnicianController::class, 'saveParte']);
-    Route::get('partes/{workOrderId}', [TechnicianController::class, 'getParte']);
 
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+
+        Route::post('magic-link/generate', [MagicLinkController::class, 'generate']);
+
+        // PWA Endpoints para técnicos — requieren sesion; cada metodo valida
+        // que el actor sea el propio tecnico o tenga rol admin-tier.
+        Route::get('ordenes/tecnico/{tecnico}', [TechnicianController::class, 'getOrders']);
+        Route::post('partes', [TechnicianController::class, 'saveParte']);
+        Route::get('partes/{workOrderId}', [TechnicianController::class, 'getParte']);
 
         Route::get('roles', [RoleController::class, 'index']);
 

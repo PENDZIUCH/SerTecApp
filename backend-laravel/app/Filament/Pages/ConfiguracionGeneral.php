@@ -18,6 +18,11 @@ class ConfiguracionGeneral extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
+        return static::canAccess();
+    }
+
+    public static function canAccess(): bool
+    {
         return auth()->check() && auth()->user()->hasRole('super_admin');
     }
 

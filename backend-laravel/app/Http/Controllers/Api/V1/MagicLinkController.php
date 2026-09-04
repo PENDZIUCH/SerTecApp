@@ -10,6 +10,10 @@ class MagicLinkController extends Controller
 {
     public function generate(Request $request)
     {
+        if (!$request->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor'])) {
+            return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+        }
+
         $request->validate([
             'user_id' => 'required|exists:users,id'
         ]);

@@ -279,9 +279,23 @@ Objetivo de Hugo: "avanzar sin romper nada" y que el repo "se vea 100% pro". No 
 5. Este archivo reescrito para reflejar el estado real verificado hoy (ver secciones "Estado actual verificado", "Cómo funciona el deploy realmente", "Estructura del repo").
 
 ### Backlog explícito (no se tocó hoy, a propósito)
-- Traducir al español los títulos de recursos Filament restantes: WorkPart, Customer, Equipment, Part, Visit, User.
-- Jerarquía de roles: que solo un superadmin pueda crear otro superadmin.
 - Definir y configurar el dominio de producción real que usará `main` (hoy no existe todavía, todo corre sobre `demo.pendziuch.com`).
+
+### Verificado más tarde el mismo día: traducciones OK, jerarquía de superadmin tenía una falla de seguridad real (CORREGIDA)
+
+Hugo pidió reverificar dos ítems que este mismo archivo había dejado como backlog pendiente:
+
+- **Traducción de títulos de Filament: confirmado que SÍ estaba hecha.** Todos los resources (`WorkPart`, `Customer`, `Equipment`, `Part`, `Visit`, `User`, `WorkOrder`, `Budget`, `Subscription`, `WorkshopItem`) tienen `$navigationLabel`/`$modelLabel`/`$pluralModelLabel` en español. Este archivo estaba desactualizado en ese punto también.
+- **Jerarquía de superadmin: NO estaba hecha — era una falla de seguridad real, corregida en el commit `48931df`.** En `UserResource.php`, el dropdown de "Rol" ofrecía **todos** los roles (incluido `super_admin`) a cualquier usuario que no fuera `supervisor` — es decir, cualquier `administrador` podía autoasignarse `super_admin`, o resetear la contraseña de una cuenta `super_admin` existente vía las acciones "Enviar Acceso"/WhatsApp/Email (esas acciones no chequeaban el rol del registro destino).
+
+**Fix aplicado (3 capas, en `backend-laravel/app/Filament/Resources/UserResource.php`):**
+1. `options()` del select de rol excluye `super_admin` salvo que el usuario logueado ya sea `super_admin`.
+2. Regla de validación server-side (`->rule(...)`) en el mismo campo — no depende solo del dropdown, rechaza cualquier submit armado a mano que intente colar `super_admin`.
+3. Helper `isProtectedSuperAdmin()` usado en `canEdit()` y en las 3 acciones de reset de password/envío de acceso — bloquea que un no-`super_admin` edite o resetee la password de una cuenta `super_admin` existente.
+
+Nombre del rol verificado contra la DB real de producción por SSH antes de escribir el fix (7 roles: `admin`, `administrador`, `cliente`, `customer_viewer`, `super_admin`, `supervisor`, `técnico` — **ojo:** la `.env` local por defecto apunta a SQLite con datos de prueba desactualizados y distintos nombres de rol; para verificar roles/permisos siempre chequear contra Hostinger, no contra local, salvo que se fuerce `.env.mysql.local`).
+
+**Lección para la próxima sesión:** cuando Hugo dice "creo que ya hicimos X", puede tener razón en una cosa y no en otra dentro del mismo pedido — verificar cada ítem por separado en el código real, no asumir que todo el lote está en el mismo estado.
 
 ### Cabos sueltos detectados el 2026-09-03 — estado al 2026-09-04
 - `backend-laravel/deploy.bat` (vacío) y `backend-laravel/fix_wps.py` (script roto, `WorkPartService.php` nunca existió) — **resuelto:** archivados en `ARCHIVOS/scripts-viejos/` el 2026-09-04, no borrados.

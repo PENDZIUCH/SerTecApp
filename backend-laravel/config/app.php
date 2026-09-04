@@ -53,6 +53,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'pwa_url' => env('PWA_URL', 'http://localhost:3000'),
 
     /*
     |--------------------------------------------------------------------------

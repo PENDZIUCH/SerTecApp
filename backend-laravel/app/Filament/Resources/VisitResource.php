@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\VisitResource\Pages;
 use App\Models\Visit;
+use App\Services\ModuleManager;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,11 @@ use Filament\Tables\Table;
 
 class VisitResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('visits');
+    }
+
     protected static ?string $model = Visit::class;
     protected static ?string $navigationIcon = 'heroicon-o-map-pin';
     protected static ?string $navigationLabel = 'Visitas';

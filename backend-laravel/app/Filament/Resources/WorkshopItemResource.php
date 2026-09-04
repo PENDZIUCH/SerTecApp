@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\WorkshopItemResource\Pages;
 use App\Models\WorkshopItem;
+use App\Services\ModuleManager;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,11 @@ use Filament\Tables\Table;
 
 class WorkshopItemResource extends Resource
 {
+    public static function canAccess(): bool
+    {
+        return ModuleManager::isActive('workshop');
+    }
+
     protected static ?string $model = WorkshopItem::class;
     protected static ?string $navigationIcon = 'heroicon-o-wrench-screwdriver';
     protected static ?string $navigationLabel = 'Taller';

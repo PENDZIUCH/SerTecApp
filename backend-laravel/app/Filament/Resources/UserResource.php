@@ -254,8 +254,12 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with('roles');
-        if (auth()->check() && auth()->user()->hasRole('supervisor')) {
+        $user = auth()->user();
+        if ($user?->hasRole('supervisor')) {
             $query->whereHas('roles', fn ($q) => $q->whereIn('name', ['técnico', 'tecnico']));
+        } elseif (!$user?->hasRole('super_admin')) {
+            // administrador y demas roles ni siquiera ven las cuentas super_admin en el listado.
+            $query->whereDoesntHave('roles', fn ($q) => $q->where('name', 'super_admin'));
         }
         return $query;
     }

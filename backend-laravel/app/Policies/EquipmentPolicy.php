@@ -2,107 +2,38 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Equipment;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EquipmentPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
+    private function isAdminTier(User $user): bool
+    {
+        return $user->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
+    }
+
+    // Un tecnico necesita ver el equipo del cliente para diagnosticar, pero no administrarlo.
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_equipment');
+        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Equipment $equipment): bool
     {
-        return $user->can('view_equipment');
+        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
-    {
-        return $user->can('create_equipment');
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Equipment $equipment): bool
-    {
-        return $user->can('update_equipment');
-    }
-
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Equipment $equipment): bool
-    {
-        return $user->can('delete_equipment');
-    }
-
-    /**
-     * Determine whether the user can bulk delete.
-     */
-    public function deleteAny(User $user): bool
-    {
-        return $user->can('delete_any_equipment');
-    }
-
-    /**
-     * Determine whether the user can permanently delete.
-     */
-    public function forceDelete(User $user, Equipment $equipment): bool
-    {
-        return $user->can('force_delete_equipment');
-    }
-
-    /**
-     * Determine whether the user can permanently bulk delete.
-     */
-    public function forceDeleteAny(User $user): bool
-    {
-        return $user->can('force_delete_any_equipment');
-    }
-
-    /**
-     * Determine whether the user can restore.
-     */
-    public function restore(User $user, Equipment $equipment): bool
-    {
-        return $user->can('restore_equipment');
-    }
-
-    /**
-     * Determine whether the user can bulk restore.
-     */
-    public function restoreAny(User $user): bool
-    {
-        return $user->can('restore_any_equipment');
-    }
-
-    /**
-     * Determine whether the user can replicate.
-     */
-    public function replicate(User $user, Equipment $equipment): bool
-    {
-        return $user->can('replicate_equipment');
-    }
-
-    /**
-     * Determine whether the user can reorder.
-     */
-    public function reorder(User $user): bool
-    {
-        return $user->can('reorder_equipment');
-    }
+    public function create(User $user): bool { return $this->isAdminTier($user); }
+    public function update(User $user, Equipment $equipment): bool { return $this->isAdminTier($user); }
+    public function delete(User $user, Equipment $equipment): bool { return $this->isAdminTier($user); }
+    public function deleteAny(User $user): bool { return $this->isAdminTier($user); }
+    public function forceDelete(User $user, Equipment $equipment): bool { return $this->isAdminTier($user); }
+    public function forceDeleteAny(User $user): bool { return $this->isAdminTier($user); }
+    public function restore(User $user, Equipment $equipment): bool { return $this->isAdminTier($user); }
+    public function restoreAny(User $user): bool { return $this->isAdminTier($user); }
+    public function replicate(User $user, Equipment $equipment): bool { return $this->isAdminTier($user); }
+    public function reorder(User $user): bool { return $this->isAdminTier($user); }
 }

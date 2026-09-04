@@ -8,7 +8,9 @@ class UpdateWorkOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('work_orders.edit');
+        // work_orders.edit nunca se asigno al rol real 'tecnico' (el seeder usa 'technician'
+        // en ingles) - delegar a la Policy, que ya contempla ownership por assigned_tech_id.
+        return $this->user()->can('update', $this->route('work_order'));
     }
 
     public function rules(): array

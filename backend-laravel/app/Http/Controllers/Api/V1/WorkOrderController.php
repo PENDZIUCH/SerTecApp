@@ -4,21 +4,32 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWorkOrderRequest;
+use App\Http\Requests\UpdateWorkOrderRequest;
 use App\Http\Resources\WorkOrderResource;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class WorkOrderController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private WorkOrderService $workOrderService
-    ) {}
+    ) {
+        $this->authorizeResource(WorkOrder::class, 'work_order');
+    }
 
     public function index()
     {
         $query = WorkOrder::with(['customer', 'equipment', 'assignedTech']);
+
+        if (auth()->user()->hasAnyRole(['técnico', 'tecnico'])) {
+            $query->where('assigned_tech_id', auth()->id());
+        }
 
         if (request('status')) {
             $query->where('status', request('status'));
@@ -51,9 +62,9 @@ class WorkOrderController extends Controller
         return new WorkOrderResource($workOrder->load(['customer', 'equipment', 'assignedTech', 'logs', 'partsUsed']));
     }
 
-    public function update(Request $request, WorkOrder $workOrder): JsonResponse
+    public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): JsonResponse
     {
-        $workOrder = $this->workOrderService->update($workOrder, $request->all());
+        $workOrder = $this->workOrderService->update($workOrder, $request->validated());
 
         return response()->json(new WorkOrderResource($workOrder));
     }
@@ -67,6 +78,8 @@ class WorkOrderController extends Controller
 
     public function changeStatus(Request $request, WorkOrder $workOrder): JsonResponse
     {
+        Gate::authorize('update', $workOrder);
+
         $workOrder = $this->workOrderService->changeStatus($workOrder, $request->input('status'));
 
         return response()->json(new WorkOrderResource($workOrder));
@@ -74,6 +87,8 @@ class WorkOrderController extends Controller
 
     public function addPart(Request $request, WorkOrder $workOrder): JsonResponse
     {
+        Gate::authorize('update', $workOrder);
+
         $part = $this->workOrderService->addPart(
             $workOrder,
             $request->input('part_id'),

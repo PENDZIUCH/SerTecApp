@@ -8,7 +8,7 @@ class StoreWorkOrderRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('work_orders.create');
+        return $this->user()->can('create', \App\Models\WorkOrder::class);
     }
 
     public function rules(): array

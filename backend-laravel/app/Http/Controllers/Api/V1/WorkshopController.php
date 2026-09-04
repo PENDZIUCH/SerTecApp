@@ -6,20 +6,30 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\WorkshopItemResource;
 use App\Models\WorkshopItem;
 use App\Services\WorkshopService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WorkshopController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private WorkshopService $workshopService
-    ) {}
+    ) {
+        $this->authorizeResource(WorkshopItem::class, 'workshop');
+    }
 
     public function index()
     {
-        $items = WorkshopItem::with(['equipment', 'customer', 'assignedTech'])
-            ->applyFilters(request()->all())
-            ->paginate(request('per_page', 15));
+        $query = WorkshopItem::with(['equipment', 'customer', 'assignedTech'])
+            ->applyFilters(request()->all());
+
+        if (auth()->user()->hasAnyRole(['técnico', 'tecnico'])) {
+            $query->where('assigned_tech_id', auth()->id());
+        }
+
+        $items = $query->paginate(request('per_page', 15));
 
         return WorkshopItemResource::collection($items);
     }
@@ -52,6 +62,8 @@ class WorkshopController extends Controller
 
     public function changeStatus(Request $request, WorkshopItem $workshop): JsonResponse
     {
+        $this->authorize('update', $workshop);
+
         $item = $this->workshopService->changeStatus($workshop, $request->input('status'));
 
         return response()->json(new WorkshopItemResource($item));

@@ -8,7 +8,7 @@ class UpdateCustomerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('customers.edit');
+        return $this->user()->can('update', $this->route('customer'));
     }
 
     public function rules(): array

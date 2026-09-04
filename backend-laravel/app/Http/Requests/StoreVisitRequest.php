@@ -8,7 +8,7 @@ class StoreVisitRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('visits.create');
+        return $this->user()->can('create', \App\Models\Visit::class);
     }
 
     public function rules(): array

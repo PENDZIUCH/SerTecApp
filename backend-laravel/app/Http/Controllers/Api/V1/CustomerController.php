@@ -8,13 +8,18 @@ use App\Http\Requests\UpdateCustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Models\Customer;
 use App\Services\CustomerService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 
 class CustomerController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private CustomerService $customerService
-    ) {}
+    ) {
+        $this->authorizeResource(Customer::class, 'customer');
+    }
 
     public function index()
     {

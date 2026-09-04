@@ -8,7 +8,7 @@ class StorePartRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('parts.create');
+        return $this->user()->can('create', \App\Models\Part::class);
     }
 
     public function rules(): array

@@ -7,18 +7,27 @@ use App\Http\Requests\StoreVisitRequest;
 use App\Http\Resources\VisitResource;
 use App\Models\Visit;
 use App\Services\VisitService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VisitController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private VisitService $visitService
-    ) {}
+    ) {
+        $this->authorizeResource(Visit::class, 'visit');
+    }
 
     public function index()
     {
         $query = Visit::with(['workOrder', 'assignedTech']);
+
+        if (auth()->user()->hasAnyRole(['técnico', 'tecnico'])) {
+            $query->where('assigned_tech_id', auth()->id());
+        }
 
         if (request('status')) {
             $query->where('status', request('status'));
@@ -60,6 +69,8 @@ class VisitController extends Controller
 
     public function checkIn(Request $request, Visit $visit): JsonResponse
     {
+        $this->authorize('update', $visit);
+
         $visit = $this->visitService->checkIn($visit, $request->only(['latitude', 'longitude']));
 
         return response()->json(new VisitResource($visit));
@@ -67,6 +78,8 @@ class VisitController extends Controller
 
     public function checkOut(Visit $visit): JsonResponse
     {
+        $this->authorize('update', $visit);
+
         $visit = $this->visitService->checkOut($visit);
 
         return response()->json(new VisitResource($visit));

@@ -8,7 +8,7 @@ class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('users.create');
+        return $this->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
     }
 
     public function rules(): array
@@ -21,7 +21,16 @@ class StoreUserRequest extends FormRequest
             'job_title' => ['nullable', 'string', 'max:100'],
             'is_active' => ['boolean'],
             'roles' => ['array'],
-            'roles.*' => ['exists:roles,name'],
+            'roles.*' => [
+                'exists:roles,name',
+                // Mismo hueco que se cerro en Filament UserResource: nadie que no sea
+                // super_admin puede otorgar el rol super_admin, ni siquiera via API directa.
+                function ($attribute, $value, $fail) {
+                    if ($value === 'super_admin' && !$this->user()->hasRole('super_admin')) {
+                        $fail('Solo un usuario con rol super_admin puede asignar el rol super_admin.');
+                    }
+                },
+            ],
         ];
     }
 }

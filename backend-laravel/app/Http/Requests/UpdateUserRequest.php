@@ -9,7 +9,11 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('users.edit');
+        $target = $this->route('user');
+        if ($target && $target->hasRole('super_admin') && !$this->user()->hasRole('super_admin')) {
+            return false; // un no-super_admin no edita (ni resetea password de) una cuenta super_admin
+        }
+        return $this->user()->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
     }
 
     public function rules(): array
@@ -22,7 +26,14 @@ class UpdateUserRequest extends FormRequest
             'job_title' => ['nullable', 'string', 'max:100'],
             'is_active' => ['boolean'],
             'roles' => ['array'],
-            'roles.*' => ['exists:roles,name'],
+            'roles.*' => [
+                'exists:roles,name',
+                function ($attribute, $value, $fail) {
+                    if ($value === 'super_admin' && !$this->user()->hasRole('super_admin')) {
+                        $fail('Solo un usuario con rol super_admin puede asignar el rol super_admin.');
+                    }
+                },
+            ],
         ];
     }
 }

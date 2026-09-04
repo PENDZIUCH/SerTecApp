@@ -6,14 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\SubscriptionResource;
 use App\Models\Subscription;
 use App\Services\SubscriptionService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private SubscriptionService $subscriptionService
-    ) {}
+    ) {
+        $this->authorizeResource(Subscription::class, 'subscription');
+    }
 
     public function index()
     {
@@ -59,6 +64,8 @@ class SubscriptionController extends Controller
 
     public function renew(Subscription $subscription): JsonResponse
     {
+        $this->authorize('update', $subscription);
+
         $subscription = $this->subscriptionService->renew($subscription);
 
         return response()->json(new SubscriptionResource($subscription));

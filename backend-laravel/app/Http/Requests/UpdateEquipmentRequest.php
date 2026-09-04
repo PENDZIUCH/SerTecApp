@@ -8,7 +8,7 @@ class UpdateEquipmentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('equipments.edit');
+        return $this->user()->can('update', $this->route('equipment'));
     }
 
     public function rules(): array

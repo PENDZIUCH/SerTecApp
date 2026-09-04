@@ -7,14 +7,19 @@ use App\Http\Requests\StorePartRequest;
 use App\Http\Resources\PartResource;
 use App\Models\Part;
 use App\Services\PartService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PartController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private PartService $partService
-    ) {}
+    ) {
+        $this->authorizeResource(Part::class, 'part');
+    }
 
     public function index()
     {
@@ -61,6 +66,8 @@ class PartController extends Controller
 
     public function addMovement(Request $request, Part $part): JsonResponse
     {
+        $this->authorize('update', $part);
+
         $movement = $this->partService->addMovement(
             $part,
             $request->input('movement_type'),

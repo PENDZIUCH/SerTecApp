@@ -4,17 +4,23 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEquipmentRequest;
+use App\Http\Requests\UpdateEquipmentRequest;
 use App\Http\Resources\EquipmentResource;
 use App\Models\Equipment;
 use App\Services\EquipmentService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EquipmentController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private EquipmentService $equipmentService
-    ) {}
+    ) {
+        $this->authorizeResource(Equipment::class, 'equipment');
+    }
 
     public function index()
     {
@@ -46,9 +52,9 @@ class EquipmentController extends Controller
         return new EquipmentResource($equipment->load(['customer', 'brand', 'model', 'history']));
     }
 
-    public function update(Request $request, Equipment $equipment): JsonResponse
+    public function update(UpdateEquipmentRequest $request, Equipment $equipment): JsonResponse
     {
-        $equipment = $this->equipmentService->update($equipment, $request->all());
+        $equipment = $this->equipmentService->update($equipment, $request->validated());
 
         return response()->json(new EquipmentResource($equipment));
     }
@@ -62,6 +68,8 @@ class EquipmentController extends Controller
 
     public function changeStatus(Request $request, Equipment $equipment): JsonResponse
     {
+        $this->authorize('update', $equipment);
+
         $equipment = $this->equipmentService->changeStatus(
             $equipment,
             $request->input('status'),

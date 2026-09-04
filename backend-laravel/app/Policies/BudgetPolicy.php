@@ -2,107 +2,38 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Budget;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class BudgetPolicy
 {
     use HandlesAuthorization;
 
-    /**
-     * Determine whether the user can view any models.
-     */
+    private function isAdminTier(User $user): bool
+    {
+        return $user->hasAnyRole(['super_admin', 'administrador', 'supervisor']);
+    }
+
+    // Un tecnico puede ver presupuestos (los necesita para su trabajo) pero no crearlos/editarlos/aprobarlos.
     public function viewAny(User $user): bool
     {
-        return $user->can('view_any_budget');
+        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Budget $budget): bool
     {
-        return $user->can('view_budget');
+        return $this->isAdminTier($user) || $user->hasAnyRole(['técnico', 'tecnico']);
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
-    public function create(User $user): bool
-    {
-        return $user->can('create_budget');
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Budget $budget): bool
-    {
-        return $user->can('update_budget');
-    }
-
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Budget $budget): bool
-    {
-        return $user->can('delete_budget');
-    }
-
-    /**
-     * Determine whether the user can bulk delete.
-     */
-    public function deleteAny(User $user): bool
-    {
-        return $user->can('delete_any_budget');
-    }
-
-    /**
-     * Determine whether the user can permanently delete.
-     */
-    public function forceDelete(User $user, Budget $budget): bool
-    {
-        return $user->can('force_delete_budget');
-    }
-
-    /**
-     * Determine whether the user can permanently bulk delete.
-     */
-    public function forceDeleteAny(User $user): bool
-    {
-        return $user->can('force_delete_any_budget');
-    }
-
-    /**
-     * Determine whether the user can restore.
-     */
-    public function restore(User $user, Budget $budget): bool
-    {
-        return $user->can('restore_budget');
-    }
-
-    /**
-     * Determine whether the user can bulk restore.
-     */
-    public function restoreAny(User $user): bool
-    {
-        return $user->can('restore_any_budget');
-    }
-
-    /**
-     * Determine whether the user can replicate.
-     */
-    public function replicate(User $user, Budget $budget): bool
-    {
-        return $user->can('replicate_budget');
-    }
-
-    /**
-     * Determine whether the user can reorder.
-     */
-    public function reorder(User $user): bool
-    {
-        return $user->can('reorder_budget');
-    }
+    public function create(User $user): bool { return $this->isAdminTier($user); }
+    public function update(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
+    public function delete(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
+    public function deleteAny(User $user): bool { return $this->isAdminTier($user); }
+    public function forceDelete(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
+    public function forceDeleteAny(User $user): bool { return $this->isAdminTier($user); }
+    public function restore(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
+    public function restoreAny(User $user): bool { return $this->isAdminTier($user); }
+    public function replicate(User $user, Budget $budget): bool { return $this->isAdminTier($user); }
+    public function reorder(User $user): bool { return $this->isAdminTier($user); }
 }

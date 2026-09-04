@@ -6,14 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\BudgetResource;
 use App\Models\Budget;
 use App\Services\BudgetService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BudgetController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private BudgetService $budgetService
-    ) {}
+    ) {
+        $this->authorizeResource(Budget::class, 'budget');
+    }
 
     public function index()
     {
@@ -59,6 +64,8 @@ class BudgetController extends Controller
 
     public function approve(Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         $budget = $this->budgetService->approve($budget);
 
         return response()->json(new BudgetResource($budget));
@@ -66,6 +73,8 @@ class BudgetController extends Controller
 
     public function reject(Request $request, Budget $budget): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         $budget = $this->budgetService->reject($budget, $request->input('reason'));
 
         return response()->json(new BudgetResource($budget));

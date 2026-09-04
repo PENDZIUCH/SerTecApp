@@ -16,7 +16,7 @@
 5. **Pasar URLs siempre como links** `[texto](url)`, nunca como texto plano.
 6. **NUNCA mergear ramas (`git merge`) sin mostrar antes `git diff --stat <rama1>..<rama2>` y pedir confirmación si el diff toca más de ~20 archivos o carpetas fuera del alcance del feature.** Un merge mal hecho puede arrastrar código legacy de vuelta al repo sin que nadie lo note hasta días después.
 7. **Un commit firmado con el nombre/email de Hugo en `git log` NO prueba que Hugo lo haya hecho.** Hugo no usa git manualmente. Cualquier commit hecho por una sesión de Claude vía terminal en su máquina queda firmado con la identidad de git configurada localmente. Nunca atribuirle a Hugo una acción solo por la autoría del commit.
-8. **`backend-laravel/` (deploy a Hostinger vía push a `development`) y `sertecapp-tecnicos/` (deploy a Cloudflare Pages vía `wrangler pages deploy`) son pipelines INDEPENDIENTES.** Un push que dispara el webhook de Hostinger NO publica cambios del frontend Next.js. Si se toca `sertecapp-tecnicos/`, hay que build+deploy a Cloudflare aparte y decirlo explícitamente.
+8. **`backend-laravel/` (deploy a Hostinger vía webhook) y `sertecapp-tecnicos/` (deploy a Cloudflare Pages) son pipelines INDEPENDIENTES, pero desde 2026-09-04 los DOS son automáticos con un solo push a `development`.** Ver sección "Deploy automático de la PWA (Cloudflare Pages)" más abajo — ya no hace falta `wrangler pages deploy` a mano.
 9. **Antes de cualquier deploy a Hostinger: usar el skill `/deploy-hostinger`.**
 10. **Al cerrar cualquier sesión donde se avanzó algo real: actualizar este archivo antes de terminar.** No dejarlo para "la próxima" — la próxima sesión no tiene memoria de esta conversación.
 
@@ -44,7 +44,7 @@ Ver reglas 6, 7 y 8 arriba — nacieron de este incidente.
 
 - **`development` es la rama que manda.** El webhook de GitHub dispara `deploy-sertecapp.sh` en Hostinger en cada push a `development` (confirmado leyendo el script en el servidor — usa `git archive origin/development backend-laravel/`, ver sección de deploy más abajo). Todo lo que está en `demo.pendziuch.com` hoy viene de `development`, no de `main`.
 - **`main` es solo un espejo de referencia** que se sincroniza manualmente (fast-forward) cuando `development` está estable, para no perder de vista qué es "lo último confirmado andando". No dispara ningún deploy por sí sola todavía.
-- La PWA (`sertecapp-tecnicos/`) se deploya aparte, a mano, con `wrangler pages deploy` (build local + push manual) — no hay CI para esto todavía.
+- La PWA (`sertecapp-tecnicos/`) se deploya aparte, pero **desde 2026-09-04 es automático**: Cloudflare Pages (proyecto `sertecapp-live`) está conectado directo al repo de GitHub, build+deploy en cada push a `development`. Ver detalle en "Deploy automático de la PWA (Cloudflare Pages)" más abajo.
 
 **Dos frontends PWA — a propósito, no es un error:**
 
@@ -348,7 +348,37 @@ Cada controller agrega `authorizeResource()` en el constructor. `index()` de Wor
 - PWA: sacado un `console.log` que volcaba el perfil completo del usuario en `/ordenes`.
 - PWA: corregido un typo de dominio en `next.config.ts` (el `runtimeCaching` del Service Worker apuntaba a `sertecapp.pendziuch.com` en vez de `demo.pendziuch.com` — era un no-op, quedó bien apuntado) + purga de Cache Storage agregada al logout/"Limpiar Caché" en `ordenes` y `admin`.
 
-**⚠️ Los cambios de PWA (Fase C) están commiteados en `development` pero NO deployados a Cloudflare Pages** — ese pipeline es manual (`wrangler pages deploy`, regla 8 de este archivo). Falta build + deploy cuando Hugo lo pida.
+Los cambios de PWA (Fase C) se deployaron el mismo día: primero a mano con `wrangler pages deploy` (verificado en el navegador, sin errores de consola), y después se automatizó el pipeline entero — ver sección siguiente.
+
+## Deploy automático de la PWA (Cloudflare Pages) — configurado 2026-09-04
+
+`sertecapp.pendziuch.com` corre en el proyecto de Cloudflare Pages **`sertecapp-live`** (¡ojo! no es `sertecapp-tecnicos` — ese es el proyecto del frontend viejo/congelado, ver tabla de "Estado actual verificado"). Antes de hoy el deploy era 100% manual: build local (`NEXT_EXPORT=1 npx next build --webpack`) + `wrangler pages deploy out --project-name=sertecapp-live`.
+
+**Ahora es automático**, igual que Hostinger pero por integración nativa de Cloudflare (no webhook + script propio): se conectó el repo `PENDZIUCH/SerTecApp` directo desde el dashboard de Cloudflare (Workers y Pages → `sertecapp-live` → Configuración → Desarrollo → Repositorio Git → Conectar). Cada push a `development` dispara un build y deploy solo, sin tocar nada.
+
+**Configuración de build (Cloudflare dashboard, sección "Desarrollo" de `sertecapp-live`):**
+
+| Campo | Valor |
+|---|---|
+| Rama de producción | `development` |
+| Directorio raíz | `sertecapp-tecnicos` |
+| Comando de compilación | `npx next build --webpack` |
+| Resultado de compilación | `out` |
+
+**Variables de entorno de build** (sección "Variables y secretos" del mismo proyecto):
+
+| Variable | Valor | Por qué |
+|---|---|---|
+| `NEXT_EXPORT` | `1` | Activa en `next.config.ts` el modo de export estático + PWA — sin esto hace un build normal que no sirve para Cloudflare Pages (sin `out/`, sin `sw.js`). |
+| `NODE_VERSION` | `20` | Sin fijarla, Cloudflare puede usar una versión vieja por defecto. |
+
+`--webpack` en el build command es obligatorio: Next.js 16 usa Turbopack por defecto y `next-pwa` (el plugin que genera el service worker) todavía no lo soporta — sin el flag, el build tira error.
+
+**Gotcha real que pasó al conectar:** el primer build automático se disparó apenas se conectó el repo, ANTES de que las variables de entorno quedaran guardadas — resultado: deployó una versión sin `NEXT_EXPORT`, sin export estático, con `sw.js` vacío (0 bytes) en producción. Se corrigió con un "Reintentar implementación" manual desde la pestaña Implementaciones una vez confirmadas las variables. **Si en el futuro se reconecta el repo o se cambia esta config, verificar el primer build resultante antes de asumir que quedó bien** — chequear que `https://sertecapp.pendziuch.com/sw.js` no esté vacío y contenga `demo\.pendziuch\.com` (con las barras de escape, es un regex minificado).
+
+**Costos:** plan gratis de Cloudflare Pages, 500 builds/mes, sin tarjeta de crédito y sin cobro automático si se excede (simplemente no te deja hacer más builds hasta el mes siguiente o hasta upgradear a mano). Con la frecuencia de pushes de este proyecto, no hay riesgo real de acercarse a ese límite.
+
+**Vuelta atrás:** Cloudflare Pages guarda el historial completo de deploys (pestaña "Implementaciones") — cualquiera se puede volver a promover a producción con un clic, sin necesidad de revertir el commit.
 
 ### Verificado después de cada fase
 `demo.pendziuch.com` (login admin, API health, login API) y `sertecapp.pendziuch.com` siguen respondiendo 200 tras las 3 fases. Los 4 endpoints que pasaron a requerir auth devuelven 401 sin token. La lógica de Policies se probó contra datos reales de producción (técnico real, orden propia/ajena) vía tinker de solo lectura, sin dejar residuos.

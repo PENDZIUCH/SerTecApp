@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-03
+> Última actualización: 2026-09-04
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -26,16 +26,25 @@
 
 Una sesión de Claude hizo `git merge development` sobre `main` para subir 3 features (ojito PWA, sesión persistente, permisos supervisor) y arrastró 509 archivos / +27.193 líneas de una carpeta Laravel legacy en la raíz (`app/`, `config/`, `database/`, `routes/`, `resources/`, `storage/`, `bootstrap/`, `public/`, `tests/`, `artisan`, `composer.json` — sin `vendor/` ni `.env`, no ejecutable, no relacionada con `backend-laravel/` que es el Laravel real). Después un `reset` dejó `main` y `development` en el mismo commit.
 
-**Corregido el 2026-09-03:**
-- Carpeta legacy movida a `ARCHIVOS/laravel-legacy-julio/` (commit `a1b6e52`), confirmado sin impacto en producción.
-- `test-sertecapp.bat` creado en la raíz para chequear infraestructura completa en 1 llamado (ver reglas de testing rápido).
-- Confirmado: ojito PWA + sesión persistente + permisos supervisor SIGUEN sin buildear/deployar a Cloudflare Pages — código listo, no publicado.
-- `main` = lo vivo en `sertecapp.pendziuch.com`/Hostinger. `development` = prueba/local. Idea futura: subdominio de staging separado.
-- Ver reglas 6, 7 y 8 arriba — nacieron de este incidente.
+**Corregido el 2026-09-03:** carpeta legacy movida a `ARCHIVOS/laravel-legacy-julio/` (commit `a1b6e52`), confirmado sin impacto en producción. `test-sertecapp.bat` creado en la raíz para chequear infraestructura completa en 1 llamado.
+
+**Completado el 2026-09-04:** esa limpieza había quedado a medias — el commit `a1b6e52` archivó `app/config/database/resources/routes` pero dejó sueltos en la raíz el resto del mismo esqueleto legacy (`bootstrap/`, `public/`, `storage/`, `tests/`, `artisan`, `composer.json`, `composer.lock`, `phpunit.xml`, `vite.config.js`). Se terminó de mover todo a `ARCHIVOS/laravel-legacy-julio/`, y de paso se archivaron (sin borrar, todo recuperable en `ARCHIVOS/` y en el historial de git) ~23 `.md` sueltos de sesiones viejas y 8 scripts de deploy duplicados/abandonados. Ver sección **"Estructura del repo (2026-09-04)"** más abajo.
+
+**Sobre lo que se creía "sin publicar":** el 2026-09-03 se dio por hecho que el ojito PWA + sesión persistente + botón WhatsApp seguían sin deployar a Cloudflare Pages. Era un error — Hugo las vio funcionando en producción el 2026-09-03/04 y, al verificar en vivo, se confirmó: el hash del bundle JS servido en `sertecapp.pendziuch.com` coincide exactamente con el build local hecho esa tarde. **Lección: no asumir estado de deploy sin comparar contra lo que corre en vivo (hash de build, screenshot, etc.) — ni aunque la sesión anterior lo haya documentado como pendiente.**
+
+Ver reglas 6, 7 y 8 arriba — nacieron de este incidente.
 
 ---
 
-## Estado actual verificado (2026-09-02) ✅
+## Estado actual verificado (2026-09-04) ✅
+
+**⚠️ IMPORTANTE — qué es "producción" hoy y qué rama la alimenta:**
+
+`demo.pendziuch.com` (Hostinger) y `sertecapp.pendziuch.com` (PWA) son hoy el entorno de **demo/staging para Luis**, todavía NO el dominio de producción final — eso es intencional, es donde se sigue iterando. Cuando haya un dominio de producción real separado, **`main` se va a usar para ese deploy**. Hasta entonces:
+
+- **`development` es la rama que manda.** El webhook de GitHub dispara `deploy-sertecapp.sh` en Hostinger en cada push a `development` (confirmado leyendo el script en el servidor — usa `git archive origin/development backend-laravel/`, ver sección de deploy más abajo). Todo lo que está en `demo.pendziuch.com` hoy viene de `development`, no de `main`.
+- **`main` es solo un espejo de referencia** que se sincroniza manualmente (fast-forward) cuando `development` está estable, para no perder de vista qué es "lo último confirmado andando". No dispara ningún deploy por sí sola todavía.
+- La PWA (`sertecapp-tecnicos/`) se deploya aparte, a mano, con `wrangler pages deploy` (build local + push manual) — no hay CI para esto todavía.
 
 **Dos frontends PWA — a propósito, no es un error:**
 
@@ -46,13 +55,14 @@ Una sesión de Claude hizo `git merge development` sobre `main` para subir 3 fea
 
 | Entorno | URL | Estado |
 |---------|-----|--------|
-| Admin panel (Hostinger) | [https://demo.pendziuch.com/sertecapp/login](https://demo.pendziuch.com/sertecapp/login) | ✅ Funciona |
+| Admin panel (Hostinger) | [https://demo.pendziuch.com/sertecapp/login](https://demo.pendziuch.com/sertecapp/login) | ✅ Funciona, al día con `development` (deploy webhook confirmado 2026-09-03 22:09) |
 | API REST (Hostinger) | [https://demo.pendziuch.com/api/v1](https://demo.pendziuch.com/api/v1) | ✅ Funciona |
+| PWA técnicos (Cloudflare Pages) | [https://sertecapp.pendziuch.com](https://sertecapp.pendziuch.com) | ✅ Al día — ojito mostrar/ocultar contraseña, sesión persistente y botón WhatsApp confirmados en vivo el 2026-09-04 (hash de bundle JS coincide con el build local del 2026-09-03) |
 | Admin panel (local) | [http://localhost:8000/sertecapp/login](http://localhost:8000/sertecapp/login) | Verificar si está levantado (`netstat`) antes de asumir |
 
-**Git:** `main` y `development` sincronizados en el mismo commit al 2026-09-02 18:41 (verificar con `git log -1` en cada uno — no asumir que están desalineados).
+**Git:** `main` y `development` sincronizados en el mismo commit desde el 2026-09-04 (verificar con `git log -1` en cada uno — no asumir que están desalineados).
 
-**Login producción:** `pendziuch@gmail.com` / `SerTecApp2026!`
+**Login producción (demo):** `pendziuch@gmail.com` / `SerTecApp2026!`
 
 ---
 
@@ -119,6 +129,17 @@ tail -f /tmp/sertecapp_deploy.log
 | Webhook URL | `https://demo.pendziuch.com/deploy.php` |
 | Webhook secret | `SerTecDeploy2026!` |
 
+### Cómo funciona el deploy realmente (verificado 2026-09-04)
+
+`deploy-sertecapp.sh` (vive en `~/deploy-sertecapp.sh` en Hostinger, y hay copia versionada en la raíz del repo) usa **`git archive` + `tar --strip-components=1`**, NO `git pull`:
+
+```bash
+git fetch origin development
+git archive origin/development backend-laravel/ | tar -xf - -C "$LARAVEL_DIR/" --strip-components=1
+```
+
+Esto extrae el contenido exacto del subárbol `backend-laravel/` del commit de `development` directamente sobre `public_html/backend-laravel/`, sin importar si el working tree local del servidor está sucio o desactualizado (lo está — el `.git` interno de esa carpeta en Hostinger quedó con un HEAD viejo de julio y no se usa para nada, es ruido inofensivo). El `.env` se respalda y restaura aparte. Esto es lo que resolvió, de hecho, el viejo problema de "dos paths distintos" (ver más abajo) — aunque nunca se documentó como resuelto hasta ahora.
+
 ---
 
 ## Reglas técnicas Hostinger (lecciones aprendidas)
@@ -168,19 +189,16 @@ npm run dev
 
 | Rama | Uso |
 |------|-----|
-| `development` | Trabajo activo — **siempre trabajar acá** |
-| `main` | Producción estable |
+| `development` | Trabajo activo — **siempre trabajar acá** — es la que dispara el deploy real a `demo.pendziuch.com` vía webhook |
+| `main` | Espejo manual de referencia hoy. Reservada para cuando exista un dominio de producción real separado de la demo (ver "Estado actual verificado" arriba) |
 
-Flujo: trabajar en `development` → push → auto-deploy a Hostinger vía webhook.
+Flujo: trabajar en `development` → push → auto-deploy a Hostinger vía webhook. Sincronizar `main` de vez en cuando con fast-forward cuando `development` esté estable (no dispara nada, es solo referencia).
 
 ---
 
-## Auto-deploy (pendiente completar)
+## Auto-deploy — YA FUNCIONA (confirmado 2026-09-04, no es "pendiente")
 
-El script y webhook ya están en el servidor. Falta:
-1. **GitHub Webhook** → [github.com/PENDZIUCH/SerTecApp/settings/hooks/new](https://github.com/PENDZIUCH/SerTecApp/settings/hooks/new)
-   - URL: `https://demo.pendziuch.com/deploy.php` | Secret: `SerTecDeploy2026!`
-2. **hPanel → Cron Jobs**: `/bin/bash /home/u283281385/deploy-sertecapp.sh` cada 5 min
+El webhook de GitHub → `deploy.php` → `deploy-sertecapp.sh` está activo y confirmado corriendo (log de deploy con timestamp real tras un push a `development`). Ver "Cómo funciona el deploy realmente" arriba para el mecanismo exacto (`git archive`, no `git pull`). Si en el futuro parece que dejó de andar, chequear primero `tail -f /tmp/sertecapp_deploy.log` en el servidor antes de asumir que hay que reconfigurar nada.
 
 ---
 
@@ -193,9 +211,9 @@ Corrección aplicada en `StatsOverviewWidget.php` — commit `0e5e352`.
 
 ---
 
-## Estado actualizado 2026-07-28
+## Estado actualizado 2026-07-28 (histórico — mecanismo de deploy superado, ver "Cómo funciona el deploy realmente" arriba)
 
-### Deploy funcionando
+### Deploy funcionando (en ese momento)
 - Git en Hostinger ahora trackea todos los archivos — `git pull` actualiza correctamente
 - Flujo de deploy: fix local → commit → push → SSH `git pull origin development && php artisan view:clear && php artisan cache:clear`
 - Webhook automático pendiente (conectar GitHub → `https://demo.pendziuch.com/deploy.php`)
@@ -219,74 +237,13 @@ Corrección aplicada en `StatsOverviewWidget.php` — commit `0e5e352`.
 
 ---
 
-## Problema pendiente — estructura del repo (RESOLVER PRIMERO en próxima sesión)
+## Problema histórico de paths duplicados — RESUELTO (ver "Cómo funciona el deploy" arriba)
 
-**El problema:** El repo tiene archivos en dos paths distintos:
-- Local trackea: `backend-laravel/app/Filament/...` (repo root = `SerTecApp/`)
-- Hostinger trackea: `app/Filament/...` (repo root = `backend-laravel/`)
+Durante julio-agosto 2026 esto fue un problema real: local trackea `backend-laravel/app/Filament/...` (repo root = `SerTecApp/`) pero Hostinger necesitaba `app/Filament/...` (repo root = `backend-laravel/`), y usar `git pull` ahí nunca actualizaba nada bien. Se probaron soluciones manuales (robocopy antes de cada commit, ver historial de este archivo si hace falta el detalle) que nunca quedaron del todo prolijas.
 
-Por eso `git pull` en Hostinger nunca actualiza los archivos de Filament correctamente.
+**Se resolvió de fondo, sin que nadie lo documentara como tal, con `deploy-sertecapp.sh`:** usa `git archive origin/development backend-laravel/ | tar --strip-components=1`, que extrae directamente el subárbol correcto sin depender de que las rutas del repo local y del servidor coincidan. Ver detalle completo en "Cómo funciona el deploy realmente" más arriba. **No hace falta robocopy ni sincronizar paths a mano — ya no es necesario.**
 
-**La solución (Opción B — próxima sesión):**
-Reorganizar Hostinger para que el repo root sea `SerTecApp/` igual que local, y el deploy apunte a `public_html/backend-laravel/`. Así git pull funciona de verdad.
-
-**Lo que NO hacer mientras tanto:**
-- No commitear desde Hostinger — pisa los fixes de local
-- No hacer git reset --hard desde Hostinger
-
-**Estado actual de Hostinger:**
-- Dashboard funciona ✅
-- Links sin 404 ✅  
-- Técnico obligatorio ✅
-- Títulos en inglés todavía (ListWorkOrders, etc.) ⚠️
-
----
-
-## SOLUCIÓN DEFINITIVA AL PROBLEMA DE DEPLOY (2026-07-28)
-
-### El problema
-El repo tiene archivos en DOS paths distintos:
-- `app/Filament/...` — path que usa Hostinger (repo root = `backend-laravel/`)
-- `backend-laravel/app/Filament/...` — path local (repo root = `SerTecApp/`)
-
-`git pull` en Hostinger solo actualiza los archivos en `app/...` — nunca los de `backend-laravel/app/...`.
-
-### La solución
-Antes de cada commit que toca archivos PHP, correr robocopy para sincronizar:
-
-```cmd
-cd "C:\Users\Hugo Pendziuch\Documents\claude\SerTecApp"
-robocopy backend-laravel . /E /XO /XF .env /XD vendor node_modules .git storage
-git add app/
-git commit -m "fix: descripción del cambio"
-git push origin development
-```
-
-Luego en SSH de Hostinger:
-```bash
-git pull origin development && php artisan view:clear && php artisan cache:clear
-```
-
-### Archivos que NO sincronizar con robocopy
-- `.env` — cada entorno tiene el suyo
-- `vendor/` — se instala con composer
-- `storage/` — datos locales
-- `.git/` — repositorio git
-
-### Pendiente — automatizar con script
-Crear un script `deploy.ps1` local que haga todo en un comando:
-1. robocopy backend-laravel → app/
-2. git add + commit + push
-3. SSH a Hostinger → git pull + artisan clear
-
-### Pendiente — recursos en inglés
-Traducir Pages de todos los resources:
-- WorkPart (Partes pendientes)
-- Customer (Clientes)
-- Equipment (Equipos)
-- Part (Repuestos)
-- Visit (Visitas)
-- User (Usuarios)
+Pendiente real que queda (no es un blocker, es trabajo de UI): traducir al español los títulos de recursos Filament que faltan — WorkPart, Customer, Equipment, Part, Visit, User.
 
 ---
 
@@ -303,8 +260,41 @@ Resultado: **`main` y `development` quedaron sincronizados en `3785486`, sin pé
 ### Aclaración importante: los dos frontends PWA no están en conflicto
 `sertecapp.pendziuch.com` (activo, Hostinger/MySQL) y `sertecapp-tecnicos.pages.dev` (backup de demo congelado, Worker viejo + D1/SQLite) apuntan a APIs distintas a propósito — ver tabla en "Estado actual verificado" arriba. Confirmado comparando `.env.production.local` (`NEXT_PUBLIC_API_URL=https://demo.pendziuch.com`) contra el JS bundle servido en pages.dev (que llama a `sertecapp-worker.pendziuch.workers.dev`).
 
-### Cabos sueltos detectados (no resueltos todavía)
-- `backend-laravel/deploy.bat` — vacío (0 bytes), creado 06/08. **Intento fallido, nunca se completó.** Candidato a borrar (pendiente OK de Hugo).
-- `backend-laravel/fix_wps.py` — script Python del 08/08 que intentaba generar `app/Services/WorkPartService.php` (lógica de: técnico envía parte → notifica supervisor → aprobar/rechazar → emails). **Intento fallido:** el PHP embebido tiene las variables rotas (faltan los `$`), y `WorkPartService.php` **no existe en ningún lado del repo hoy**. Candidato a borrar (pendiente OK de Hugo).
-- **🔴 Duplicación de `app/Filament/` sin resolver — más grave de lo que se pensaba.** Verificado en vivo: existen DOS copias, `app/Filament/` (raíz del repo) y `backend-laravel/app/Filament/`, y **ya están desincronizadas** (`WorkPartResource.php` es distinto entre las dos). Este es el mismo problema documentado en la sección "Problema pendiente — estructura del repo" más abajo — sigue sin resolverse a pesar de que se le dedicó tiempo antes. Riesgo: Hostinger puede estar sirviendo código viejo sin que se note. **Prioridad para próxima sesión de trabajo real.**
-- El repo raíz tiene ~15 archivos `.md` sueltos de sesiones de deploy anteriores (`RESUMEN_SOLUCION_DEPLOY.md`, `SOLUCION_DEPLOY_DEVELOPMENT.md`, `CHECKLIST_DEPLOY.md`, `CLAUDE_ES_UN_BOLUDO.md`, etc.) — información dispersa que compite con este archivo como fuente de verdad. Sugerido: mover a `docs/archivo/` y dejar `CLAUDE.md` como único punto de entrada (pendiente OK de Hugo).
+---
+
+## Sesión 2026-09-04 — orden y sincronización (sin tocar features)
+
+Objetivo de Hugo: "avanzar sin romper nada" y que el repo "se vea 100% pro". No se tocó ninguna feature ni código funcional — solo prolijidad y corrección de documentación desactualizada.
+
+### Verificado en vivo antes de tocar nada (regla 0)
+- Ojito, sesión persistente y botón WhatsApp: confirmados en producción (screenshot + hash de bundle JS coincidente). CLAUDE.md decía lo contrario — corregido.
+- Deploy a Hostinger: leído `deploy-sertecapp.sh` directo en el servidor por SSH. Usa `git archive --strip-components=1`, no `git pull`. El viejo "problema de paths duplicados" está resuelto de hecho desde hace rato, solo nunca se documentó.
+- `development` es la rama que dispara el deploy real (vía webhook). `main` es un espejo manual — Hugo aclaró que la va a reservar para un futuro dominio de producción separado, distinto de `demo.pendziuch.com`.
+
+### Hecho
+1. `sertecapp-tecnicos/public/sw.js`, `workbox-*.js`, `fallback-*.js` dejaron de versionarse (se regeneran en cada build, ensuciaban el diff sin ser código real) — commit `c39d060`.
+2. `main` sincronizada con `development` vía fast-forward (11 commits, todo ya en producción) — commit `c39d060`, pusheado a GitHub.
+3. Completado el archivado del esqueleto Laravel legacy que había quedado a medias en la raíz (`bootstrap/`, `public/`, `storage/`, `tests/`, `artisan`, `composer.json`, `composer.lock`, `phpunit.xml`, `vite.config.js`) → `ARCHIVOS/laravel-legacy-julio/` — commit `1b1cd60`.
+4. Archivados ~23 `.md` históricos y 8 scripts de deploy/debug obsoletos → `ARCHIVOS/docs-historicos/` y `ARCHIVOS/scripts-viejos/` — commit `03a9c0f`. Nada se borró.
+5. Este archivo reescrito para reflejar el estado real verificado hoy (ver secciones "Estado actual verificado", "Cómo funciona el deploy realmente", "Estructura del repo").
+
+### Backlog explícito (no se tocó hoy, a propósito)
+- Traducir al español los títulos de recursos Filament restantes: WorkPart, Customer, Equipment, Part, Visit, User.
+- Jerarquía de roles: que solo un superadmin pueda crear otro superadmin.
+- Definir y configurar el dominio de producción real que usará `main` (hoy no existe todavía, todo corre sobre `demo.pendziuch.com`).
+
+### Cabos sueltos detectados el 2026-09-03 — estado al 2026-09-04
+- `backend-laravel/deploy.bat` (vacío) y `backend-laravel/fix_wps.py` (script roto, `WorkPartService.php` nunca existió) — **resuelto:** archivados en `ARCHIVOS/scripts-viejos/` el 2026-09-04, no borrados.
+- **Duplicación `app/Filament/` (raíz) vs `backend-laravel/app/Filament/`** — **resuelto:** el `app/Filament/` de la raíz era parte del mismo esqueleto legacy, ya archivado completo en `ARCHIVOS/laravel-legacy-julio/` el 2026-09-04. Hoy solo existe `backend-laravel/app/Filament/`, sin duplicados. El deploy a Hostinger nunca dependió de esta carpeta raíz — usa `git archive` sobre `backend-laravel/` (ver "Cómo funciona el deploy realmente").
+- ~25 `.md` sueltos en la raíz — **resuelto:** archivados en `ARCHIVOS/docs-historicos/` el 2026-09-04. Ver sección "Estructura del repo" abajo.
+
+## Estructura del repo (2026-09-04)
+
+Raíz limpia: `CLAUDE.md`, `README.md`, `ARCHITECTURE.md`, `deploy-sertecapp.sh` (el único script de deploy vigente, corre vía cron/webhook en Hostinger), `deploy.bat` (helper local: commit + push a `development`), `test-sertecapp.bat` (chequeo rápido de infra), más las carpetas de código (`backend-laravel/`, `sertecapp-tecnicos/`, `sertecapp-worker/`) y `ARCHIVOS/`.
+
+`ARCHIVOS/` — todo lo archivado, **nada borrado, todo recuperable** (está en git, se puede traer de vuelta con `git mv` si algo hiciera falta):
+- `laravel-legacy-julio/` — el esqueleto Laravel duplicado que quedó suelto en la raíz de una migración vieja (código muerto, sin `vendor/` ni `.env`, nunca lo usó ningún deploy). Completo desde 2026-09-04.
+- `docs-historicos/` — ~23 `.md` de sesiones de deploy/planificación anteriores a este archivo. Si hace falta contexto de algo viejo, buscar ahí antes que preguntar.
+- `scripts-viejos/` — deploy scripts duplicados/abandonados, scripts de debug/migración de un solo uso, logs sueltos.
+
+**Regla para el futuro: si algo en `ARCHIVOS/` parece hacer falta de nuevo, moverlo de vuelta con `git mv` (no copiar) para no volver a duplicar.**

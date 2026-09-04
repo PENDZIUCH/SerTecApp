@@ -364,6 +364,7 @@ Los cambios de PWA (Fase C) se deployaron el mismo día: primero a mano con `wra
 | Directorio raíz | `sertecapp-tecnicos` |
 | Comando de compilación | `npx next build --webpack` |
 | Resultado de compilación | `out` |
+| Rutas de vigilancia de compilación | `sertecapp-tecnicos/*` (acotado el 2026-09-04 — antes era `*`, disparaba rebuild hasta con un push que solo tocaba `backend-laravel/` o este mismo `CLAUDE.md`) |
 
 **Variables de entorno de build** (sección "Variables y secretos" del mismo proyecto):
 

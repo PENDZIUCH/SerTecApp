@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-04
+> Última actualización: 2026-09-06
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -386,7 +386,7 @@ Los cambios de PWA (Fase C) se deployaron el mismo día: primero a mano con `wra
 
 ### Explícitamente fuera de esta sesión (documentado, backlog real)
 - **Rediseño completo Roles↔Permisos: RESUELTO más tarde el mismo día** — ver sección "Unificación Roles↔Permisos" más abajo.
-- **Magic link de larga vida (30-365 días) viajando en texto plano por WhatsApp/email** — cambiarlo a un token de un solo uso de corta vida cambia el flujo de UX, se planifica aparte con Hugo antes de tocarlo. Sigue pendiente.
+- **Magic link de larga vida (30-365 días) viajando en texto plano por WhatsApp/email** — **RESUELTO el 2026-09-06**, ver sección "Magic link de un solo uso" más abajo.
 - PDF de presupuestos: ya resuelto (ver sección de esa misma tarde más abajo).
 
 ## Convergencia con core/v1 — hecha 2026-09-04 (commit `587c746`)
@@ -441,3 +441,29 @@ Se listaron los 14 Resources + 3 Pages del panel y se verificó que TODOS tuvier
 **Verificado contra producción después de correr el seeder** (tinker, con datos reales): administrador puede actualizar/borrar work orders y gestionar usuarios; técnico puede actualizar su propia orden, NO puede borrarla, NO puede tocar una orden ajena, puede ver clientes pero no editarlos, no ve suscripciones; `super_admin` pasa todo vía `Gate::before` sin depender de sus permisos explícitos. 25 tests locales (157 aserciones) — incluyen 2 casos nuevos que antes eran imposibles de probar: que sacarle un permiso a un rol le saca el acceso de verdad, y que `super_admin` funciona aunque no tenga permisos asignados.
 
 **Resultado para Hugo:** ahora si destildás algo en el panel de Roles para `administrador`/`supervisor`/`técnico`, tiene efecto real en todo el panel — consistente en todos lados, no una mezcla.
+
+## Magic link de un solo uso — hecho 2026-09-06 (commit `a78953d`)
+
+**Motivo:** el magic link (acceso de un clic vía WhatsApp/email) quedó identificado en la auditoría del 2026-09-04 como el único hallazgo de seguridad sin cerrar: era un token Sanctum de acceso total (`['*']`), válido **365 días** (no 30-365 como decía este archivo antes de verificarlo — los 30 días eran de un endpoint de API que ni se usa desde el frontend, código muerto), viajando en texto plano por WhatsApp/email, y reusable indefinidamente durante todo ese año.
+
+**Lo que se verificó antes de tocar nada:** el link no era solo la puerta de entrada — era la sesión completa. El front (`sertecapp-tecnicos/app/l/page.tsx`) guardaba ese mismo token en `localStorage` y lo seguía usando como credencial de la app, es lo que sostiene el "Hola Juan" de la sesión persistente. Por eso simplemente borrar el token al primer uso hubiera roto esa feature.
+
+**Fix aplicado:**
+1. El link ahora vence en **24hs** si no se usa (decisión de Hugo, entre 1h/24h/7 días — eligió 24h por margen práctico sin dejar una ventana larga de exposición).
+2. Al primer clic, `MagicLinkController::verify()` canjea el magic link por un token de sesión nuevo (mismo tipo que un login normal, sin vencimiento — preserva la sesión persistente) y **destruye el magic link en el momento** (`$token->delete()`).
+3. Si el mismo link se vuelve a abrir después (reenviado, interceptado, o alguien vuelve a tocarlo): 401, ya no sirve.
+4. Se unificó la creación del link en `MagicLinkController::issueLinkFor()` — antes había 4 copias del mismo código (`UserResource.php` ×3 + `MagicLinkController::generate` ×1) con expiraciones distintas entre sí (365 días vs. 30 días), una inconsistencia que ya no existe.
+
+**Tests nuevos:** `backend-laravel/tests/Feature/MagicLinkSingleUseTest.php` — 4 tests que confirman el vencimiento de 24hs, el canje por token de sesión, que reusar el mismo link falla, y que el token de sesión resultante no hereda el vencimiento corto del link. Nota interna: probar "dos requests seguidos con el mismo token" en un test de Laravel requiere `Auth::forgetGuards()` entre medio — Sanctum memoiza el guard resuelto en el primer request dentro del mismo método de test, así que sin eso el segundo request da un falso 200 (no pasa en producción, ahí cada request HTTP es un proceso nuevo).
+
+**Verificado:** 29 tests / 167 aserciones en verde (toda la suite de seguridad + los 4 nuevos) antes de pushear. Deploy automático a Hostinger + Cloudflare Pages disparado por el push a `development`.
+
+## Política de tests — criterio acordado 2026-09-06
+
+Hugo preguntó si toca escribir test para cada cosa que se agrega de acá en adelante. Criterio acordado, no es "sí a todo" ni "no a nada":
+
+- **Sí, casi siempre:** lógica de seguridad/permisos (quién puede hacer qué), y cualquier bug real que ya se rompió una vez (evita que vuelva sin darnos cuenta). Es barato de escribir y es exactamente lo que evita gastar tokens re-verificando lo mismo a mano por SSH/tinker en cada sesión — el motivo por el que existe esta suite.
+- **No hace falta:** cambios de texto/UI, ajustes de estilo, configuración de infraestructura (deploy, CORS, envs) — ahí lo que vale es la verificación en vivo (curl, `test-sertecapp.bat`, mirarlo en el navegador), no un test unitario.
+- **Depende:** lógica de negocio nueva con reglas no triviales (ej. algo como el magic link, con una ventana de tiempo y un estado que cambia) — ahí sí vale la pena, porque es fácil romperlo sin darse cuenta en un cambio futuro y no es algo que se vea a simple vista mirando el panel.
+
+En la práctica: cada vez que se toque algo de auth/roles/tokens/dinero (presupuestos, suscripciones), se agrega test en el mismo commit. El resto se evalúa caso a caso, sin convertir esto en burocracia.

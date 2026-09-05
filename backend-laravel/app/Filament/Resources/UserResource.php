@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
+use App\Http\Controllers\Api\V1\MagicLinkController;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -116,10 +117,9 @@ class UserResource extends Resource
                         $tempPass = \Illuminate\Support\Str::random(8);
                         $record->update(['password' => \Illuminate\Support\Facades\Hash::make($tempPass)]);
 
-                        // Magic link PWA
-                        $token = $record->createToken('magic-link', ['*'], now()->addDays(365))->plainTextToken;
+                        // Magic link PWA (un solo uso, vence en 24hs)
                         $pwaUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com');
-                        $magicLink = $pwaUrl . '/l?t=' . $token;
+                        $magicLink = MagicLinkController::issueLinkFor($record);
 
                         // WhatsApp
                         $phone = preg_replace('/[^0-9]/', '', $record->phone ?? '');
@@ -133,7 +133,7 @@ class UserResource extends Resource
                                 "Email: {$record->email}\n" .
                                 "Contraseña: {$tempPass}\n\n" .
                                 "Página para ingresar con usuario y contraseña:\n{$pwaUrl}\n\n" .
-                                "O si preferís, acceso directo sin escribir nada (un solo clic):\n{$magicLink}\n\n" .
+                                "O si preferís, acceso directo sin escribir nada (un solo clic, válido por 24hs):\n{$magicLink}\n\n" .
                                 "Tip: si usás siempre el mismo dispositivo, el sistema te va a recordar automáticamente."
                             );
                             $whatsappUrl = "https://wa.me/{$phone}?text={$msg}";
@@ -176,9 +176,8 @@ class UserResource extends Resource
                     ->action(function (User $record) {
                         $tempPass = \Illuminate\Support\Str::random(8);
                         $record->update(['password' => \Illuminate\Support\Facades\Hash::make($tempPass)]);
-                        $token = $record->createToken('magic-link', ['*'], now()->addDays(365))->plainTextToken;
                         $pwaUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com');
-                        $magicLink = $pwaUrl . '/l?t=' . $token;
+                        $magicLink = MagicLinkController::issueLinkFor($record);
 
                         $phone = preg_replace('/[^0-9]/', '', $record->phone);
                         if (!str_starts_with($phone, '54')) {
@@ -190,7 +189,7 @@ class UserResource extends Resource
                             "Email: {$record->email}\n" .
                             "Contraseña: {$tempPass}\n\n" .
                             "Página para ingresar con usuario y contraseña:\n{$pwaUrl}\n\n" .
-                            "O acceso directo sin escribir nada (un solo clic):\n{$magicLink}"
+                            "O acceso directo sin escribir nada (un solo clic, válido por 24hs):\n{$magicLink}"
                         );
                         $whatsappUrl = "https://wa.me/{$phone}?text={$msg}";
 
@@ -214,8 +213,7 @@ class UserResource extends Resource
                     ->action(function (User $record) {
                         $tempPass = \Illuminate\Support\Str::random(8);
                         $record->update(['password' => \Illuminate\Support\Facades\Hash::make($tempPass)]);
-                        $token = $record->createToken('magic-link', ['*'], now()->addDays(365))->plainTextToken;
-                        $accessUrl = config('app.pwa_url', 'https://sertecapp.pendziuch.com') . '/l?t=' . $token;
+                        $accessUrl = MagicLinkController::issueLinkFor($record);
                         try {
                             \Illuminate\Support\Facades\Mail::to($record->email)
                                 ->send(new \App\Mail\AccesoUsuarioMail($record, $accessUrl, $tempPass));

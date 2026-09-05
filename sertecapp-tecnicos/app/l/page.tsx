@@ -29,9 +29,11 @@ function MagicLinkContent() {
 
         if (response.ok) {
           const data = await response.json();
-          
-          // Guardar token y user
-          localStorage.setItem('token', token);
+
+          // El magic link es de un solo uso: el backend ya lo invalidó y
+          // devolvió un token de sesión nuevo (el mismo tipo que un login
+          // normal) — es ese el que hay que guardar, no el de la URL.
+          localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
           
           // Redirigir a órdenes

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { APP_URL } from "../lib/config";
 import "./globals.css";
 
 const inter = Inter({
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "SerTecApp - Técnicos",
     description: "Aplicación para técnicos de Fitness Company",
-    url: "https://pro.pendziuch.com",
+    url: APP_URL,
     siteName: "SerTecApp",
     images: [
       {

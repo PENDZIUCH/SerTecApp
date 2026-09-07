@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-06
+> Última actualización: 2026-09-07
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -19,6 +19,7 @@
 8. **`backend-laravel/` (deploy a Hostinger vía webhook) y `sertecapp-tecnicos/` (deploy a Cloudflare Pages) son pipelines INDEPENDIENTES, pero desde 2026-09-04 los DOS son automáticos con un solo push a `development`.** Ver sección "Deploy automático de la PWA (Cloudflare Pages)" más abajo — ya no hace falta `wrangler pages deploy` a mano.
 9. **Antes de cualquier deploy a Hostinger: usar el skill `/deploy-hostinger`.**
 10. **Al cerrar cualquier sesión donde se avanzó algo real: actualizar este archivo antes de terminar.** No dejarlo para "la próxima" — la próxima sesión no tiene memoria de esta conversación.
+11. **No hardcodear dominios/URLs en código nuevo — usar variables de entorno con un fallback razonable.** Acordado con Hugo el 2026-09-07 tras encontrar `https://pro.pendziuch.com` pegado a mano en el Open Graph de la PWA (dominio ni siquiera vigente). Este es un producto pensado para reusarse (ver "Convergencia con core/v1" más abajo) — el dominio va a cambiar más de una vez. Patrón: `backend-laravel` ya usa `config('app.pwa_url')`/`config('app.url')` (env `PWA_URL`/`APP_URL`); `sertecapp-tecnicos` centraliza esto en `lib/config.ts` (`API_URL`, `APP_URL`) — nunca escribir la URL directo en un componente o controller.
 
 ---
 
@@ -467,3 +468,13 @@ Hugo preguntó si toca escribir test para cada cosa que se agrega de acá en ade
 - **Depende:** lógica de negocio nueva con reglas no triviales (ej. algo como el magic link, con una ventana de tiempo y un estado que cambia) — ahí sí vale la pena, porque es fácil romperlo sin darse cuenta en un cambio futuro y no es algo que se vea a simple vista mirando el panel.
 
 En la práctica: cada vez que se toque algo de auth/roles/tokens/dinero (presupuestos, suscripciones), se agrega test en el mismo commit. El resto se evalúa caso a caso, sin convertir esto en burocracia.
+
+## Preparación para cambio de dominio — auditado 2026-09-07 (commit `7fb87c0`)
+
+Hugo preguntó (a raíz de evaluar meter el admin de Filament bajo un subdirectorio de `sertecapp.pendziuch.com` — **descartado**, son dos plataformas distintas — Cloudflare Pages no ejecuta PHP; si se quiere un dominio unificado más adelante, la vía simple es un subdominio con CNAME a Hostinger, no un proxy) si el sistema está preparado para cambiar de dominio/subdominio sin problemas. Auditoría real del código (no de memoria):
+
+- **Bien:** `APP_URL`/`PWA_URL` en `backend-laravel` y `API_URL` en `sertecapp-tecnicos` (`lib/config.ts`) ya son variables de entorno, no hardcodeadas.
+- **Encontrado y corregido:** `sertecapp-tecnicos/app/layout.tsx` tenía `https://pro.pendziuch.com` pegado a mano en el metadata de Open Graph — dominio que ni siquiera es el vigente hoy. Ahora sale de `APP_URL` en `lib/config.ts` (env `NEXT_PUBLIC_APP_URL`, fallback al dominio actual).
+- **Único cabo suelto que queda:** `backend-laravel/config/cors.php` tiene `https://demo.pendziuch.com` hardcodeado en `allowed_origins` (además del patrón regex que ya cubre cualquier subdominio de `*.pendziuch.com` automáticamente). Si el dominio de producción real termina siendo un dominio distinto a `pendziuch.com`, esa línea hay que agregarla a mano + redeploy — no es automático. No se tocó hoy porque no se sabe todavía cuál va a ser ese dominio.
+
+De acá surgió la regla 11 de arriba (no hardcodear dominios en código nuevo).

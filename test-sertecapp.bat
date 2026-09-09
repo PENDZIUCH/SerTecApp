@@ -38,6 +38,9 @@ echo === PWA - Service Worker apunta al dominio correcto ===
 echo [10] sw.js debe referenciar demo.pendziuch.com (no sertecapp.pendziuch.com)
 curl -s https://sertecapp.pendziuch.com/sw.js | findstr /C:"demo" >nul && echo   OK: contiene "demo" || echo   ATENCION: no se encontro "demo" en sw.js - revisar manualmente
 
+echo [11] Bundle JS de la PWA no debe apuntar a localhost (variable NEXT_PUBLIC_API_URL de Cloudflare Pages)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0check-pwa-api-url.ps1"
+
 echo.
 echo === FIN ===
 echo Para el detalle de que corrige cada chequeo de seguridad, ver CLAUDE.md

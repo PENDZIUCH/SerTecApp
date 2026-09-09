@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-07
+> Última actualización: 2026-09-09
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -478,3 +478,86 @@ Hugo preguntó (a raíz de evaluar meter el admin de Filament bajo un subdirecto
 - **Único cabo suelto que queda:** `backend-laravel/config/cors.php` tiene `https://demo.pendziuch.com` hardcodeado en `allowed_origins` (además del patrón regex que ya cubre cualquier subdominio de `*.pendziuch.com` automáticamente). Si el dominio de producción real termina siendo un dominio distinto a `pendziuch.com`, esa línea hay que agregarla a mano + redeploy — no es automático. No se tocó hoy porque no se sabe todavía cuál va a ser ese dominio.
 
 De acá surgió la regla 11 de arriba (no hardcodear dominios en código nuevo).
+
+## Sesión 2026-09-09 — dos bugs reales en producción, ambos resueltos y verificados
+
+Hugo reportó "no veo las órdenes que antes tenía" (usuario hugo TECH, ahora
+admin) y "no puedo entrar con pedro" (`test@test.com`). Investigado en vivo,
+no por sospecha — dos causas distintas, las dos ya arregladas y confirmadas
+funcionando por Hugo mismo en el sitio real.
+
+### Bug 1 — Cloudflare Pages había perdido `NEXT_PUBLIC_API_URL`
+
+La PWA (`sertecapp.pendziuch.com`, proyecto `sertecapp-live`) le pegaba a
+`http://localhost:8787/api/v1/...` en vivo — confirmado viendo el pedido de
+red real en el navegador. La variable de entorno de build
+`NEXT_PUBLIC_API_URL` (debe ser `https://demo.pendziuch.com`) no estaba
+seteada en Cloudflare Pages — sin ella, `lib/config.ts` cae a un fallback de
+desarrollo (`http://localhost:8787`, ahí desde abril, nunca causó problema
+mientras la variable estuvo bien puesta). Se perdió en algún momento después
+del 2026-09-04 por afuera de git — es config del dashboard de Cloudflare, no
+del código, y ya había pasado una vez antes (ver "Deploy automático de la
+PWA" más arriba).
+
+**Por qué no se notó antes:** la app tiene un modo "sesión guardada" que
+sigue andando con datos cacheados si el fetch al servidor falla — cualquiera
+con sesión vieja seguía viendo la app "funcionar" sin darse cuenta de que
+nada fresco llegaba al servidor.
+
+**Arreglado:** variable re-seteada en Cloudflare Pages (`sertecapp-live` →
+Configuración → Variables y secretos) + redeploy manual ("Reintentar
+implementación"). Verificado con un login real: el error pasó de "Error de
+conexión" (fetch nunca llega a ningún lado) a "Credenciales incorrectas"
+(el servidor real respondió).
+
+**Para que no vuelva a pasar en silencio:** nuevo chequeo `[11]` en
+`test-sertecapp.bat` (usa `check-pwa-api-url.ps1`) — lee el bundle JS en
+vivo y avisa si contiene `localhost:8787` en vez de `demo.pendziuch.com`.
+Correrlo detecta esto en segundos en vez de por un usuario real trabado.
+
+### Bug 2 — `authorizeResource()` rompía los 8 controllers de dominio de la API
+
+`App\Http\Controllers\Controller` (la clase base del proyecto) no heredaba
+de nada — le faltaba `middleware()`/`getMiddleware()`, que
+`authorizeResource()` (agregado a Budget/Customer/Equipment/Part/
+Subscription/Visit/WorkOrder/Workshop en la auditoría del 2026-09-04) llama
+internamente. Efecto real: **cualquier request autenticado** a esos 8
+controllers tiraba `BadMethodCallException: Call to undefined method
+::middleware()` — nunca se vio en vivo porque el Bug 1 (arriba) hacía que
+nada llegara al servidor de todos modos, y en local `WorkOrderTest`/
+`EquipmentTest` crasheaban el test runner entero antes de llegar a
+ejecutarse (permisos dot-notation viejos que ya no existen, tapaban el
+error real).
+
+**Arreglado:** `Controller` ahora `extends Illuminate\Routing\Controller`
+(la base real de Laravel, trae `middleware()` de fábrica) — commit
+`4a45efe`. De paso, Pest instalado (`composer require pestphp/pest
+pestphp/pest-plugin-laravel --dev`, necesitó habilitar la extensión `gd`
+de PHP local que faltaba) y `WorkOrderTest`/`EquipmentTest` migrados al
+mismo patrón de `SecurityPoliciesTest` (rol real +
+`SyncShieldPermissionsSeeder`, no permisos viejos hardcodeados).
+
+**Verificado:** 43 tests en verde (los 31 de seguridad intactos +
+`WorkOrderTest` 100%), deployado, y confirmado por Hugo en vivo — entró
+como hugo TECH (admin) y ya ve las órdenes en el panel.
+
+### Pendiente, sin resolver hoy
+
+- **`EquipmentTest` tiene 2 fallos propios**, no relacionados a los bugs de
+  arriba: falta la tabla `equipment_histories` (migración faltante — podría
+  ser un problema real en producción también si alguien cambia el estado de
+  un equipo, no confirmado en vivo) y un `BadMethodCallException` distinto
+  en "user can create equipment". No tocado, queda para otra sesión.
+- **`CustomerImportExportTest`**: 1 de 8 tests falla — el test asume que un
+  POST simple a `/admin/customers` con `{action: 'export'}` dispara la
+  exportación de Filament, pero no es así como funciona el action real de
+  `pxlrbt/filament-excel`. Test mal diseñado desde el origen, no un bug de
+  la app. No tocado.
+- **Cuenta de Hugo (`pendziuch@gmail.com`) tiene dos roles a la vez**:
+  `administrador` + `super_admin`. Redundante — `super_admin` ya pasa todo
+  vía `Gate::before`, no depende de tener `administrador` también. Causaba
+  que en algún lado de la UI se mostrara "administrador" en vez de
+  "super_admin". Hugo puede sacarse el rol `administrador` él mismo desde
+  Filament (Usuarios → su usuario) sin perder ningún acceso — no se tocó
+  porque es una decisión suya sobre su propia cuenta, no algo para hacer
+  sin que lo pida.

@@ -12,11 +12,15 @@ use Spatie\Permission\Models\Role;
 // patron que SecurityPoliciesTest: rol real + seeder real de produccion.
 beforeEach(function () {
     Role::firstOrCreate(['name' => 'administrador', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'técnico', 'guard_name' => 'web']);
     (new SyncShieldPermissionsSeeder())->run();
 
     $this->user = User::factory()->create();
     $this->user->assignRole('administrador');
     $this->actingAs($this->user, 'sanctum');
+
+    $this->tecnico = User::factory()->create();
+    $this->tecnico->assignRole('técnico');
 });
 
 test('user can list work orders', function () {
@@ -42,10 +46,39 @@ test('user can create work order', function () {
         'title' => 'Test Work Order',
         'description' => 'Test description',
         'priority' => 'medium',
+        'assigned_tech_id' => $this->tecnico->id,
     ]);
 
     $response->assertStatus(201)
         ->assertJsonStructure(['id', 'wo_number']);
+});
+
+test('crear orden sin tecnico asignado es rechazado', function () {
+    $customer = Customer::factory()->create();
+
+    $response = $this->postJson('/api/v1/work-orders', [
+        'customer_id' => $customer->id,
+        'title' => 'Sin tecnico',
+    ]);
+
+    $response->assertStatus(422)->assertJsonValidationErrors('assigned_tech_id');
+});
+
+test('crear orden siempre fuerza requires_signature a true, sin importar lo que mande el cliente', function () {
+    $customer = Customer::factory()->create();
+
+    $response = $this->postJson('/api/v1/work-orders', [
+        'customer_id' => $customer->id,
+        'title' => 'Con firma forzada',
+        'assigned_tech_id' => $this->tecnico->id,
+        'requires_signature' => false,
+    ]);
+
+    $response->assertStatus(201);
+    $this->assertDatabaseHas('work_orders', [
+        'id' => $response->json('id'),
+        'requires_signature' => true,
+    ]);
 });
 
 test('user can change work order status', function () {

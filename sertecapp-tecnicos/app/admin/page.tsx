@@ -45,7 +45,7 @@ export default function AdminPage() {
   const [equiposFiltrados, setEquiposFiltrados] = useState<Equipment[]>([]);
   const [form, setForm] = useState({
     customer_id: '', equipment_id: '', title: '', description: '',
-    priority: 'medium', assigned_tech_id: '', scheduled_date: '', requires_signature: false,
+    priority: 'medium', assigned_tech_id: '', scheduled_date: '',
   });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
@@ -98,7 +98,7 @@ export default function AdminPage() {
   }, [form.customer_id, equipos]);
 
   const abrirModal = () => {
-    setForm({ customer_id: '', equipment_id: '', title: '', description: '', priority: 'medium', assigned_tech_id: '', scheduled_date: '', requires_signature: false });
+    setForm({ customer_id: '', equipment_id: '', title: '', description: '', priority: 'medium', assigned_tech_id: '', scheduled_date: '' });
     setFormError(''); setShowModal(true);
   };
 
@@ -109,7 +109,9 @@ export default function AdminPage() {
     if (!form.assigned_tech_id) { setFormError('Debés asignar un técnico'); return; }
     setSaving(true); setFormError('');
     try {
-      const body: any = { customer_id: parseInt(form.customer_id), title: form.title, description: form.description, priority: form.priority, requires_signature: form.requires_signature };
+      // requires_signature ya no se manda: el backend lo fuerza a true siempre
+      // (StoreWorkOrderRequest::prepareForValidation, decision de Hugo 2026-09-09).
+      const body: any = { customer_id: parseInt(form.customer_id), title: form.title, description: form.description, priority: form.priority };
       if (form.equipment_id) body.equipment_id = parseInt(form.equipment_id);
       if (form.assigned_tech_id) body.assigned_tech_id = parseInt(form.assigned_tech_id);
       if (form.scheduled_date) body.scheduled_date = form.scheduled_date;
@@ -308,9 +310,9 @@ export default function AdminPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Técnico</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Técnico *</label>
                   <select value={form.assigned_tech_id} onChange={e => setForm(f => ({ ...f, assigned_tech_id: e.target.value }))} style={{color:'#111827'}} className={selectClass}>
-                    <option value="">Sin asignar</option>
+                    <option value="">Seleccionar...</option>
                     {tecnicos.map(t => <option key={t.id} value={t.id} style={{color:'#111827'}}>{t.name}</option>)}
                   </select>
                 </div>
@@ -319,10 +321,8 @@ export default function AdminPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha programada</label>
                 <input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} style={{color:'#111827'}} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 bg-white" />
               </div>
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="firma" checked={form.requires_signature} onChange={e => setForm(f => ({ ...f, requires_signature: e.target.checked }))} className="w-4 h-4 text-red-600 rounded" />
-                <label htmlFor="firma" className="text-sm text-gray-700">Requiere firma del cliente</label>
-              </div>
+              {/* La firma del cliente ahora es siempre obligatoria (forzada en el
+                  backend) - se saco el checkbox porque ya no hay nada que elegir. */}
               {formError && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{formError}</div>}
               <button onClick={crearOrden} disabled={saving} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl transition-all disabled:opacity-50">
                 {saving ? 'Creando...' : 'Crear Orden'}

@@ -5,10 +5,18 @@ use App\Models\Equipment;
 use App\Models\EquipmentBrand;
 use App\Models\EquipmentModel;
 use App\Models\User;
+use Database\Seeders\SyncShieldPermissionsSeeder;
+use Spatie\Permission\Models\Role;
 
+// Permisos dot-notation viejos (equipments.view, etc.) no existen mas desde
+// la unificacion Roles<->Permisos del 2026-09-04 (ver CLAUDE.md). Mismo
+// patron que SecurityPoliciesTest: rol real + seeder real de produccion.
 beforeEach(function () {
+    Role::firstOrCreate(['name' => 'administrador', 'guard_name' => 'web']);
+    (new SyncShieldPermissionsSeeder())->run();
+
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('equipments.view', 'equipments.create', 'equipments.edit');
+    $this->user->assignRole('administrador');
     $this->actingAs($this->user, 'sanctum');
 });
 

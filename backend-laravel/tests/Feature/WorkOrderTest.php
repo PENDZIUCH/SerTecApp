@@ -4,10 +4,18 @@ use App\Models\Customer;
 use App\Models\Equipment;
 use App\Models\User;
 use App\Models\WorkOrder;
+use Database\Seeders\SyncShieldPermissionsSeeder;
+use Spatie\Permission\Models\Role;
 
+// Permisos dot-notation viejos (work_orders.view, etc.) no existen mas desde
+// la unificacion Roles<->Permisos del 2026-09-04 (ver CLAUDE.md). Mismo
+// patron que SecurityPoliciesTest: rol real + seeder real de produccion.
 beforeEach(function () {
+    Role::firstOrCreate(['name' => 'administrador', 'guard_name' => 'web']);
+    (new SyncShieldPermissionsSeeder())->run();
+
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('work_orders.view', 'work_orders.create', 'work_orders.edit');
+    $this->user->assignRole('administrador');
     $this->actingAs($this->user, 'sanctum');
 });
 

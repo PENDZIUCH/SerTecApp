@@ -36,7 +36,10 @@ test('user can list equipment', function () {
 test('user can create equipment', function () {
     $customer = Customer::factory()->create();
     $brand = EquipmentBrand::factory()->create();
-    $model = EquipmentModel::factory()->for($brand)->create();
+    // 'brand' explicito: EquipmentModel::brand() no sigue la convencion que
+    // for() adivina por default (esperaria equipmentBrand()) - sin esto tira
+    // BadMethodCallException. Encontrado 2026-09-16.
+    $model = EquipmentModel::factory()->for($brand, 'brand')->create();
 
     $response = $this->postJson('/api/v1/equipments', [
         'customer_id' => $customer->id,

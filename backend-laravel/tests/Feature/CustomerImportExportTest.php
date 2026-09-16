@@ -36,26 +36,14 @@ class CustomerImportExportTest extends TestCase
         Storage::fake('local');
     }
 
-    /** @test */
-    public function export_generates_excel_with_all_customers()
-    {
-        // Crear 5 clientes
-        Customer::factory()->count(5)->create();
-        
-        // Actuar como admin
-        $this->actingAs($this->admin);
-        
-        // Exportar (simulando click en botón)
-        $response = $this->post('/admin/customers', [
-            'action' => 'export'
-        ]);
-        
-        // Verificar que se descargó un archivo
-        $this->assertTrue($response->headers->get('content-type') === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        
-        // Verificar cantidad de clientes en BD
-        $this->assertEquals(5, Customer::count());
-    }
+    // export_generates_excel_with_all_customers se saco (2026-09-16): probaba
+    // una exportacion Filament que no existe para CustomerResource - solo
+    // PdfTemplateResource, SystemLogResource y SystemSettingResource tienen
+    // ExportAction/ExportBulkAction configurado. Un POST directo a
+    // /admin/customers con {action: 'export'} nunca fue como funciona el
+    // export real de pxlrbt/filament-excel (accion firmada de Livewire, no
+    // un form POST). Si en algun momento se agrega export a Customers, este
+    // test hay que reescribirlo contra el mecanismo real, no reponer este.
 
     /** @test */
     public function import_creates_new_customers_from_excel()

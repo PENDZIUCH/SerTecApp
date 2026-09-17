@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-09
+> Última actualización: 2026-09-17
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -541,18 +541,14 @@ mismo patrón de `SecurityPoliciesTest` (rol real +
 `WorkOrderTest` 100%), deployado, y confirmado por Hugo en vivo — entró
 como hugo TECH (admin) y ya ve las órdenes en el panel.
 
-### Pendiente, sin resolver hoy
+### Pendiente sin resolver el 09-09 — RESUELTO el 2026-09-16 (commits `5886120`, `d5a138e`)
 
-- **`EquipmentTest` tiene 2 fallos propios**, no relacionados a los bugs de
-  arriba: falta la tabla `equipment_histories` (migración faltante — podría
-  ser un problema real en producción también si alguien cambia el estado de
-  un equipo, no confirmado en vivo) y un `BadMethodCallException` distinto
-  en "user can create equipment". No tocado, queda para otra sesión.
-- **`CustomerImportExportTest`**: 1 de 8 tests falla — el test asume que un
-  POST simple a `/admin/customers` con `{action: 'export'}` dispara la
-  exportación de Filament, pero no es así como funciona el action real de
-  `pxlrbt/filament-excel`. Test mal diseñado desde el origen, no un bug de
-  la app. No tocado.
+- **`EquipmentTest`**: el fallo de `equipment_histories` **era un bug real de producción**, no solo de test — `EquipmentHistory.php` no tenía `$table` explícito, así que Eloquent buscaba la tabla en plural (`equipment_histories`) cuando la migración crea `equipment_history` (singular). Cualquier cambio de estado de un equipo real tiraba error. Corregido con `$table = 'equipment_history'`. El otro fallo ("user can create equipment") era `EquipmentModel::factory()->for($brand)` adivinando mal el nombre de la relación (`equipmentBrand()` en vez de la real, `brand()`) — corregido especificando el nombre.
+- **`CustomerImportExportTest`**: el test que fallaba se borró — probaba una función de export que `CustomerResource` nunca tuvo configurada (solo `PdfTemplate`/`SystemLog`/`SystemSetting` la tienen). No hay nada ahí para testear, no es un bug de la app. Los otros 7 tests del archivo (import/merge) siguen intactos.
+- **`ExampleTest.php` borrado**: era el scaffold genérico de Laravel (esperaba 200 en `/`), pero esta app redirige `/` a `/sertecapp` a propósito. No aportaba nada.
+
+**Suite completa: 46/46 en verde, cero fallos** (verificado en vivo el 2026-09-17, no solo por el mensaje del commit).
+
 - **Cuenta de Hugo (`pendziuch@gmail.com`) tiene dos roles a la vez**:
   `administrador` + `super_admin`. Redundante — `super_admin` ya pasa todo
   vía `Gate::before`, no depende de tener `administrador` también. Causaba

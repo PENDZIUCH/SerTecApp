@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { API_URL } from '../../../../lib/config';
 import { CustomerSelect } from '../../../components/CustomerSelect';
 
-const sel = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500";
-const inp = "w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500";
+const sel = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-red-500";
+const inp = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-red-500";
 
 const normalizeStatus = (s: string) => {
   const map: Record<string, string> = {
@@ -25,9 +25,9 @@ const estados = [
   { value: 'completado', label: 'Completado' }, { value: 'cancelado', label: 'Cancelado' },
 ];
 const statusColor: Record<string, string> = {
-  pendiente: 'bg-yellow-100 text-yellow-800', en_progreso: 'bg-blue-100 text-blue-800',
-  completado: 'bg-green-100 text-green-800', completed: 'bg-green-100 text-green-800',
-  cancelado: 'bg-red-100 text-red-800',
+  pendiente: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800', en_progreso: 'bg-blue-100 dark:bg-blue-900 text-blue-800',
+  completado: 'bg-green-100 dark:bg-green-900 text-green-800', completed: 'bg-green-100 dark:bg-green-900 text-green-800',
+  cancelado: 'bg-red-100 dark:bg-red-900 text-red-800',
 };
 
 const logIcon: Record<string, string> = {
@@ -168,13 +168,13 @@ function OrdenEditContent() {
   };
 
   if (!orderId || loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
       <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-red-600 text-white px-4 py-4 flex items-center gap-3 shadow-lg">
         <button onClick={() => router.push('/admin')} className="text-white text-xl font-bold">&#8592;</button>
         <div>
@@ -182,7 +182,7 @@ function OrdenEditContent() {
           <p className="text-red-100 text-xs">{orden?.customer?.business_name || orden?.customer?.full_name || ''}</p>
         </div>
         {orden?.status && (
-          <span className={'ml-auto text-xs px-3 py-1 rounded-full font-medium ' + (statusColor[orden.status] || 'bg-gray-100 text-gray-600')}>
+          <span className={'ml-auto text-xs px-3 py-1 rounded-full font-medium ' + (statusColor[orden.status] || 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300')}>
             {normalizeStatus(orden.status)}
           </span>
         )}
@@ -191,17 +191,17 @@ function OrdenEditContent() {
       <main className="p-4 max-w-lg mx-auto space-y-4 mt-4">
 
         {/* Formulario edición */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">Datos de la Orden</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide">Datos de la Orden</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
             <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} style={{color:'#111827'}} className={sel}>
               {estados.map(s => <option key={s.value} value={s.value} style={{color:'#111827'}}>{s.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cliente *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cliente *</label>
             <CustomerSelect
               token={token}
               value={form.customer_id}
@@ -210,29 +210,29 @@ function OrdenEditContent() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
-            <select value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))} disabled={!form.customer_id} style={{color:'#111827'}} className={sel + ' disabled:bg-gray-50'}>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Equipo</label>
+            <select value={form.equipment_id} onChange={e => setForm(f => ({ ...f, equipment_id: e.target.value }))} disabled={!form.customer_id} style={{color:'#111827'}} className={sel + ' disabled:bg-gray-50 dark:disabled:bg-gray-900'}>
               <option value="">{form.customer_id ? (equiposFiltrados.length === 0 ? 'Sin equipos' : 'Seleccionar...') : 'Primero selecciona cliente'}</option>
               {equiposFiltrados.map(e => <option key={e.id} value={e.id} style={{color:'#111827'}}>{typeof e.brand === 'object' ? (e.brand as any)?.name : e.brand} {typeof e.model === 'object' ? (e.model as any)?.name : e.model}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título *</label>
             <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={{color:'#111827'}} className={inp} placeholder="Título de la orden" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{color:'#111827'}} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-red-500 resize-none" placeholder="Detalles..." />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{color:'#111827'}} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-red-500 resize-none" placeholder="Detalles..." />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prioridad</label>
               <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))} style={{color:'#111827'}} className={sel}>
                 {prioridades.map(p => <option key={p.value} value={p.value} style={{color:'#111827'}}>{p.label}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Técnico</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Técnico</label>
               <select value={form.assigned_tech_id} onChange={e => setForm(f => ({ ...f, assigned_tech_id: e.target.value }))} style={{color:'#111827'}} className={sel}>
                 <option value="">Sin asignar</option>
                 {tecnicos.map(t => <option key={t.id} value={t.id} style={{color:'#111827'}}>{t.name}</option>)}
@@ -240,49 +240,49 @@ function OrdenEditContent() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha programada</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fecha programada</label>
             <input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} style={{color:'#111827'}} className={inp} />
           </div>
           <div className="flex items-center gap-3">
-            <input type="checkbox" id="firma" checked={form.requires_signature} onChange={e => setForm(f => ({ ...f, requires_signature: e.target.checked }))} className="w-4 h-4 text-red-600 rounded" />
-            <label htmlFor="firma" className="text-sm text-gray-700">Requiere firma del cliente</label>
+            <input type="checkbox" id="firma" checked={form.requires_signature} onChange={e => setForm(f => ({ ...f, requires_signature: e.target.checked }))} className="w-4 h-4 text-red-600 dark:text-red-400 rounded" />
+            <label htmlFor="firma" className="text-sm text-gray-700 dark:text-gray-300">Requiere firma del cliente</label>
           </div>
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>}
-          {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">{success}</div>}
+          {error && <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">{error}</div>}
+          {success && <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-xl text-sm">{success}</div>}
           <button onClick={guardar} disabled={saving} className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-4 rounded-xl disabled:opacity-50 transition-colors">
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
-          <button onClick={() => router.push('/admin')} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl transition-colors">
+          <button onClick={() => router.push('/admin')} className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-xl transition-colors">
             Cancelar
           </button>
         </div>
 
         {/* Parte técnico completado */}
         {parte && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
-            <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide flex items-center gap-2">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-4">
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide flex items-center gap-2">
               ✅ Parte Completado
             </h2>
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Técnico</p>
-              <p className="text-sm text-gray-900">{parte.tecnico_name || '-'}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Técnico</p>
+              <p className="text-sm text-gray-900 dark:text-white">{parte.tecnico_name || '-'}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Diagnóstico</p>
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{parte.diagnostico || parte.diagnosis}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Diagnóstico</p>
+              <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">{parte.diagnostico || parte.diagnosis}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Trabajo Realizado</p>
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{parte.trabajo_realizado || parte.work_done}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Trabajo Realizado</p>
+              <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">{parte.trabajo_realizado || parte.work_done}</p>
             </div>
             {parte.repuestos && parte.repuestos.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1">Repuestos Usados</p>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Repuestos Usados</p>
                 <div className="space-y-1">
                   {parte.repuestos.map((r: any, i: number) => (
-                    <div key={i} className="flex justify-between text-sm text-gray-900 bg-gray-50 px-3 py-1.5 rounded-lg">
+                    <div key={i} className="flex justify-between text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-lg">
                       <span>{r.nombre}</span>
-                      <span className="text-gray-500">×{r.cantidad}</span>
+                      <span className="text-gray-500 dark:text-gray-400">×{r.cantidad}</span>
                     </div>
                   ))}
                 </div>
@@ -290,28 +290,28 @@ function OrdenEditContent() {
             )}
             {(parte.firma_base64 || parte.signature) && (
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Firma del Cliente</p>
-                <img src={parte.firma_base64 || parte.signature} alt="Firma" className="border border-gray-200 rounded-lg max-w-full bg-white p-2" />
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Firma del Cliente</p>
+                <img src={parte.firma_base64 || parte.signature} alt="Firma" className="border border-gray-200 dark:border-gray-700 rounded-lg max-w-full bg-white dark:bg-gray-800 p-2" />
               </div>
             )}
-            <p className="text-xs text-gray-400">Completado: {formatDate(parte.created_at)}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Completado: {formatDate(parte.created_at)}</p>
           </div>
         )}
 
         {/* Historial de auditoría */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide mb-4">📋 Historial</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm uppercase tracking-wide mb-4">📋 Historial</h2>
           {logs.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">Sin registros todavía</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">Sin registros todavía</p>
           ) : (
             <div className="space-y-3">
               {logs.map((log: any, i: number) => (
                 <div key={i} className="flex gap-3 items-start">
                   <span className="text-lg flex-shrink-0 mt-0.5">{logIcon[log.log_type] || '📌'}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">{log.message}</p>
+                    <p className="text-sm text-gray-900 dark:text-white">{log.message}</p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-xs text-gray-400">{formatDate(log.created_at)}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(log.created_at)}</span>
                       {log.lat && log.lng && (
                         <a
                           href={`https://maps.google.com/?q=${log.lat},${log.lng}`}

@@ -129,7 +129,7 @@ export default function ImportarPage() {
   const skipCount = preview.filter(r => r.status === 'skip').length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-red-600 text-white px-4 py-4 flex items-center gap-3 shadow-lg sticky top-0 z-10">
         <button onClick={() => router.push('/admin')} className="text-white text-xl font-bold">&#8592;</button>
         <h1 className="font-bold text-lg">Importar desde Excel</h1>
@@ -137,12 +137,12 @@ export default function ImportarPage() {
 
       <main className="p-4 max-w-2xl mx-auto space-y-4 mt-4">
         {/* Tipo de importación */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <p className="text-sm font-semibold text-gray-700 mb-3">¿Qué querés importar?</p>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">¿Qué querés importar?</p>
           <div className="grid grid-cols-2 gap-3">
             {(['clientes', 'repuestos'] as ImportType[]).map(t => (
               <button key={t} onClick={() => { setImportType(t); setPreview([]); setFileName(''); setDone(false); }}
-                className={`py-3 rounded-xl font-semibold text-sm transition-all ${importType === t ? 'bg-red-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                className={`py-3 rounded-xl font-semibold text-sm transition-all ${importType === t ? 'bg-red-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
                 {t === 'clientes' ? '🏢 Clientes' : '🔩 Repuestos'}
               </button>
             ))}
@@ -150,74 +150,74 @@ export default function ImportarPage() {
         </div>
 
         {/* Columnas esperadas */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800">
+        <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 rounded-2xl p-4 text-sm text-blue-800">
           <p className="font-semibold mb-1">Columnas esperadas para {importType}:</p>
           {importType === 'clientes' ? (
             <p className="text-xs">razon_social (o business_name) · email · telefono · cuit · direccion · ciudad</p>
           ) : (
             <p className="text-xs">nombre · codigo (o part_number) · sku · costo · stock · descripcion</p>
           )}
-          <p className="text-xs mt-1 text-blue-600">Los nombres de columnas son flexibles — detecta variantes en español e inglés.</p>
+          <p className="text-xs mt-1 text-blue-600 dark:text-blue-400">Los nombres de columnas son flexibles — detecta variantes en español e inglés.</p>
         </div>
 
         {/* Drag & Drop / Selección archivo */}
         <div
-          className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-8 text-center cursor-pointer hover:border-red-400 hover:bg-red-50 transition-all"
+          className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-8 text-center cursor-pointer hover:border-red-400 hover:bg-red-50 dark:hover:bg-red-900 transition-all"
           onClick={() => fileRef.current?.click()}
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}>
           <p className="text-4xl mb-2">📊</p>
-          <p className="font-semibold text-gray-700">{fileName || 'Arrastrá tu archivo Excel aquí'}</p>
-          <p className="text-xs text-gray-400 mt-1">O hacé click para seleccionar · .xlsx .xls .csv</p>
+          <p className="font-semibold text-gray-700 dark:text-gray-300">{fileName || 'Arrastrá tu archivo Excel aquí'}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">O hacé click para seleccionar · .xlsx .xls .csv</p>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
         </div>
 
         {/* Preview */}
         {preview.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <p className="font-semibold text-gray-800 text-sm">Preview — {preview.length} filas ({pendientesCount} a importar, {skipCount} omitidas)</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+              <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Preview — {preview.length} filas ({pendientesCount} a importar, {skipCount} omitidas)</p>
             </div>
             <div className="overflow-x-auto max-h-64">
               <table className="w-full text-xs">
-                <thead className="bg-gray-50 sticky top-0">
+                <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2 text-left text-gray-500 font-medium">Estado</th>
+                    <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-medium">Estado</th>
                     {Object.keys(preview[0].data).slice(0, 4).map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-gray-500 font-medium">{h}</th>
+                      <th key={h} className="px-3 py-2 text-left text-gray-500 dark:text-gray-400 font-medium">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {preview.slice(0, 50).map((row, i) => (
-                    <tr key={i} className={row.status === 'ok' ? 'bg-green-50' : row.status === 'error' ? 'bg-red-50' : row.status === 'skip' ? 'bg-gray-50' : ''}>
+                    <tr key={i} className={row.status === 'ok' ? 'bg-green-50 dark:bg-green-900' : row.status === 'error' ? 'bg-red-50 dark:bg-red-900' : row.status === 'skip' ? 'bg-gray-50 dark:bg-gray-900' : ''}>
                       <td className="px-3 py-1.5">
-                        {row.status === 'pending' && <span className="text-gray-400">⏳</span>}
+                        {row.status === 'pending' && <span className="text-gray-400 dark:text-gray-500">⏳</span>}
                         {row.status === 'ok' && <span className="text-green-600">✅</span>}
-                        {row.status === 'error' && <span className="text-red-600" title={row.message}>❌</span>}
-                        {row.status === 'skip' && <span className="text-gray-400" title={row.message}>⏭️</span>}
+                        {row.status === 'error' && <span className="text-red-600 dark:text-red-400" title={row.message}>❌</span>}
+                        {row.status === 'skip' && <span className="text-gray-400 dark:text-gray-500" title={row.message}>⏭️</span>}
                       </td>
                       {Object.values(row.data).slice(0, 4).map((v, j) => (
-                        <td key={j} className="px-3 py-1.5 text-gray-700 truncate max-w-[120px]">{String(v || '')}</td>
+                        <td key={j} className="px-3 py-1.5 text-gray-700 dark:text-gray-300 truncate max-w-[120px]">{String(v || '')}</td>
                       ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {preview.length > 50 && <p className="text-xs text-gray-400 text-center py-2">Mostrando 50 de {preview.length} filas</p>}
+              {preview.length > 50 && <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">Mostrando 50 de {preview.length} filas</p>}
             </div>
           </div>
         )}
 
         {/* Progreso */}
         {importing && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-gray-700">Importando...</p>
-              <p className="text-sm text-gray-500">{progress}%</p>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Importando...</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{progress}%</p>
             </div>
-            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div className="h-full bg-red-500 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
           </div>
@@ -225,12 +225,12 @@ export default function ImportarPage() {
 
         {/* Resultado */}
         {done && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <p className="font-semibold text-gray-800 mb-3">✅ Importación completada</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
+            <p className="font-semibold text-gray-800 dark:text-gray-100 mb-3">✅ Importación completada</p>
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-green-50 rounded-xl p-3"><p className="text-2xl font-bold text-green-700">{stats.ok}</p><p className="text-xs text-green-600">Importados</p></div>
-              <div className="bg-red-50 rounded-xl p-3"><p className="text-2xl font-bold text-red-700">{stats.error}</p><p className="text-xs text-red-600">Con error</p></div>
-              <div className="bg-gray-50 rounded-xl p-3"><p className="text-2xl font-bold text-gray-500">{stats.skip}</p><p className="text-xs text-gray-400">Omitidos</p></div>
+              <div className="bg-green-50 dark:bg-green-900 rounded-xl p-3"><p className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.ok}</p><p className="text-xs text-green-600">Importados</p></div>
+              <div className="bg-red-50 dark:bg-red-900 rounded-xl p-3"><p className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.error}</p><p className="text-xs text-red-600 dark:text-red-400">Con error</p></div>
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-3"><p className="text-2xl font-bold text-gray-500 dark:text-gray-400">{stats.skip}</p><p className="text-xs text-gray-400 dark:text-gray-500">Omitidos</p></div>
             </div>
           </div>
         )}

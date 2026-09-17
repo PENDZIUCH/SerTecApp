@@ -33,6 +33,9 @@ curl -s -H "Accept: application/json" -o nul -w "  HTTP %%{http_code}\n" https:/
 echo [9] POST partes sin token
 curl -s -H "Accept: application/json" -o nul -w "  HTTP %%{http_code}\n" -X POST -H "Content-Type: application/json" -d "{}" https://demo.pendziuch.com/api/v1/partes
 
+echo [9b] lookup-values/customer_type sin token
+curl -s -H "Accept: application/json" -o nul -w "  HTTP %%{http_code}\n" https://demo.pendziuch.com/api/v1/lookup-values/customer_type
+
 echo.
 echo === PWA - Service Worker apunta al dominio correcto ===
 echo [10] sw.js debe referenciar demo.pendziuch.com (no sertecapp.pendziuch.com)

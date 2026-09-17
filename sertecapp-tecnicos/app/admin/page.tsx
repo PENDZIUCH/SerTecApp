@@ -203,8 +203,8 @@ export default function AdminPage() {
           <div><h1 className="font-bold text-lg leading-tight">SerTecApp Admin</h1><p className="text-red-100 text-xs">{user?.name}</p></div>
         </div>
         <div className="flex items-center gap-3 relative">
-          <button onClick={() => setShowThemeMenu(!showThemeMenu)} aria-label="Tema" className="text-red-100 hover:text-white text-lg leading-none p-1">
-            🎨
+          <button onClick={() => setShowThemeMenu(!showThemeMenu)} aria-label="Opciones" className="text-red-100 hover:text-white text-lg leading-none p-1">
+            ⚙️
           </button>
           {showThemeMenu && (
             <>

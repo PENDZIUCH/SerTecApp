@@ -29,7 +29,18 @@ class CustomerResource extends Resource
         return $form->schema([
             Forms\Components\Select::make('customer_type')
                 ->label('Tipo')
-                ->options(['individual' => 'Individual', 'company' => 'Empresa', 'gym' => 'Gimnasio'])
+                // Lista administrable en Filament > Administracion > Tipos
+                // de Cliente (LookupValueResource) - no hardcodeado. Si el
+                // cliente ya tiene un tipo que despues se desactivo, se
+                // agrega igual a las opciones (grisado en la practica, pero
+                // seleccionable) para no dejar el campo en blanco al editar.
+                ->options(function ($record) {
+                    $options = \App\Models\LookupValue::optionsFor('customer_type');
+                    if ($record && $record->customer_type && ! isset($options[$record->customer_type])) {
+                        $options[$record->customer_type] = $record->customer_type . ' (inactivo)';
+                    }
+                    return $options;
+                })
                 ->required(),
             Forms\Components\TextInput::make('business_name')
                 ->label('Razón Social')

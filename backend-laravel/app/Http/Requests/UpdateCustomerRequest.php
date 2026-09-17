@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\LookupValue;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateCustomerRequest extends FormRequest
 {
@@ -13,8 +15,18 @@ class UpdateCustomerRequest extends FormRequest
 
     public function rules(): array
     {
+        // Tipos activos + el tipo actual del cliente, aunque ya no este
+        // activo - si alguien desactiva un tipo desde el panel, los
+        // clientes que ya lo tenian no deben romperse al editar otro campo
+        // sin querer cambiarles el tipo.
+        $tiposValidos = LookupValue::forCategory('customer_type')->active()->pluck('value');
+        $tipoActual = $this->route('customer')?->customer_type;
+        if ($tipoActual && ! $tiposValidos->contains($tipoActual)) {
+            $tiposValidos->push($tipoActual);
+        }
+
         return [
-            'customer_type' => ['sometimes', 'in:individual,company,gym'],
+            'customer_type' => ['sometimes', Rule::in($tiposValidos)],
             'business_name' => ['sometimes', 'string', 'max:255'],
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],

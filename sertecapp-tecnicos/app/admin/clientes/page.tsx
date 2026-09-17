@@ -29,6 +29,9 @@ export default function ClientesPage() {
     customer_type: 'company', business_name: '', first_name: '', last_name: '',
     email: '', phone: '', tax_id: '', address: '', city: '', notes: '',
   });
+  // Tipos de cliente: se administran en Filament (Administración > Listas
+  // configurables), no hardcodeados acá - se piden a la API al entrar.
+  const [tiposCliente, setTiposCliente] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -37,6 +40,10 @@ export default function ClientesPage() {
     const u = JSON.parse(savedUser);
     if (!u?.roles?.includes('administrador') && !u?.roles?.includes('admin')) { router.push('/ordenes'); return; }
     setToken(t);
+    fetch(`${API_URL}/api/v1/lookup-values/customer_type`, { headers: { 'Authorization': `Bearer ${t}`, 'Accept': 'application/json' } })
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(d => setTiposCliente(d.data || []))
+      .catch(() => {});
   }, []);
 
   const loadCustomers = useCallback(async (t: string, s: string, p: number) => {
@@ -77,8 +84,7 @@ export default function ClientesPage() {
 
   const abrirEditar = (c: Customer) => {
     setEditCustomer(c);
-    // Detectar tipo real basado en datos disponibles
-    const tipo = c.business_name ? 'company' : (c.first_name ? 'individual' : c.customer_type || 'company');
+    const tipo = c.customer_type || 'company';
     // Extraer address y city del full_address
     const parts = (c.full_address || '').split(',').map(s => s.trim()).filter(s => s && s !== 'Argentina');
     setForm({
@@ -194,11 +200,18 @@ export default function ClientesPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                 <select value={form.customer_type} onChange={e => setForm(f => ({ ...f, customer_type: e.target.value }))} className={inp}>
-                  <option value="company">Empresa</option>
-                  <option value="individual">Persona</option>
+                  {tiposCliente.length > 0 ? tiposCliente.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  )) : (
+                    // Fallback si todavía no cargó la lista de la API.
+                    <>
+                      <option value="company">Empresa</option>
+                      <option value="individual">Persona</option>
+                    </>
+                  )}
                 </select>
               </div>
-              {form.customer_type === 'company' ? (
+              {form.customer_type !== 'individual' ? (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Razón Social *</label>
                   <input value={form.business_name} onChange={e => setForm(f => ({ ...f, business_name: e.target.value }))} className={inp} placeholder="Nombre de la empresa" />

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Api\V1\WorkshopController;
 use App\Http\Controllers\Api\V1\TechnicianController;
 use App\Http\Controllers\Api\V1\MagicLinkController;
+use App\Http\Controllers\Api\V1\LookupValueController;
 use Illuminate\Support\Facades\Route;
 
 // Health check endpoint (sin autenticación)
@@ -39,6 +40,7 @@ Route::prefix('v1')->group(function () {
         Route::get('partes/{workOrderId}', [TechnicianController::class, 'getParte']);
 
         Route::get('roles', [RoleController::class, 'index']);
+        Route::get('lookup-values/{category}', [LookupValueController::class, 'index']);
 
         Route::apiResource('users', UserController::class);
         

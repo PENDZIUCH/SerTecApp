@@ -28,7 +28,21 @@ _(vacío por ahora)_
 
 ## Ajustes de UI / texto
 
-_(vacío por ahora)_
+- **2026-09-17 — Modo oscuro no llega a las pantallas de admin de la PWA.**
+  Las pantallas de técnico (Mis Órdenes, el parte, etc.) sí lo tienen — 44
+  clases `dark:` solo en la de órdenes. Las 6 pantallas de admin
+  (`app/admin/page.tsx`, `clientes`, `gestion`, `importar`, `orden`,
+  `orden/[id]/_client.tsx`) tienen **cero**, ninguna. No es un switch
+  manual en ningún lado — sigue solo la config de modo oscuro del
+  dispositivo/navegador (`prefers-color-scheme`), automático.
+  **Complejidad: simple y seguro, no chico.** Es puramente agregar la
+  variante `dark:` de Tailwind al lado de cada clase de color que ya
+  existe (ej. `bg-white` → `bg-white dark:bg-gray-800`) — no toca lógica,
+  no puede romper nada funcional, mismo patrón ya probado y funcionando
+  en las pantallas de técnico. Lo que sí es real: volumen — se contaron
+  ~241 clases de color entre las 6 pantallas (76 en el panel principal,
+  49 en clientes, 49 en el detalle de orden, 32-34 en gestión/importar).
+  Es una pasada dedicada por cada pantalla, no un cambio de 5 minutos.
 
 ## Ideas para más adelante
 

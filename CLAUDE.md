@@ -556,4 +556,85 @@ como hugo TECH (admin) y ya ve las órdenes en el panel.
   "super_admin". Hugo puede sacarse el rol `administrador` él mismo desde
   Filament (Usuarios → su usuario) sin perder ningún acceso — no se tocó
   porque es una decisión suya sobre su propia cuenta, no algo para hacer
-  sin que lo pida.
+  sin que lo pida. **Hecho por Hugo el 2026-09-16/17** — confirmado en
+  producción, cuenta quedó solo con `super_admin`.
+
+---
+
+## Sesión 2026-09-17 — pedido del cliente por WhatsApp + tipos de cliente administrables
+
+Luis (cliente) mandó 4 pedidos sueltos por WhatsApp. Se analizaron contra
+el código real (no a ojo) antes de presupuestar nada:
+
+1. **Tipo de cliente** (country, hotel, consorcio, etc.) — ya existía el
+   campo pero fijo a 3 valores (`individual`/`company`/`gym`, enum de DB).
+2. **GPS** — ya estaba 100% implementado (cada parte/visita guarda
+   lat/lng real capturado del celular del técnico), solo mostraba un link
+   a Google Maps, no un mapa embebido, y no comparaba contra la dirección
+   del cliente. Hugo decidió: sacar la comparación con dirección del
+   alcance (nadie la pidió, es trabajo grande) — pendiente el mapa
+   embebido (chico, no hecho).
+3. **Email al completar un parte** — el cliente final ya lo recibía; a
+   Luis solo le llegaba una alerta *dentro* del panel, no a su correo. Se
+   acordó agregar casillas on/off por destinatario (cliente/supervisor/
+   técnico) en Configuración Email — **no implementado todavía**, queda
+   pendiente. Aclarado: los emails no ocupan espacio en el server (se
+   mandan directo por SMTP, no se archivan).
+4. **Agenda/calendario** — no existía nada, ninguna vista tipo calendario
+   en ningún lado. Confirmado como desarrollo nuevo real, no implementado.
+
+**Hecho en esta sesión (commits `ca3ff38`, `238b91a`, migraciones
+corridas a mano en producción):** sistema de tipos de cliente
+administrable, pensado como patrón reusable para cualquier lista
+configurable futura (no solo clientes):
+
+- `lookup_values` — tabla genérica (`category`, `value`, `label`,
+  `is_active`, `sort_order`). Agregar una lista administrable nueva a
+  futuro es una `category` nueva en esta misma tabla, sin migración ni
+  Resource nuevo.
+- Filament → Administración → **Listas configurables**
+  (`LookupValueResource`, admin/supervisor/super_admin) — crear, editar,
+  activar/desactivar (botón directo, sin abrir el form).
+- `customers.customer_type`: `enum` → `string` (ya no limita valores a
+  nivel DB). Datos existentes intactos (312 clientes verificados post-
+  migración: 310 company + 2 individual).
+- `StoreCustomerRequest`/`UpdateCustomerRequest` validan contra los
+  `lookup_values` activos, no contra una lista hardcodeada. Al editar, el
+  tipo actual del cliente sigue siendo válido aunque se haya desactivado
+  después (no rompe ediciones no relacionadas al tipo).
+- Nuevo endpoint `GET /api/v1/lookup-values/{category}` (autenticado,
+  cualquier rol) para que la PWA arme selects dinámicos.
+- Seed inicial: Particular/Empresa/Gimnasio (slugs viejos re-etiquetados)
+  + Country/Hotel/Consorcio (los pedidos por Luis).
+- **De paso, bug encontrado y corregido en la PWA**
+  (`sertecapp-tecnicos/app/admin/clientes/page.tsx`): el form de "Nuevo
+  Cliente" ahí tenía el tipo hardcodeado a solo 2 opciones (ni "Gimnasio"
+  estaba) y la lógica de qué campos pedir estaba invertida para cualquier
+  tipo que no fuera exactamente `company` — ahora usa el endpoint nuevo.
+- **De paso también, regresión encontrada y corregida** (commit
+  `87a8169`): sacarle el rol `administrador` a la cuenta de Hugo (ver
+  arriba) dejó invisibles 6 botones en Filament que chequeaban
+  `hasRole('administrador')` literal sin contemplar `super_admin`
+  (Exportar/Importar/Eliminar Todos en Clientes, Importar Life Fitness en
+  Repuestos, borrado en bloque de Budgets y Repuestos) — cambiados a
+  `hasAnyRole(['administrador', 'super_admin'])`.
+
+**Verificado:** 8 tests nuevos (unicidad, opciones activas/ordenadas,
+tipo nuevo agregado sin tocar código, tipo inactivo rechazado, individual
+vs resto, desactivar no rompe ediciones existentes, endpoint requiere
+auth, seeder idempotente) + toda la suite existente. **55 tests en
+verde.** Build de la PWA verificado local (`next build --webpack`) antes
+de subir. Migraciones y seeder corridos a mano en producción (el deploy
+automático solo limpia cache, no migra — confirmado leyendo el log real
+del deploy). Health check completo (`test-sertecapp.bat`, ahora con 12
+chequeos) en verde post-deploy.
+
+### Pendiente de esta sesión
+
+- Mapa embebido para el GPS del parte (hoy es un link a Google Maps).
+- Casillas on/off de email por destinatario (cliente/supervisor/técnico)
+  en Configuración Email — hoy solo el cliente recibe email, Luis solo ve
+  alerta interna.
+- Armar la agenda/calendario (feature nueva completa, sin arrancar).
+- `PENDIENTES.md` en la raíz del repo — backlog vivo donde Hugo va
+  tirando detalles sueltos a medida que los encuentra usando la app real.

@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   const enterWithSavedSession = () => {
     const roles: string[] = savedUser?.roles || [];
-    const isAdmin = roles.includes('administrador') || roles.includes('admin');
+    const isAdmin = roles.includes('administrador') || roles.includes('admin') || roles.includes('super_admin');
     router.push(isAdmin ? '/admin' : '/ordenes');
   };
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
         requestGeoPermission();
         const roles: string[] = data.user?.roles || [];
-        const isAdmin = roles.includes('administrador') || roles.includes('admin');
+        const isAdmin = roles.includes('administrador') || roles.includes('admin') || roles.includes('super_admin');
         setTimeout(() => router.push(isAdmin ? '/admin' : '/ordenes'), 300);
       } else {
         setError(data.message || 'Credenciales incorrectas');
@@ -71,7 +71,7 @@ export default function LoginPage() {
         if (user.email === email) {
           setError('Sin conexión. Entrando con datos guardados...');
           const roles: string[] = user?.roles || [];
-          const isAdmin = roles.includes('administrador') || roles.includes('admin');
+          const isAdmin = roles.includes('administrador') || roles.includes('admin') || roles.includes('super_admin');
           setTimeout(() => router.push(isAdmin ? '/admin' : '/ordenes'), 1000);
           return;
         }

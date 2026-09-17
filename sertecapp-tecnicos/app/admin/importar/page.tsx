@@ -31,7 +31,7 @@ export default function ImportarPage() {
     const savedUser = localStorage.getItem('user');
     if (!t || !savedUser) { router.push('/'); return; }
     const u = JSON.parse(savedUser);
-    if (!u?.roles?.includes('administrador') && !u?.roles?.includes('admin')) { router.push('/ordenes'); return; }
+    if (!u?.roles?.includes('administrador') && !u?.roles?.includes('admin') && !u?.roles?.includes('super_admin')) { router.push('/ordenes'); return; }
     setToken(t);
   }, []);
 

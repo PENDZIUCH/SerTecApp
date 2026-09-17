@@ -69,7 +69,7 @@ function OrdenEditContent() {
     if (!t || !savedUser) { router.push('/'); return; }
     const u = JSON.parse(savedUser);
     const roles: string[] = u?.roles || [];
-    if (!roles.includes('administrador') && !roles.includes('admin')) { router.push('/ordenes'); return; }
+    if (!roles.includes('administrador') && !roles.includes('admin') && !roles.includes('super_admin')) { router.push('/ordenes'); return; }
     setToken(t);
     loadAll(t, orderId);
   }, [orderId]);

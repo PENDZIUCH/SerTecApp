@@ -38,7 +38,7 @@ export default function ClientesPage() {
     const savedUser = localStorage.getItem('user');
     if (!t || !savedUser) { router.push('/'); return; }
     const u = JSON.parse(savedUser);
-    if (!u?.roles?.includes('administrador') && !u?.roles?.includes('admin')) { router.push('/ordenes'); return; }
+    if (!u?.roles?.includes('administrador') && !u?.roles?.includes('admin') && !u?.roles?.includes('super_admin')) { router.push('/ordenes'); return; }
     setToken(t);
     fetch(`${API_URL}/api/v1/lookup-values/customer_type`, { headers: { 'Authorization': `Bearer ${t}`, 'Accept': 'application/json' } })
       .then(r => r.ok ? r.json() : { data: [] })

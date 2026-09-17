@@ -46,7 +46,17 @@ _(vacío por ahora)_
 
 ## Ideas para más adelante
 
-_(vacío por ahora)_
+- **2026-09-17 — Auditar duplicación PWA-admin vs Filament.** Filament y
+  la PWA tienen pantallas separadas (construidas en stacks distintos) para
+  lo mismo: Clientes, Usuarios, Importar Excel, Detalle de Orden. Comparten
+  la misma API/base de datos (no hay riesgo de datos desincronizados), pero
+  la UI de cada uno se mantiene aparte y puede quedar desactualizada una
+  respecto de la otra sin que nadie se entere — pasó hoy con tipos de
+  cliente (Filament se actualizó solo con el sistema nuevo, la PWA tenía
+  su propia lista hardcodeada aparte y hubo que arreglarla a mano). Vale
+  la pena una revisión con calma de las otras pantallas duplicadas
+  (Usuarios/roles, Importar, Detalle de Orden) buscando el mismo patrón,
+  no urgente, no se encontró nada roto hoy.
 
 ## Resueltos
 

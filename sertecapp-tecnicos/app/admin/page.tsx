@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_URL } from '../../lib/config';
 import { CustomerSelect } from '../components/CustomerSelect';
+import { ThemeSelector } from '../components/ThemeSelector';
 
 const API = API_URL;
 
@@ -39,6 +40,7 @@ export default function AdminPage() {
   const [loadingTecnico, setLoadingTecnico] = useState(false);
   const [vista, setVista] = useState<'admin' | 'tecnico'>('admin');
   const [showModal, setShowModal] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [clientes, setClientes] = useState<Customer[]>([]);
   const [tecnicos, setTecnicos] = useState<Tech[]>([]);
   const [equipos, setEquipos] = useState<Equipment[]>([]);
@@ -200,7 +202,20 @@ export default function AdminPage() {
           <img src="/icon.svg" alt="Logo" className="w-8 h-8 bg-white dark:bg-gray-800 rounded-lg p-1" />
           <div><h1 className="font-bold text-lg leading-tight">SerTecApp Admin</h1><p className="text-red-100 text-xs">{user?.name}</p></div>
         </div>
-        <button onClick={logout} className="text-red-100 hover:text-white text-sm font-medium">Salir</button>
+        <div className="flex items-center gap-3 relative">
+          <button onClick={() => setShowThemeMenu(!showThemeMenu)} aria-label="Tema" className="text-red-100 hover:text-white text-lg leading-none p-1">
+            🎨
+          </button>
+          {showThemeMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowThemeMenu(false)} />
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-20 p-3">
+                <ThemeSelector />
+              </div>
+            </>
+          )}
+          <button onClick={logout} className="text-red-100 hover:text-white text-sm font-medium">Salir</button>
+        </div>
       </header>
 
       <main className="p-4 max-w-4xl mx-auto">

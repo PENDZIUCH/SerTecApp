@@ -10,7 +10,7 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { getGreeting } from '../../lib/utils';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../components/ui/Toast';
-import { useDarkMode } from '../../hooks/useDarkMode';
+import { ThemeSelector } from '../components/ThemeSelector';
 import { Modal } from '../components/ui/Modal';
 import { OrderDetail } from '../components/OrderDetail';
 
@@ -42,7 +42,6 @@ export default function OrdenesPage() {
   const [syncing, setSyncing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { toasts, showToast, hideToast, updateToast } = useToast();
-  const { theme, changeTheme } = useDarkMode();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -412,32 +411,9 @@ export default function OrdenesPage() {
                         )}
                       </button>
                       
-                      {/* Dark Mode Toggle */}
+                      {/* Tema (componente compartido con admin - ver ThemeSelector.tsx) */}
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Tema</p>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => changeTheme('light')}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                              theme === 'light'
-                                ? 'bg-yellow-500 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            ☀️ Claro
-                          </button>
-
-                          <button
-                            onClick={() => changeTheme('dark')}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                              theme === 'dark'
-                                ? 'bg-gray-900 text-white shadow-md'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            🌙 Oscuro
-                          </button>
-                        </div>
+                        <ThemeSelector />
                       </div>
 
                       <button

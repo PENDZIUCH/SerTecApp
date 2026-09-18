@@ -97,6 +97,14 @@ class BookingResource extends Resource
                     ]),
             ])
             ->defaultSort('starts_at', 'asc')
+            ->defaultGroup(
+                Tables\Grouping\Group::make('resource')
+                    ->label('Técnico')
+                    ->getKeyFromRecordUsing(fn (Booking $record) => $record->resource_type . '-' . $record->resource_id)
+                    ->getTitleFromRecordUsing(fn (Booking $record) => $record->resource_type === User::class
+                        ? (optional(User::find($record->resource_id))->name ?? 'Técnico eliminado')
+                        : 'Recurso #' . $record->resource_id)
+            )
             ->filters([
                 SelectFilter::make('resource_id')
                     ->label('Técnico')
@@ -132,6 +140,7 @@ class BookingResource extends Resource
             'index' => Pages\ListBookings::route('/'),
             'create' => Pages\CreateBooking::route('/create'),
             'edit' => Pages\EditBooking::route('/{record}/edit'),
+            'armar-recorrido' => Pages\ArmarRecorrido::route('/armar-recorrido'),
         ];
     }
 }

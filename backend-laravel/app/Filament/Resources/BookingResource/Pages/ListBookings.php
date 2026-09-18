@@ -14,6 +14,11 @@ class ListBookings extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('armar-recorrido')
+                ->label('Armar Recorrido')
+                ->icon('heroicon-o-map')
+                ->color('primary')
+                ->url(fn () => BookingResource::getUrl('armar-recorrido')),
             Actions\CreateAction::make()->label('Nueva Visita'),
         ];
     }

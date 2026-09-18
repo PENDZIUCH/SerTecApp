@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BookingController;
 use App\Http\Controllers\Api\V1\BudgetController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\EquipmentController;
@@ -59,7 +60,14 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('visits', VisitController::class);
         Route::post('visits/{visit}/check-in', [VisitController::class, 'checkIn']);
         Route::post('visits/{visit}/check-out', [VisitController::class, 'checkOut']);
-        
+
+        // Motor de agenda/reservas generico (ver App\Models\Booking) - no
+        // acoplado a visitas/ordenes, pensado para reusarse en otros casos
+        // de uso (mesas, clases, delivery) ademas de esta integracion.
+        Route::apiResource('bookings', BookingController::class);
+        Route::post('bookings/{booking}/check-in', [BookingController::class, 'checkIn']);
+        Route::post('bookings/{booking}/check-out', [BookingController::class, 'checkOut']);
+
         Route::apiResource('subscriptions', SubscriptionController::class);
         Route::post('subscriptions/{subscription}/renew', [SubscriptionController::class, 'renew']);
         

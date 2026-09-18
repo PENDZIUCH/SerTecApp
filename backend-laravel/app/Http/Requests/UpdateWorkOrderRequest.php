@@ -24,6 +24,7 @@ class UpdateWorkOrderRequest extends FormRequest
             'assigned_tech_id' => ['nullable', 'exists:users,id'],
             'scheduled_date' => ['nullable', 'date'],
             'scheduled_time' => ['nullable', 'date_format:H:i'],
+            'estimated_duration_minutes' => ['nullable', 'integer', 'min:1'],
             'labor_cost' => ['nullable', 'numeric', 'min:0'],
         ];
     }

@@ -36,6 +36,9 @@ class StoreWorkOrderRequest extends FormRequest
             'assigned_tech_id' => ['required', 'exists:users,id'],
             'scheduled_date' => ['nullable', 'date'],
             'scheduled_time' => ['nullable', 'date_format:H:i'],
+            // No es columna de work_orders - solo se usa para calcular
+            // ends_at del Booking generado (ver WorkOrderService::syncBooking).
+            'estimated_duration_minutes' => ['nullable', 'integer', 'min:1'],
             'requires_signature' => ['boolean'],
         ];
     }

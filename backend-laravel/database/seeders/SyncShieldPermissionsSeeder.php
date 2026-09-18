@@ -20,7 +20,7 @@ class SyncShieldPermissionsSeeder extends Seeder
 {
     private const ADMIN_TIER_RESOURCES = [
         'budget', 'customer', 'equipment', 'part', 'subscription',
-        'visit', 'work::order', 'work::part', 'workshop::item', 'user',
+        'visit', 'booking', 'work::order', 'work::part', 'workshop::item', 'user',
     ];
 
     private const CRUD_SUFFIXES = [
@@ -76,7 +76,7 @@ class SyncShieldPermissionsSeeder extends Seeder
             return;
         }
 
-        $readWrite = ['work::order', 'work::part', 'visit', 'workshop::item'];
+        $readWrite = ['work::order', 'work::part', 'visit', 'booking', 'workshop::item'];
         $readOnly = ['customer', 'part', 'equipment', 'budget'];
 
         foreach ($readWrite as $resource) {

@@ -178,17 +178,28 @@ class WorkPartResource extends Resource
                         });
 
                         // Notificar al técnico
+                        $tecnico = $record->technician;
+                        $bodyTecnico = 'Tu parte de la Orden #' . $record->work_order_id . ' fue aprobado.' .
+                            ($data['supervisor_notes'] ? ' Nota: ' . $data['supervisor_notes'] : '');
                         try {
-                            $tecnico = $record->technician;
                             if ($tecnico) {
                                 \Filament\Notifications\Notification::make()
                                     ->title('✅ Parte Aprobado')
-                                    ->body('Tu parte de la Orden #' . $record->work_order_id . ' fue aprobado.' .
-                                        ($data['supervisor_notes'] ? ' Nota: ' . $data['supervisor_notes'] : ''))
+                                    ->body($bodyTecnico)
                                     ->success()
                                     ->sendToDatabase($tecnico);
                             }
                         } catch (\Exception $e) {}
+
+                        // Web Push al tecnico, solo si el evento esta activo
+                        // (lookup_values, category='push_notification_events',
+                        // value='parte_aprobado').
+                        \App\Services\PushNotificationDispatcher::send(
+                            'parte_aprobado',
+                            $tecnico,
+                            '✅ Parte Aprobado',
+                            $bodyTecnico,
+                        );
 
                         Notification::make()
                             ->title('Parte Aprobado')
@@ -231,16 +242,27 @@ class WorkPartResource extends Resource
                         });
 
                         // Notificar al técnico
+                        $tecnico = $record->technician;
+                        $bodyTecnico = 'Tu parte de la Orden #' . $record->work_order_id . ' fue rechazado. Motivo: ' . $data['supervisor_notes'];
                         try {
-                            $tecnico = $record->technician;
                             if ($tecnico) {
                                 \Filament\Notifications\Notification::make()
                                     ->title('❌ Parte Rechazado')
-                                    ->body('Tu parte de la Orden #' . $record->work_order_id . ' fue rechazado. Motivo: ' . $data['supervisor_notes'])
+                                    ->body($bodyTecnico)
                                     ->danger()
                                     ->sendToDatabase($tecnico);
                             }
                         } catch (\Exception $e) {}
+
+                        // Web Push al tecnico, solo si el evento esta activo
+                        // (lookup_values, category='push_notification_events',
+                        // value='parte_rechazado').
+                        \App\Services\PushNotificationDispatcher::send(
+                            'parte_rechazado',
+                            $tecnico,
+                            '❌ Parte Rechazado',
+                            $bodyTecnico,
+                        );
 
                         // Email al cliente
                         try {

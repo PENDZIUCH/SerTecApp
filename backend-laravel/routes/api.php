@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\WorkshopController;
 use App\Http\Controllers\Api\V1\TechnicianController;
 use App\Http\Controllers\Api\V1\MagicLinkController;
 use App\Http\Controllers\Api\V1\LookupValueController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 // Health check endpoint (sin autenticación)
@@ -42,6 +43,12 @@ Route::prefix('v1')->group(function () {
 
         Route::get('roles', [RoleController::class, 'index']);
         Route::get('lookup-values/{category}', [LookupValueController::class, 'index']);
+
+        // Web Push - un solo endpoint para las dos audiencias (tecnicos en
+        // la PWA y supervisores/admins en Filament), ver
+        // App\Http\Controllers\Api\V1\PushSubscriptionController.
+        Route::post('push-subscriptions', [PushSubscriptionController::class, 'store']);
+        Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy']);
 
         Route::apiResource('users', UserController::class);
         

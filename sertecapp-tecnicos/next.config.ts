@@ -12,6 +12,12 @@ if (isProd) {
     disable: false,
     fallbacks: { document: '/offline.html' },
     buildExcludes: [/middleware-manifest\.json$/],
+    // Listeners de Web Push (push/notificationclick) - inyectados dentro
+    // del sw.js que genera workbox via importScripts, en vez de escribir
+    // sw.js a mano (se regenera en cada build, no se versiona - ver
+    // .gitignore). Ver public/push-worker.js para el detalle, no toca nada
+    // del caching que ya arma next-pwa/workbox.
+    importScripts: ['/push-worker.js'],
     runtimeCaching: [
       {
         urlPattern: /^https:\/\/demo\.pendziuch\.com\/api\/.*/i,

@@ -20,6 +20,8 @@ class WorkPart extends Model
         'status',
         'supervisor_notes',
         'approved_at',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [

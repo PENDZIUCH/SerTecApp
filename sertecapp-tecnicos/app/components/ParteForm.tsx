@@ -6,13 +6,13 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineModal } from './ui/OfflineModal';
 import { API_URL } from '../../lib/config';
 
-function getGeoLocation(): Promise<{lat: number; lng: number} | null> {
+function getGeoLocation(): Promise<{lat: number; lng: number; accuracy: number} | null> {
   return new Promise((resolve) => {
     if (!navigator.geolocation) { resolve(null); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
       () => resolve(null),
-      { timeout: 15000, maximumAge: 60000 }
+      { timeout: 20000, maximumAge: 0, enableHighAccuracy: true }
     );
   });
 }
@@ -38,7 +38,7 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showOfflineModal, setShowOfflineModal] = useState(false);
-  const [precachedGeo, setPrecachedGeo] = useState<{lat: number; lng: number} | null>(null);
+  const [precachedGeo, setPrecachedGeo] = useState<{lat: number; lng: number; accuracy: number} | null>(null);
   const [geoStatus, setGeoStatus] = useState<'pending' | 'ok' | 'failed'>('pending');
   const [parteRechazado, setParteRechazado] = useState<{supervisor_notes: string; diagnosis?: string; work_done?: string} | null>(null);
 
@@ -203,8 +203,9 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
             <span className="text-gray-500 dark:text-gray-400">📍 Obteniendo ubicación...</span>
           )}
           {geoStatus === 'ok' && precachedGeo && (
-            <span className="text-green-700 dark:text-green-400">
-              📍 Ubicación capturada ({precachedGeo.lat.toFixed(5)}, {precachedGeo.lng.toFixed(5)})
+            <span className={precachedGeo.accuracy > 100 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}>
+              📍 Ubicación capturada ({precachedGeo.lat.toFixed(5)}, {precachedGeo.lng.toFixed(5)}) — precisión ±{Math.round(precachedGeo.accuracy)}m
+              {precachedGeo.accuracy > 100 && ' (baja, puede estar corrida)'}
             </span>
           )}
           {geoStatus === 'failed' && (

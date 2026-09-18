@@ -198,4 +198,38 @@ class UserEscalationGuardTest extends TestCase
         $response->assertStatus(204);
         $this->assertSoftDeleted('users', ['id' => $tecnico->id]);
     }
+
+    /**
+     * Hueco cerrado el 2026-09-18 (encontrado en auditoria de otra sesion,
+     * anotado en PENDIENTES.md): el comentario del codigo decia que un
+     * supervisor no podia editar la cuenta de OTRO supervisor, pero
+     * UpdateUserRequest::authorize() nunca lo implemento - solo bloqueaba
+     * administrador/super_admin como target.
+     */
+    public function test_supervisor_cannot_edit_another_supervisor_account(): void
+    {
+        $otroSupervisor = User::factory()->create();
+        $otroSupervisor->assignRole('supervisor');
+
+        Sanctum::actingAs($this->supervisor);
+
+        $response = $this->putJson("/api/v1/users/{$otroSupervisor->id}", [
+            'name' => 'Nombre cambiado sin permiso',
+        ]);
+
+        $response->assertStatus(403);
+        $this->assertNotEquals('Nombre cambiado sin permiso', $otroSupervisor->fresh()->name);
+    }
+
+    public function test_supervisor_can_edit_their_own_account(): void
+    {
+        Sanctum::actingAs($this->supervisor);
+
+        $response = $this->putJson("/api/v1/users/{$this->supervisor->id}", [
+            'name' => 'Mi Nombre Actualizado',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertEquals('Mi Nombre Actualizado', $this->supervisor->fresh()->name);
+    }
 }

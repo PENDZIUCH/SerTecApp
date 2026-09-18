@@ -17,6 +17,9 @@ class UpdateUserRequest extends FormRequest
         if ($target && $target->hasAnyRole(['administrador', 'admin']) && !$actorEsAdminTier) {
             return false; // un supervisor no puede editar cuentas de administrador
         }
+        if ($target && $target->id !== $this->user()->id && $target->hasRole('supervisor') && !$actorEsAdminTier) {
+            return false; // un supervisor no puede editar la cuenta de OTRO supervisor (si puede editarse a si mismo)
+        }
         return $this->user()->can('update_user');
     }
 

@@ -12,6 +12,12 @@ interface User {
 
 const inp = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-white";
 
+const roleBadgeClass = (role: string) => {
+  if (role === 'administrador' || role === 'admin' || role === 'super_admin') return 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400';
+  if (role === 'supervisor') return 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-400';
+  return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
+};
+
 export default function GestionPage() {
   const router = useRouter();
   const [token, setToken] = useState('');
@@ -28,6 +34,7 @@ export default function GestionPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<{id: number; name: string}[]>([]);
   const [isAdminTier, setIsAdminTier] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -37,6 +44,7 @@ export default function GestionPage() {
     const roles: string[] = u?.roles || [];
     if (!roles.includes('administrador') && !roles.includes('admin') && !roles.includes('super_admin') && !roles.includes('supervisor')) { router.push('/ordenes'); return; }
     setIsAdminTier(roles.includes('administrador') || roles.includes('admin') || roles.includes('super_admin'));
+    setCurrentUserId(u?.id ?? null);
     setToken(t);
     loadUsers(t);
     loadRoles(t);
@@ -48,7 +56,8 @@ export default function GestionPage() {
   const rolesAsignables = isAdminTier
     ? availableRoles
     : availableRoles.filter(r => r.name === 'técnico' || r.name === 'tecnico');
-  const esCuentaAdminTier = (u: User) => u.roles.some(r => ['administrador', 'admin', 'super_admin'].includes(r));
+  const esCuentaAdminTier = (u: User) =>
+    u.id !== currentUserId && u.roles.some(r => ['administrador', 'admin', 'super_admin', 'supervisor'].includes(r));
 
   const hd = (t: string) => ({
     'Authorization': 'Bearer ' + t, 'Accept': 'application/json', 'Content-Type': 'application/json'
@@ -149,9 +158,11 @@ export default function GestionPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-semibold text-gray-900 dark:text-white">{u.name}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.roles[0] === 'administrador' || u.roles[0] === 'admin' ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400' : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'}`}>
-                        {u.roles[0]}
-                      </span>
+                      {u.roles.map(r => (
+                        <span key={r} className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleBadgeClass(r)}`}>
+                          {r}
+                        </span>
+                      ))}
                       {!u.is_active && <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full">Inactivo</span>}
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{u.email}</p>

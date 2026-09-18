@@ -638,3 +638,68 @@ chequeos) en verde post-deploy.
 - Armar la agenda/calendario (feature nueva completa, sin arrancar).
 - `PENDIENTES.md` en la raíz del repo — backlog vivo donde Hugo va
   tirando detalles sueltos a medida que los encuentra usando la app real.
+
+## Sesión 2026-09-17 (continuación) — selector de tema unificado admin↔técnico + fix super_admin bloqueado en PWA
+
+Mismo día, horas después de la sesión de tipos de cliente de arriba.
+Motivo: el modo oscuro recién agregado a las 6 pantallas de admin (commit
+`14fa9af`, mismo día, ver PENDIENTES.md → Resueltos) reusaba el mapeo de
+colores de técnico, pero admin no tenía ningún control para cambiar de
+tema — técnico sí tenía un toggle Claro/Oscuro en "Mis Órdenes", sin la
+opción "Automático" (se había sacado antes porque la detección automática
+no andaba bien, ver historial de conversación con Hugo).
+
+### Selector de tema unificado (commit `4306ed9`, 14:12)
+
+- Nuevo `sertecapp-tecnicos/app/components/ThemeSelector.tsx` — componente
+  único y compartido entre `app/admin/page.tsx` y `app/ordenes/page.tsx`
+  (mismo criterio de "una sola fuente de verdad" que ya se venía aplicando
+  en el proyecto, justo el patrón que la sección "Auditar duplicación
+  PWA-admin vs Filament" de PENDIENTES.md pedía vigilar), reusa el hook
+  `useDarkMode` ya existente en vez de duplicar lógica.
+- 3 opciones: Claro / Oscuro / Automático (🖥️) — vuelve el botón
+  "Automático" que se había sacado antes, esta vez funcionando bien.
+- **Bug real encontrado y corregido en `hooks/useDarkMode.ts`:** elegir
+  "Automático" a mano no resolvía el color correcto en el momento —
+  aplicaba siempre la clase clara y recién se corregía en el próximo
+  cambio real de `prefers-color-scheme` del sistema, porque hasta ahora
+  ningún botón llamaba a `changeTheme('system')`. Corregido para que
+  resuelva contra `prefers-color-scheme` de inmediato al elegir
+  "Automático", y siga reaccionando en vivo si el sistema cambia mientras
+  la app sigue abierta.
+- Admin: nuevo botón en el header (antes no existía ningún lugar para esto)
+  que abre un menú chico con el selector.
+- Build de la PWA (`next build --webpack`) verificado en verde antes de
+  subir.
+
+### Ajuste de ícono (commit `9beb531`, 14:23)
+
+Botón de opciones en el header de admin: ícono de paleta 🎨 cambiado a
+engranaje ⚙️ — un solo archivo (`app/admin/page.tsx`), pedido de estilo de
+Hugo.
+
+### Fix — cuenta con solo `super_admin` no podía entrar al admin de la PWA (commit `88801bc`, 14:32)
+
+Mismo bug de fondo que la regresión de Filament corregida horas antes en
+esta misma sesión (`87a8169`, ver arriba), pero en un lugar distinto sin
+tocar hasta ahora: las 6 pantallas de admin de la PWA
+(`app/admin/clientes/page.tsx`, `app/admin/gestion/page.tsx`,
+`app/admin/importar/page.tsx`, `app/admin/orden/[id]/_client.tsx`,
+`app/admin/page.tsx`) y la lógica de redirect post-login en `app/page.tsx`
+chequeaban `roles.includes('administrador')` (o el legacy `'admin'`) de
+forma literal, sin contemplar `super_admin` — igual que en Filament, nunca
+se actualizaron cuando `super_admin` pasó a ser un rol separado de
+`administrador`. Desde que se le sacó a la cuenta de Hugo el rol
+`administrador` redundante (2026-09-16/17, ver PENDIENTES.md →
+Resueltos), quedó bloqueada de todo el admin de la PWA, redirigida
+siempre a `/ordenes` (vista técnico).
+
+**Encontrado** al revisar un pedido de Hugo de restringir "Importar
+Excel" a solo admin (no supervisor) — se confirmó que supervisor SÍ
+estaba correctamente excluido de esas mismas pantallas (nunca tuvo el rol
+`administrador`, ese chequeo funcionaba bien), pero de paso apareció este
+bug que sí afectaba a la cuenta de Hugo.
+
+**Fix:** agregado `roles.includes('super_admin')` a los 8 chequeos (6
+pantallas de admin + 2 en la lógica de redirect de `app/page.tsx`). Build
+verificado antes de subir.

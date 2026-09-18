@@ -25,6 +25,7 @@ class TechnicianController extends Controller
                 $q->latest()->limit(1);
             }])
             ->where('assigned_tech_id', $tecnicoId)
+            ->latest()
             ->get();
 
         \Log::info("Órdenes encontradas: " . $orders->count());

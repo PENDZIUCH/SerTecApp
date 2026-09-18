@@ -11,9 +11,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 
 // Administra las listas configurables genericas (ver App\Models\LookupValue
-// para el porque). Hoy solo hay una category en uso ('customer_type'), pero
-// la pantalla ya soporta cualquier otra que se agregue a futuro sin tocar
-// este archivo - alcanza con crear filas con una category nueva.
+// para el porque). Categorias en uso: 'customer_type' y
+// 'email_notification_recipients' (2026-09-18, toggle on/off de a quien le
+// llega el email al completar un parte - ver
+// SeedEmailNotificationRecipientsSeeder y TechnicianController::saveParte).
+// La pantalla ya soporta cualquier otra category que se agregue a futuro
+// sin tocar este archivo - alcanza con crear filas con una category nueva.
 class LookupValueResource extends Resource
 {
     protected static ?string $model = LookupValue::class;
@@ -43,6 +46,7 @@ class LookupValueResource extends Resource
                     ->label('Lista')
                     ->options([
                         'customer_type' => 'Tipo de Cliente',
+                        'email_notification_recipients' => 'Destinatarios de Email (Parte Completado)',
                     ])
                     // Permite tipear una category nueva que todavia no
                     // exista en la lista de arriba, sin tocar codigo.
@@ -85,6 +89,7 @@ class LookupValueResource extends Resource
                     ->label('Lista')
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         'customer_type' => 'Tipo de Cliente',
+                        'email_notification_recipients' => 'Destinatarios de Email (Parte Completado)',
                         default => $state,
                     })
                     ->badge()
@@ -110,6 +115,7 @@ class LookupValueResource extends Resource
                     ->label('Lista')
                     ->options([
                         'customer_type' => 'Tipo de Cliente',
+                        'email_notification_recipients' => 'Destinatarios de Email (Parte Completado)',
                     ]),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Activo'),

@@ -106,23 +106,53 @@ class TechnicianController extends Controller
 
             DB::commit();
 
-            // Email al cliente con el resumen del parte
-            try {
-                $customerEmail = $order->customer->email ?? null;
-                if ($customerEmail) {
-                    $parteConRelaciones = $parte->load(['workOrder.customer', 'technician']);
-                    Mail::to($customerEmail)->send(new ParteCompletadoMail($parteConRelaciones));
+            $parteConRelaciones = $parte->load(['workOrder.customer', 'technician']);
+            $technician = $parteConRelaciones->technician;
+            // Buscar supervisores y super_admins usando Spatie roles
+            $supervisors = \App\Models\User::role(['supervisor', 'super_admin'])->get();
+
+            // Email al cliente / supervisor / tecnico segun toggles configurables
+            // (lookup_values, category='email_notification_recipients' - ver
+            // SeedEmailNotificationRecipientsSeeder). Cada destinatario se manda
+            // en su propio try/catch: que falte un email o que falle un envio
+            // puntual no debe tumbar el resto ni el guardado del parte.
+            $destinatariosActivos = \App\Models\LookupValue::optionsFor('email_notification_recipients');
+
+            if (array_key_exists('cliente', $destinatariosActivos)) {
+                try {
+                    $customerEmail = $order->customer->email ?? null;
+                    if ($customerEmail) {
+                        Mail::to($customerEmail)->send(new ParteCompletadoMail($parteConRelaciones));
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Error enviando email de parte completado al cliente: ' . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                \Log::warning('Error enviando email de parte completado: ' . $e->getMessage());
+            }
+
+            if (array_key_exists('supervisor', $destinatariosActivos)) {
+                foreach ($supervisors as $supervisor) {
+                    try {
+                        if (! empty($supervisor->email)) {
+                            Mail::to($supervisor->email)->send(new ParteCompletadoMail($parteConRelaciones));
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error enviando email de parte completado al supervisor: ' . $e->getMessage());
+                    }
+                }
+            }
+
+            if (array_key_exists('tecnico', $destinatariosActivos)) {
+                try {
+                    if (! empty($technician?->email)) {
+                        Mail::to($technician->email)->send(new ParteCompletadoMail($parteConRelaciones));
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Error enviando email de parte completado al tecnico: ' . $e->getMessage());
+                }
             }
 
             // Notificaciones en bloque separado — si fallan no afectan el guardado
             try {
-                $technician = \App\Models\User::find($request->tecnico_id);
-                // Buscar supervisores y super_admins usando Spatie roles
-                $supervisors = \App\Models\User::role(['supervisor', 'super_admin'])->get();
-
                 foreach ($supervisors as $supervisor) {
                     \Filament\Notifications\Notification::make()
                         ->title('Nuevo parte pendiente de aprobación')

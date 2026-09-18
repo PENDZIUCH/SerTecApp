@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-17
+> Última actualización: 2026-09-18
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -703,3 +703,175 @@ bug que sí afectaba a la cuenta de Hugo.
 **Fix:** agregado `roles.includes('super_admin')` a los 8 chequeos (6
 pantallas de admin + 2 en la lógica de redirect de `app/page.tsx`). Build
 verificado antes de subir.
+
+## Sesión 2026-09-18 — mapa GPS, toggles de email, modelo de permisos de supervisor
+
+Sesión de "varios frentes en paralelo" con subagentes: se despacharon 4
+en simultáneo (doc catch-up, investigación de `D:\LAB`/`PendziuchLabs`,
+feature de mapa GPS, feature de toggles de email), se mergearon sin
+conflictos reales, y de ahí en más varios bugs reales aparecieron al
+usar la app en vivo con Hugo — el patrón de la sesión fue "Hugo prueba
+en producción → aparece un bug real → se investiga y arregla en el
+momento", no trabajo especulativo.
+
+### Toggles de email por destinatario (commits `2a1d5ae` → merge `3c51270`)
+
+Pedido original de Hugo (WhatsApp, sesión anterior): que el email de
+parte completado pueda activarse/desactivarse por tipo de destinatario
+(cliente/supervisor/técnico) en vez de estar fijo solo al cliente.
+Reusa el patrón `lookup_values` ya construido (no Resource nuevo):
+categoría `email_notification_recipients`, valores `cliente` /
+`supervisor` / `tecnico`, cada uno con su propio `is_active` como
+toggle — administrable en Filament → Administración → Listas
+configurables, sin tocar código para cambiarlo.
+
+- `SeedEmailNotificationRecipientsSeeder` (idempotente, mismo patrón que
+  `SeedCustomerTypesSeeder`) — los 3 arrancan activos.
+- `TechnicianController::saveParte()` manda el email a cada destinatario
+  activo por separado, cada uno en su propio try/catch (que falle o
+  falte el email de uno no tumba a los demás ni el guardado del parte).
+- 5 tests nuevos en `EmailNotificationRecipientsTest.php`.
+- **Importante para producción:** el seeder no corre solo con el deploy
+  (igual que todos los seeders de datos de este proyecto) — hubo que
+  correrlo a mano por SSH después de pushear. El clasificador de Auto
+  Mode de esta sesión bloqueó el primer intento de SSH con escritura
+  (`Remote Shell Writes`) aunque Hugo ya había dado el OK en el chat —
+  hace falta una regla de permisos en la config para que eso no vuelva a
+  frenar, el OK verbal en el chat no alcanza para ese tipo de acción.
+
+### Mapa GPS embebido — construido pero roto hasta el fix real (commits `a5a56e5` → merge `3c51270`, fix real en `eb69196`)
+
+Pedido de Luis (cliente, WhatsApp): ver la ubicación del parte como
+mapa, no solo como link a Google Maps. Se agregó un iframe de Google
+Maps sin API key (`?output=embed`) en 3 lugares: admin PWA
+(`_client.tsx`), técnico PWA (`OrderDetail.tsx`), y Filament
+(`WorkPartResource` vía `location-map.blade.php`, con el patrón
+`Forms\Components\View::make()` que ya usaba el proyecto para HTML
+custom en vez de inventar uno nuevo). De paso se encontró y arregló que
+`TechnicianController::getParte()` ni siquiera devolvía
+`latitude`/`longitude` en el JSON — la PWA no tenía con qué armar el
+mapa aunque el dato existiera.
+
+**Bug real de fondo, encontrado recién al probar con un parte real de
+Hugo:** el modelo `App\Models\WorkPart` **no tenía `latitude` ni
+`longitude` en `$fillable`**. `WorkPart::create([...'latitude' => ...,
+'longitude' => ...])` los descartaba en silencio (mass assignment
+protection de Laravel, sin error) — el frontend mandaba bien las
+coordenadas, el backend las recibía bien, pero nunca llegaban a
+guardarse en la base. Por eso ni la PWA ni Filament mostraban nada: no
+era un bug de interfaz, el dato nunca existió. **Dos partes de prueba de
+Hugo (órdenes #0036 y #0037) perdieron el GPS para siempre** — no
+recuperable, nunca se guardó.
+
+Fix: agregado `latitude`/`longitude` a `$fillable`. Tests nuevos en
+`WorkPartTest.php` (guarda GPS cuando se manda, no rompe cuando no se
+manda) para que esto no vuelva a fallar en silencio.
+
+**Lección:** los tests y el build verde de la sesión donde se construyó
+la feature no lo agarraron porque probaban contra el JSON de
+respuesta/UI, no contra si el dato realmente persistía en la tabla — a
+tener en cuenta para la próxima feature que toque un modelo con
+`$fillable` explícito.
+
+### Precisión del GPS (commit `cb31ceb`)
+
+`getGeoLocation()` en `ParteForm.tsx` no pedía `enableHighAccuracy` y
+usaba `maximumAge: 60000` — en la práctica el navegador priorizaba
+ubicación por WiFi/antenas en vez de GPS real, dando coordenadas
+corridas varios km (probado en vivo: apareció en Don Torcuato). Fix:
+`enableHighAccuracy: true`, `maximumAge: 0`, y se agregó la precisión en
+metros al cartel de estado GPS del formulario (verde si ≤100m, ámbar
+"puede estar corrida" si peor). Un test en vivo con Hugo dio **±50000m
+(50km)** de precisión, probando desde la PC — confirma que la
+compu no tiene chip GPS y cae a geolocalización por IP, el último
+recurso. **Dato para producto:** las tablets de los técnicos necesitan
+SIM/datos propios (no solo WiFi) para tener chip GPS real — una tablet
+solo-WiFi depende de la base de datos de WiFi de Google, que en zonas de
+baja densidad (como Don Torcuato) puede fallar directo a precisión de
+ciudad. Idea abierta, no construida: mapa interactivo (Leaflet, sin API
+key) donde el técnico pueda corregir la ubicación a mano tocando el
+mapa, para cuando la precisión automática sale mala — Hugo la aprobó en
+concepto, queda para cuando se priorice.
+
+### Botón "Nuevo Parte" fantasma en Filament, eliminado (commit `c4d4f8f`)
+
+`WorkPartResource::getPages()` nunca registró una página `create` (no
+tiene sentido crear un parte a mano, se genera solo desde la PWA cuando
+el técnico completa el trabajo), pero `ListWorkParts::getHeaderActions()`
+sí mostraba un botón "Nuevo Parte" que apuntaba a una ruta inexistente.
+Se sacó el botón y se borró `Pages/CreateWorkPart.php` (código muerto,
+sin ninguna referencia real).
+
+### Orden de la lista de órdenes del técnico (commit `d9b05ac`)
+
+`TechnicianController::getOrders()` no tenía ningún `orderBy` — devolvía
+el orden natural de la base (las más viejas primero), obligando a
+scrollear para ver la última. Agregado `->latest()`.
+
+### Accesos rápidos "Nueva Orden" (commits `2e0de42`, `d5e8cc3`)
+
+Pedido de Hugo: acceso directo a crear orden desde el inicio, no solo
+desde la lista. Se agregó en dos lugares distintos a propósito (Hugo
+aclaró que el pedido era específicamente para Filament, donde opera el
+supervisor en general — el de la PWA se hizo de paso, con menor
+prioridad):
+
+- **Filament:** widget nuevo `QuickNewOrderWidget` en el dashboard, al
+  lado del `AccountWidget` de bienvenida (mismo grid de 2 columnas del
+  dashboard por defecto de Filament — quedaba un espacio libre ahí, eso
+  era literalmente lo que Hugo describía). Primera versión tenía
+  heading + descripción, pero el texto largo desalineaba la card contra
+  la de bienvenida (screenshot de Hugo lo mostró clarísimo) —
+  simplificada a solo un botón centrado (`d5e8cc3`).
+- **PWA:** saludo "Bienvenido/a, {nombre}" + botón "Nueva Orden" en
+  `app/admin/page.tsx`, arriba de las stats.
+
+### Modelo de permisos corregido: supervisor en la PWA (commits `3efee4e`, `8dbb014`)
+
+Corrección importante de un supuesto que se había asumido mal en la
+sesión anterior: la restricción "el supervisor puede hacer lío" **era
+específicamente sobre Importar Excel, no sobre toda la sección de
+admin**. El sentido real de tener pantallas de administración en la PWA
+es que el supervisor las pueda ver desde el celular (ej. en una
+reunión), no que estén reservadas al admin. Modelo real, aclarado por
+Hugo:
+
+- **Admin-tier only (sin cambios):** Importar Excel (`/admin/importar`).
+- **Ahora también supervisor:** dashboard (`/admin`), Clientes, detalle
+  de orden (`/admin/orden/[id]`) — el login ahora manda al supervisor a
+  `/admin` en vez de `/ordenes`.
+- **Usuarios (`/admin/gestion`), con reglas nuevas:** supervisor SÍ
+  entra y SÍ puede dar de alta/editar usuarios, pero **solo con rol
+  técnico** — no puede crear ni promover a administrador/supervisor, no
+  puede editar cuentas de administrador existentes, y **no puede borrar
+  a nadie** (borrado queda solo para administrador/super_admin). Esto se
+  valida en 2 capas: UI (el select de rol solo ofrece "técnico" a un
+  supervisor, se ocultan Editar/Activar en cuentas admin) **y backend**
+  (`StoreUserRequest`/`UpdateUserRequest`/`UserController::destroy`) —
+  la UI es solo para no ofrecer una opción que va a rebotar con 403, la
+  autorización real vive en el backend. 6 tests nuevos en
+  `UserEscalationGuardTest.php`.
+
+### Estado de "Visitas"/agenda (investigado, no construido)
+
+Pregunta de Hugo sobre si el pedido de "el supervisor arma un recorrido
+por técnico" ya está resuelto. Investigado: existe un sistema `Visit`
+completo en el backend (modelo, `VisitController` con CRUD +
+check-in/check-out con GPS, `VisitPolicy`, `VisitResource` en Filament
+donde se puede crear una visita con orden+técnico+fecha+hora+duración) —
+la data model para agenda ya está. Pero: **la PWA no sabe que esto
+existe** (cero referencias, técnico no ve ningún recorrido armado por el
+supervisor), y no hay ninguna vista tipo calendario en ningún lado (ni
+Filament ni PWA), solo una tabla plana sin agrupar por técnico/día. Sin
+empezar a conectar — frente grande, no priorizado todavía.
+
+### Auditoría de `D:\LAB` / `D:\PendziuchLabs` (investigación, sin cambios en este repo)
+
+Plan de reorden de discos (ver `D:\LAB\brain\areas\sertecapp.md` y
+`happy-squishing-wilkes.md`) confirmado 100% ejecutado y superado por
+trabajo posterior. No afecta a este repo — mencionado acá solo porque
+se hizo en paralelo el mismo día. Quedó un riesgo de seguridad real sin
+resolver ahí: `.env` en texto plano sin `.gitignore` en
+`PendziuchLabs\_archive\LTA-cloudflare` y en `LAB\projects\LTA-webrtc`
+(este último sin `.git` siquiera) — no es de SerTecApp pero queda
+anotado por si se retoma.

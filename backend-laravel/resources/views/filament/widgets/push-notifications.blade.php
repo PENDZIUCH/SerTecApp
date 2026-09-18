@@ -47,8 +47,8 @@
                     return outputArray;
                 }
 
-                function pushNotificationsWidget({ vapidPublicKey, token }) {
-                    return {
+                document.addEventListener('alpine:init', () => {
+                    Alpine.data('pushNotificationsWidget', ({ vapidPublicKey, token }) => ({
                         supported: false,
                         permission: 'default',
                         subscribed: false,
@@ -136,8 +136,8 @@
                                 this.loading = false;
                             }
                         },
-                    };
-                }
+                    }));
+                });
             </script>
         @endpush
     @endonce

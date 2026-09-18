@@ -219,7 +219,17 @@ export default function AdminPage() {
       </header>
 
       <main className="p-4 max-w-4xl mx-auto">
-        <div className="grid grid-cols-2 gap-3 mb-4 mt-4">
+        <div className="flex items-center justify-between gap-3 mt-4 mb-4">
+          <div>
+            <p className="text-lg font-bold text-gray-800 dark:text-gray-100">Bienvenido/a, {user?.name?.split(' ')[0]} 👋</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">¿Qué querés hacer hoy?</p>
+          </div>
+          <button onClick={abrirModal} className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-3 rounded-2xl shadow-sm transition-all flex items-center gap-2 shrink-0">
+            <span className="text-lg leading-none">+</span> Nueva Orden
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
           {[{ label: 'Órdenes', value: stats.ordenes, icon: '📋' }, { label: 'Clientes', value: stats.clientes, icon: '👥' },
             { label: 'Repuestos', value: stats.repuestos, icon: '🔩' }, { label: 'Sistema', value: '✓', icon: '🟢' }].map((s) => (
             <div key={s.label} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex items-center gap-3 shadow-sm">

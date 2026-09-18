@@ -23,6 +23,8 @@ interface Parte {
   status: string;
   supervisor_notes?: string;
   created_at: string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
 }
 
 export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
@@ -165,6 +167,32 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ order, onStart }) => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Firma del Cliente</h4>
                   <img src={parte.signature} alt="Firma" className="border border-gray-300 dark:border-gray-600 rounded-lg max-w-full h-auto bg-white" />
+                </div>
+              )}
+
+              {/* Ubicación */}
+              {parte.latitude && parte.longitude && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Ubicación</h4>
+                  <div className="rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
+                    <iframe
+                      src={`https://www.google.com/maps?q=${parte.latitude},${parte.longitude}&output=embed`}
+                      width="100%"
+                      height="220"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Ubicación del parte"
+                    />
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps?q=${parte.latitude},${parte.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-500 hover:underline mt-1 inline-block"
+                  >
+                    📍 Abrir en Google Maps
+                  </a>
                 </div>
               )}
 

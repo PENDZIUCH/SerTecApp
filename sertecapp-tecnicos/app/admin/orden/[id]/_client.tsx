@@ -294,6 +294,30 @@ function OrdenEditContent() {
                 <img src={parte.firma_base64 || parte.signature} alt="Firma" className="border border-gray-200 dark:border-gray-700 rounded-lg max-w-full bg-white dark:bg-gray-800 p-2" />
               </div>
             )}
+            {parte.latitude && parte.longitude && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Ubicación</p>
+                <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                  <iframe
+                    src={`https://www.google.com/maps?q=${parte.latitude},${parte.longitude}&output=embed`}
+                    width="100%"
+                    height="220"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Ubicación del parte"
+                  />
+                </div>
+                <a
+                  href={`https://www.google.com/maps?q=${parte.latitude},${parte.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-500 hover:underline mt-1 inline-block"
+                >
+                  📍 Abrir en Google Maps
+                </a>
+              </div>
+            )}
             <p className="text-xs text-gray-400 dark:text-gray-500">Completado: {formatDate(parte.created_at)}</p>
           </div>
         )}

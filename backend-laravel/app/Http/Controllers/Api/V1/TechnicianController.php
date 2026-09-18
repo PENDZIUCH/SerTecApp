@@ -229,6 +229,8 @@ class TechnicianController extends Controller
                     'signature'  => $parte->signature,
                     'status'            => $parte->status,
                     'supervisor_notes'  => $parte->supervisor_notes,
+                    'latitude'          => $parte->latitude,
+                    'longitude'         => $parte->longitude,
                     'created_at'        => $parte->created_at->toISOString(),
                 ],
             ]);

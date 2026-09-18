@@ -18,18 +18,36 @@ class WorkOrderService
 
         $this->syncBooking($workOrder, $estimatedDuration);
 
+        // Camino de creacion via API (usado por la seccion admin de la PWA,
+        // app/admin/orden/[id]/_client.tsx en sertecapp-tecnicos) - antes
+        // de esta feature (2026-09-18) el tecnico asignado no recibia
+        // ningun aviso por este camino (Filament si, via CreateWorkOrder).
+        WorkOrderNotifier::notifyAssignedTechnician($workOrder);
+
         return $workOrder;
     }
 
     public function update(WorkOrder $workOrder, array $data)
     {
+        $previousTechId = $workOrder->assigned_tech_id;
+
         $data['updated_by'] = auth()->id();
         $estimatedDuration = $data['estimated_duration_minutes'] ?? null;
         $workOrder->update($data);
 
-        $this->syncBooking($workOrder->fresh(), $estimatedDuration);
+        $workOrder = $workOrder->fresh();
 
-        return $workOrder->fresh();
+        $this->syncBooking($workOrder, $estimatedDuration);
+
+        // Reasignacion via API - mismo criterio que CreateWorkOrder/
+        // EditWorkOrder en Filament: solo avisa si el tecnico asignado
+        // realmente cambio (evita spamear al tecnico en cada edicion que
+        // no toca la asignacion).
+        if ($workOrder->assigned_tech_id && $workOrder->assigned_tech_id !== $previousTechId) {
+            WorkOrderNotifier::notifyAssignedTechnician($workOrder);
+        }
+
+        return $workOrder;
     }
 
     /**

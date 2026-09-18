@@ -11,6 +11,7 @@ import { getGreeting } from '../../lib/utils';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../components/ui/Toast';
 import { ThemeSelector } from '../components/ThemeSelector';
+import { PushNotificationsToggle } from '../components/PushNotificationsToggle';
 import { Modal } from '../components/ui/Modal';
 import { OrderDetail } from '../components/OrderDetail';
 
@@ -427,6 +428,11 @@ export default function OrdenesPage() {
                       {/* Tema (componente compartido con admin - ver ThemeSelector.tsx) */}
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                         <ThemeSelector />
+                      </div>
+
+                      {/* Notificaciones push - opt-in, no se activa solo */}
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <PushNotificationsToggle />
                       </div>
 
                       <button

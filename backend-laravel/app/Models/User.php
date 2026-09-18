@@ -11,11 +11,19 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements CanResetPasswordContract, FilamentUser
 {
-    use HasFactory, Notifiable, HasApiTokens, HasRoles, SoftDeletes, CanResetPassword;
+    // HasPushSubscriptions (laravel-notification-channels/webpush) agrega
+    // pushSubscriptions()/updatePushSubscription() - un mismo User sirve
+    // tanto a tecnicos (PWA) como a supervisores/admins (Filament), cada
+    // uno con sus propias suscripciones de navegador. Ver
+    // App\Notifications\PushNotification y
+    // App\Services\PushNotificationDispatcher para el toggle on/off por
+    // evento (lookup_values, category='push_notification_events').
+    use HasFactory, Notifiable, HasApiTokens, HasRoles, SoftDeletes, CanResetPassword, HasPushSubscriptions;
 
     protected $fillable = [
         'name',

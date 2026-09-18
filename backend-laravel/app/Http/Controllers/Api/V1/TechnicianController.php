@@ -172,6 +172,18 @@ class TechnicianController extends Controller
                 \Log::warning('Error enviando notificación de parte: ' . $notifEx->getMessage());
             }
 
+            // Web Push a supervisores/admins, solo si el evento esta activo
+            // (lookup_values, category='push_notification_events', value=
+            // 'parte_pendiente_aprobacion') - canal adicional a la
+            // notificacion in-app de arriba, que sigue mandandose siempre.
+            \App\Services\PushNotificationDispatcher::send(
+                'parte_pendiente_aprobacion',
+                $supervisors,
+                'Nuevo parte pendiente de aprobación',
+                "Orden #{$order->id} - {$order->customer->business_name} completada por {$technician->name}",
+                \App\Filament\Resources\WorkPartResource::getUrl('view', ['record' => $parte->id]),
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Parte guardado exitosamente',

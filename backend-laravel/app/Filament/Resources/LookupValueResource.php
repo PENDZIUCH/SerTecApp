@@ -11,10 +11,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 
 // Administra las listas configurables genericas (ver App\Models\LookupValue
-// para el porque). Categorias en uso: 'customer_type' y
+// para el porque). Categorias en uso: 'customer_type',
 // 'email_notification_recipients' (2026-09-18, toggle on/off de a quien le
 // llega el email al completar un parte - ver
-// SeedEmailNotificationRecipientsSeeder y TechnicianController::saveParte).
+// SeedEmailNotificationRecipientsSeeder y TechnicianController::saveParte)
+// y 'push_notification_events' (toggle on/off de Web Push por evento - ver
+// SeedPushNotificationEventsSeeder y App\Services\PushNotificationDispatcher).
 // La pantalla ya soporta cualquier otra category que se agregue a futuro
 // sin tocar este archivo - alcanza con crear filas con una category nueva.
 class LookupValueResource extends Resource
@@ -47,6 +49,7 @@ class LookupValueResource extends Resource
                     ->options([
                         'customer_type' => 'Tipo de Cliente',
                         'email_notification_recipients' => 'Destinatarios de Email (Parte Completado)',
+                        'push_notification_events' => 'Eventos de Notificación Push',
                     ])
                     // Permite tipear una category nueva que todavia no
                     // exista en la lista de arriba, sin tocar codigo.
@@ -90,6 +93,7 @@ class LookupValueResource extends Resource
                     ->formatStateUsing(fn (string $state) => match ($state) {
                         'customer_type' => 'Tipo de Cliente',
                         'email_notification_recipients' => 'Destinatarios de Email (Parte Completado)',
+                        'push_notification_events' => 'Eventos de Notificación Push',
                         default => $state,
                     })
                     ->badge()
@@ -116,6 +120,7 @@ class LookupValueResource extends Resource
                     ->options([
                         'customer_type' => 'Tipo de Cliente',
                         'email_notification_recipients' => 'Destinatarios de Email (Parte Completado)',
+                        'push_notification_events' => 'Eventos de Notificación Push',
                     ]),
                 Tables\Filters\TernaryFilter::make('is_active')
                     ->label('Activo'),

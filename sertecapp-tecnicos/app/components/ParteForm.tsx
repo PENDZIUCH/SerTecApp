@@ -39,10 +39,14 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
   const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showOfflineModal, setShowOfflineModal] = useState(false);
   const [precachedGeo, setPrecachedGeo] = useState<{lat: number; lng: number} | null>(null);
+  const [geoStatus, setGeoStatus] = useState<'pending' | 'ok' | 'failed'>('pending');
   const [parteRechazado, setParteRechazado] = useState<{supervisor_notes: string; diagnosis?: string; work_done?: string} | null>(null);
 
   useEffect(() => {
-    getGeoLocation().then(geo => { if (geo) setPrecachedGeo(geo); });
+    getGeoLocation().then(geo => {
+      if (geo) { setPrecachedGeo(geo); setGeoStatus('ok'); }
+      else { setGeoStatus('failed'); }
+    });
   }, []);
 
   useEffect(() => {
@@ -193,6 +197,21 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
       )}
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs border
+          bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          {geoStatus === 'pending' && (
+            <span className="text-gray-500 dark:text-gray-400">📍 Obteniendo ubicación...</span>
+          )}
+          {geoStatus === 'ok' && precachedGeo && (
+            <span className="text-green-700 dark:text-green-400">
+              📍 Ubicación capturada ({precachedGeo.lat.toFixed(5)}, {precachedGeo.lng.toFixed(5)})
+            </span>
+          )}
+          {geoStatus === 'failed' && (
+            <span className="text-amber-700 dark:text-amber-400">⚠️ Sin ubicación disponible — el parte se guardará sin GPS</span>
+          )}
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Diagnóstico *</label>
           <textarea value={diagnostico} onChange={(e) => setDiagnostico(e.target.value)} required rows={3}

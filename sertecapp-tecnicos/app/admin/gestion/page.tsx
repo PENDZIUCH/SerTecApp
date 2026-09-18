@@ -27,6 +27,7 @@ export default function GestionPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<{id: number; name: string}[]>([]);
+  const [isAdminTier, setIsAdminTier] = useState(false);
 
   useEffect(() => {
     const t = localStorage.getItem('token');
@@ -34,11 +35,20 @@ export default function GestionPage() {
     if (!t || !savedUser) { router.push('/'); return; }
     const u = JSON.parse(savedUser);
     const roles: string[] = u?.roles || [];
-    if (!roles.includes('administrador') && !roles.includes('admin') && !roles.includes('super_admin')) { router.push('/ordenes'); return; }
+    if (!roles.includes('administrador') && !roles.includes('admin') && !roles.includes('super_admin') && !roles.includes('supervisor')) { router.push('/ordenes'); return; }
+    setIsAdminTier(roles.includes('administrador') || roles.includes('admin') || roles.includes('super_admin'));
     setToken(t);
     loadUsers(t);
     loadRoles(t);
   }, []);
+
+  // Un supervisor solo puede dar de alta/editar tecnicos, no admins ni otros
+  // supervisores (el backend tambien lo valida; esto evita ofrecer una opcion
+  // que va a rebotar con 403).
+  const rolesAsignables = isAdminTier
+    ? availableRoles
+    : availableRoles.filter(r => r.name === 'técnico' || r.name === 'tecnico');
+  const esCuentaAdminTier = (u: User) => u.roles.some(r => ['administrador', 'admin', 'super_admin'].includes(r));
 
   const hd = (t: string) => ({
     'Authorization': 'Bearer ' + t, 'Accept': 'application/json', 'Content-Type': 'application/json'
@@ -63,7 +73,7 @@ export default function GestionPage() {
 
   const abrirNuevo = () => {
     setEditUser(null);
-    setForm({ name: '', email: '', phone: '', job_title: '', password: '', role: availableRoles[0]?.name || '' });
+    setForm({ name: '', email: '', phone: '', job_title: '', password: '', role: rolesAsignables[0]?.name || '' });
     setError(''); setSuccess(''); setShowModal(true);
   };
 
@@ -149,14 +159,16 @@ export default function GestionPage() {
                     {u.job_title && <p className="text-xs text-gray-400 dark:text-gray-500 italic">{u.job_title}</p>}
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Último acceso: {formatDate(u.last_login_at)}</p>
                   </div>
-                  <div className="flex gap-2 ml-3">
-                    <button onClick={() => abrirEditar(u)} className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg transition-colors">
-                      Editar
-                    </button>
-                    <button onClick={() => toggleActivo(u)} className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${u.is_active ? 'bg-red-50 dark:bg-red-900 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400' : 'bg-green-50 dark:bg-green-900 hover:bg-green-100 dark:hover:bg-green-900 text-green-600'}`}>
-                      {u.is_active ? 'Desactivar' : 'Activar'}
-                    </button>
-                  </div>
+                  {(isAdminTier || !esCuentaAdminTier(u)) && (
+                    <div className="flex gap-2 ml-3">
+                      <button onClick={() => abrirEditar(u)} className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg transition-colors">
+                        Editar
+                      </button>
+                      <button onClick={() => toggleActivo(u)} className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${u.is_active ? 'bg-red-50 dark:bg-red-900 hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-400' : 'bg-green-50 dark:bg-green-900 hover:bg-green-100 dark:hover:bg-green-900 text-green-600'}`}>
+                        {u.is_active ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -192,10 +204,11 @@ export default function GestionPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
-                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={inp}>
+                <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className={inp} disabled={!isAdminTier && rolesAsignables.length <= 1}>
                   <option value="">Seleccionar rol...</option>
-                  {availableRoles.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                  {rolesAsignables.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                 </select>
+                {!isAdminTier && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Como supervisor, solo podés dar de alta técnicos.</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

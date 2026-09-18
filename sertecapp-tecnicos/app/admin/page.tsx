@@ -246,12 +246,10 @@ export default function AdminPage() {
             <span className="text-2xl">👷</span>
             <div><p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Vista Técnico</p><p className="text-xs text-gray-400 dark:text-gray-500">Ver mis órdenes</p></div>
           </button>
-          {isAdminTier && (
-            <button onClick={() => router.push('/admin/gestion')} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
-              <span className="text-2xl">👤</span>
-              <div><p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Usuarios</p><p className="text-xs text-gray-400 dark:text-gray-500">Gestionar técnicos</p></div>
-            </button>
-          )}
+          <button onClick={() => router.push('/admin/gestion')} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
+            <span className="text-2xl">👤</span>
+            <div><p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Usuarios</p><p className="text-xs text-gray-400 dark:text-gray-500">Gestionar técnicos</p></div>
+          </button>
           <button onClick={() => router.push('/admin/clientes')} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 flex items-center gap-3 shadow-sm hover:shadow-md transition-all text-left w-full">
             <span className="text-2xl">🏢</span>
             <div><p className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Clientes</p><p className="text-xs text-gray-400 dark:text-gray-500">Ver y buscar clientes</p></div>

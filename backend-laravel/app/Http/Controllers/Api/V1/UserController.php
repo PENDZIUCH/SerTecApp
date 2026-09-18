@@ -68,6 +68,7 @@ class UserController extends Controller
     public function destroy(Request $request, User $user): JsonResponse
     {
         $this->assertPermission($request, 'delete_user');
+        abort_unless($request->user()->hasAnyRole(['administrador', 'admin', 'super_admin']), 403, 'Solo un administrador puede eliminar usuarios');
         abort_if($user->id === 1 || $user->hasAnyRole(['administrador', 'super_admin']), 403, 'No se puede eliminar esta cuenta');
 
         $this->userService->delete($user);

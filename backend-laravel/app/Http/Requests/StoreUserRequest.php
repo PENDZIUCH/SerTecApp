@@ -30,6 +30,13 @@ class StoreUserRequest extends FormRequest
                 function ($attribute, $value, $fail) {
                     if ($value === 'super_admin' && !$this->user()->hasRole('super_admin')) {
                         $fail('Solo un usuario con rol super_admin puede asignar el rol super_admin.');
+                        return;
+                    }
+                    // Un supervisor puede dar de alta usuarios, pero solo con rol tecnico
+                    // (no puede crear otros admins ni supervisores).
+                    $actorEsAdminTier = $this->user()->hasAnyRole(['administrador', 'admin', 'super_admin']);
+                    if (!$actorEsAdminTier && !in_array($value, ['técnico', 'tecnico'], true)) {
+                        $fail('Un supervisor solo puede asignar el rol técnico.');
                     }
                 },
             ],

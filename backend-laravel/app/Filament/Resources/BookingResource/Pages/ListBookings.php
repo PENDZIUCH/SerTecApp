@@ -14,7 +14,7 @@ class ListBookings extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()->label('Nueva Reserva'),
+            Actions\CreateAction::make()->label('Nueva Visita'),
         ];
     }
 }

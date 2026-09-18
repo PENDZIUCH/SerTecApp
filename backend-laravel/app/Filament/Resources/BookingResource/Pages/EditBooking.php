@@ -9,7 +9,7 @@ use Filament\Resources\Pages\EditRecord;
 class EditBooking extends EditRecord
 {
     protected static string $resource = BookingResource::class;
-    protected ?string $heading = 'Editar Reserva';
+    protected ?string $heading = 'Editar Visita';
 
     protected function getHeaderActions(): array
     {

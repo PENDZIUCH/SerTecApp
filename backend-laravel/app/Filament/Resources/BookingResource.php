@@ -37,7 +37,7 @@ class BookingResource extends Resource
     protected static ?string $model = Booking::class;
     protected static ?string $navigationIcon = 'heroicon-o-calendar-days';
     protected static ?string $navigationLabel = 'Agenda';
-    protected static ?string $modelLabel = 'Reserva';
+    protected static ?string $modelLabel = 'Visita';
     protected static ?string $pluralModelLabel = 'Agenda';
 
     public static function form(Form $form): Form

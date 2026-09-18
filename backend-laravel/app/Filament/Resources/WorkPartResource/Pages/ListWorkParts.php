@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\WorkPartResource\Pages;
 
 use App\Filament\Resources\WorkPartResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 
 class ListWorkParts extends ListRecords
@@ -13,8 +12,6 @@ class ListWorkParts extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\CreateAction::make()->label('Nuevo Parte'),
-        ];
+        return [];
     }
 }

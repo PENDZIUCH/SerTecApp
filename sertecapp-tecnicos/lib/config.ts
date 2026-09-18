@@ -9,9 +9,13 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sertecapp.pendziuch.com';
 
 // Clave pública VAPID para suscribirse a Web Push (pushManager.subscribe).
-// Sin valor por defecto a propósito: sin esta variable de build seteada,
-// el hook usePushNotifications simplemente reporta "no soportado" en vez
-// de fallar con una clave inválida. Setear NEXT_PUBLIC_VAPID_PUBLIC_KEY en
-// Cloudflare Pages con el mismo valor de VAPID_PUBLIC_KEY del backend
-// (backend-laravel/.env) - son el mismo par de claves.
-export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+// Es pública a propósito (por eso el prefijo NEXT_PUBLIC_, va igual en el
+// bundle del cliente) - hardcodeada como fallback porque Cloudflare Pages
+// no tiene forma de setear una variable de BUILD (no runtime/Functions)
+// vía wrangler CLI, solo por dashboard (confirmado 2026-09-18, ver
+// CLAUDE.md). Si el par de claves VAPID se rota alguna vez en el backend
+// (backend-laravel/.env, VAPID_PUBLIC_KEY), actualizar este valor acá
+// también - son el mismo par. Sigue pudiéndose overridear con
+// NEXT_PUBLIC_VAPID_PUBLIC_KEY si algún día se carga bien por dashboard.
+export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  || 'BK8KYAiB4p2ygpxe6APagoJ_EQhCPQKMVp4FN0lxeGWFj_EQ6D_gm_bvBiwSYhjTVn1twnG-NQe1mp0nMJXkhiQ';

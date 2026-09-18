@@ -17,6 +17,8 @@ class PushSubscriptionController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()->tokenCan('push-subscriptions:manage'), 403);
+
         $validator = Validator::make($request->all(), [
             'endpoint' => 'required|string',
             'keys' => 'required|array',
@@ -41,6 +43,8 @@ class PushSubscriptionController extends Controller
 
     public function destroy(Request $request): JsonResponse
     {
+        abort_unless($request->user()->tokenCan('push-subscriptions:manage'), 403);
+
         $validator = Validator::make($request->all(), [
             'endpoint' => 'required|string',
         ]);

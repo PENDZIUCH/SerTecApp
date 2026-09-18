@@ -41,7 +41,11 @@ class PushNotificationsWidget extends Widget
         $user = auth()->user();
         $user->tokens()->where('name', 'filament-push-widget')->delete();
 
-        return $user->createToken('filament-push-widget')->plainTextToken;
+        // Escopeado a una sola ability - si se filtra desde el navegador
+        // (XSS, extension maliciosa, etc.) no sirve para nada mas que
+        // gestionar la propia suscripcion push, no da acceso completo a
+        // la API como los tokens normales (login, magic-link).
+        return $user->createToken('filament-push-widget', ['push-subscriptions:manage'])->plainTextToken;
     }
 
     public function getVapidPublicKeyProperty(): ?string

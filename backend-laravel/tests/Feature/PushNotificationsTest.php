@@ -9,6 +9,7 @@ use App\Services\PushNotificationDispatcher;
 use Database\Seeders\SeedPushNotificationEventsSeeder;
 use Database\Seeders\SyncShieldPermissionsSeeder;
 use Illuminate\Support\Facades\Notification;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 
 // Cubre la feature de Web Push (2026-09-18): 4 eventos configurables via
@@ -257,7 +258,10 @@ test('el endpoint de suscripcion push requiere autenticacion', function () {
 
 test('un usuario autenticado puede registrar su suscripcion push', function () {
     $tecnico = User::factory()->create();
-    $this->actingAs($tecnico, 'sanctum');
+    // Sanctum::actingAs (no actingAs generico) porque el endpoint ahora
+    // chequea tokenCan('push-subscriptions:manage') - necesita un token
+    // simulado de verdad, no solo el guard con el usuario puesto.
+    Sanctum::actingAs($tecnico, ['*']);
 
     $response = $this->postJson('/api/v1/push-subscriptions', [
         'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc123',
@@ -275,7 +279,7 @@ test('un usuario autenticado puede registrar su suscripcion push', function () {
 test('un usuario autenticado puede borrar su suscripcion push', function () {
     $tecnico = User::factory()->create();
     $tecnico->updatePushSubscription('https://fcm.googleapis.com/fcm/send/abc123', 'clave-publica', 'token-auth');
-    $this->actingAs($tecnico, 'sanctum');
+    Sanctum::actingAs($tecnico, ['*']);
 
     $response = $this->deleteJson('/api/v1/push-subscriptions', [
         'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc123',
@@ -286,4 +290,32 @@ test('un usuario autenticado puede borrar su suscripcion push', function () {
         'subscribable_id' => $tecnico->id,
         'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc123',
     ]);
+});
+
+// Regresion 2026-09-18: el token que emite PushNotificationsWidget (panel
+// Filament) esta escopeado a una sola ability para que, si se filtra desde
+// el navegador, no sirva como token de acceso completo a la API.
+test('un token escopeado solo a push-subscriptions:manage puede suscribirse', function () {
+    $supervisor = User::factory()->create();
+    $supervisor->assignRole('supervisor');
+    Sanctum::actingAs($supervisor, ['push-subscriptions:manage']);
+
+    $response = $this->postJson('/api/v1/push-subscriptions', [
+        'endpoint' => 'https://fcm.googleapis.com/fcm/send/xyz789',
+        'keys' => ['p256dh' => 'clave-publica', 'auth' => 'token-auth'],
+    ]);
+
+    $response->assertStatus(201);
+});
+
+test('un token sin la ability push-subscriptions:manage es rechazado', function () {
+    $tecnico = User::factory()->create();
+    Sanctum::actingAs($tecnico, ['otra-ability-cualquiera']);
+
+    $response = $this->postJson('/api/v1/push-subscriptions', [
+        'endpoint' => 'https://fcm.googleapis.com/fcm/send/xyz789',
+        'keys' => ['p256dh' => 'clave-publica', 'auth' => 'token-auth'],
+    ]);
+
+    $response->assertStatus(403);
 });

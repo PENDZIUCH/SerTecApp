@@ -28,7 +28,21 @@ _(vacío por ahora)_
 
 ## Ajustes de UI / texto
 
-_(vacío por ahora)_
+- **2026-09-18 — `Gestión de Usuarios` (PWA) no distingue `supervisor` bien.**
+  Encontrado en la auditoría de duplicación pendiente (`sertecapp-tecnicos/app/admin/gestion/page.tsx`):
+  1. `esCuentaAdminTier()` (línea 51) no incluye `'supervisor'` en la lista de
+     roles — según el comentario de arriba, un supervisor no debería poder
+     editar la cuenta de *otro* supervisor, pero como esta función devuelve
+     `false` para una cuenta supervisor, el botón de editar igual se muestra.
+     El backend sí lo bloquea (403) según el propio comentario, así que no es
+     un agujero de seguridad — solo un botón que aparece y después falla.
+  2. El badge de rol (línea 152) usa `u.roles[0]` — muestra y colorea solo el
+     primer rol del array, no todos. Si una cuenta tiene más de un rol (como
+     pasaba con la de Hugo antes), puede mostrar el rol "equivocado" según el
+     orden en que vinieron. `supervisor` tampoco tiene color propio, cae al
+     estilo por defecto (azul, igual que técnico).
+  No es nada roto para el uso normal de hoy — encontrado al auditar, no
+  reportado por un usuario real.
 
 ## Ideas para más adelante
 

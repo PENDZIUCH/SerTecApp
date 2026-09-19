@@ -980,8 +980,25 @@ función. Arreglado registrando el componente via
 `Alpine.data(...)` dentro de `document.addEventListener('alpine:init', ...)`,
 patrón robusto independiente del orden de carga.
 
-**Widget seguía sin mostrar botón — causa real (2026-09-19, arreglada a
-mano en el servidor, no por git)**: `/push-sw.js` devolvía 404 en
+**Widget sin botón — causa #1 (2026-09-19, commit `5c7a392`)**: los
+widgets de Filament son **lazy por defecto** (se renderizan en una
+segunda request de Livewire) y un `@push('scripts')` dentro de esa
+segunda request **se pierde** — el `<script>` con el componente Alpine
+nunca llegaba al navegador (`urlBase64ToUint8Array` quedaba `undefined`).
+El arreglo anterior (`alpine:init`) no alcanzaba porque el script ni
+siquiera se entregaba. Fix: `protected static bool $isLazy = false;` en
+`PushNotificationsWidget` + registro que funciona con Alpine ya
+arrancado o no (`if (window.Alpine) register(); else addEventListener`).
+**Reproducido y verificado en local** con `php artisan serve` + browser
+embebido (usuario debug en el sqlite local, ignorado por git) — regla
+para la próxima: ante un bug de UI Filament/Livewire que no se ve en los
+tests, levantar el panel local y mirar la consola/DOM real en vez de
+adivinar por código. Lección general: en Livewire v3, `@push` solo
+funciona en el render inicial; para JS de un componente que puede
+renderizarse lazy o por update usar `@assets`/`@script`.
+
+**Widget sin botón — causa #2 (arreglada a mano en el servidor, no por
+git)**: `/push-sw.js` devolvía 404 en
 producción. En Hostinger, `public_html/` solo tiene symlinks
 **específicos** (`css`, `js`, `fonts`, `images`, `storage`) hacia
 `backend-laravel/public/` — un archivo top-level nuevo como

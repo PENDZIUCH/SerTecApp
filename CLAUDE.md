@@ -1,7 +1,7 @@
 # SerTecApp — Contexto para Claude
 
 > Leer completo antes de hacer cualquier cosa.
-> Última actualización: 2026-09-18
+> Última actualización: 2026-09-19
 > **Este archivo ES la memoria del proyecto — la única fuente de verdad que viaja entre chats, terminales y sesiones.** Cualquier chat de claude.ai tiene además su propia memoria interna, pero esa no la ve una sesión de Claude Code en la terminal — así que todo lo importante y durable se escribe ACÁ, no solo en el chat.
 
 ---
@@ -875,3 +875,165 @@ resolver ahí: `.env` en texto plano sin `.gitignore` en
 `PendziuchLabs\_archive\LTA-cloudflare` y en `LAB\projects\LTA-webrtc`
 (este último sin `.git` siquiera) — no es de SerTecApp pero queda
 anotado por si se retoma.
+
+## Sesión 2026-09-18/19 (continuación) — Agenda de punta a punta, push notifications, chequeo de email
+
+Sesión larga, directamente sobre producción con Hugo probando cada
+feature apenas se deployaba — varios bugs reales aparecieron y se
+arreglaron en el momento, no en un QA aparte. Iniciada con 4 subagentes
+en paralelo (doc catch-up, auditoría de LAB/PendziuchLabs, mapa GPS,
+toggles de email), y de ahí en más fue iterativo.
+
+### Motor de agenda/reservas genérico (commits `707437e`/`dd844f1`)
+
+Pedido de Hugo: "el supervisor arma un recorrido para un técnico,
+varias órdenes el mismo día". Se construyó **genérico a propósito**
+(no acoplado a técnico/orden), pensando en reuso futuro (clases, mesas
+de restaurante, delivery — mismo patrón resource/subject que él mismo
+pidió explícitamente evaluar):
+
+- Tabla `bookings`: `resource_type`/`resource_id` (polimórfico — qué se
+  reserva), `subject_type`/`subject_id` (polimórfico, opcional — para
+  qué es), `starts_at`/`ends_at`, `status`, `check_in`/`check_out`,
+  `latitude`/`longitude`, `metadata` (json), `notes`.
+- `App\Models\Booking`, `BookingController` (CRUD + check-in/check-out
+  con GPS, autofiltra técnico a lo suyo), `BookingPolicy`,
+  `BookingService`.
+- **Integración SerTecApp**: técnico=resource, orden=subject.
+  `WorkOrderService::syncBooking()` (ahora pública) mantiene
+  sincronizado un `Booking` cuando una orden tiene técnico+fecha
+  programada — se crea/actualiza/borra sola según corresponda.
+- Filament: recurso "Agenda" (`BookingResource`) — el modelo genérico
+  se llama `Booking` pero para SerTecApp es una **Visita**
+  (`$modelLabel`), no una "Reserva" (nombre que salió mal la primera
+  vez, corregido en `ad1c673` tras aclaración explícita de Hugo: "son
+  recorridos... no es una reserva seguro no?").
+- `Visit`/`VisitController`/`VisitResource` viejos **no se tocaron**,
+  quedan en paralelo sin uso real por ahora.
+
+### Armar Recorrido (commit `9a0ed00`)
+
+Pantalla nueva en Filament (`BookingResource\Pages\ArmarRecorrido`):
+técnico + día una sola vez, después un `Repeater` de paradas
+(orden + hora + duración), un solo "Guardar recorrido" crea todas las
+Visitas juntas — resuelve la tarea repetitiva de abrir "Nueva Visita"
+una vez por parada. La tabla de Agenda quedó agrupada por técnico
+(`Group::make()` con `getKeyFromRecordUsing`/`getTitleFromRecordUsing`).
+
+**Bug real que rompió Agenda en producción** (`ff7bb92`, detectado por
+Hugo al guardar un recorrido — 500 en `/sertecapp/bookings`): el
+agrupado no le decía a Filament cómo ordenar la consulta SQL real,
+intentaba `ORDER BY resource` (columna inexistente). Arreglado con
+`orderQueryUsing()`. Test nuevo que renderiza la lista con datos reales
+para que esto no vuelva a pasar en silencio.
+
+### "Mi Agenda" en la PWA — visibilidad y conexión con el parte
+
+- Pantalla `/agenda` (técnico): hoy/próximas, check-in/check-out con
+  GPS. Quedó **escondida en el menú desplegable** la primera vez —
+  Hugo lo marcó dos veces hasta que se movió a un botón directo en el
+  header de `/ordenes` (`560dc91`).
+- Cards enriquecidas (`a2450bd`): mostraban solo el código de orden +
+  horario — Hugo: "le tienen que dar ganas de laburar". Ahora traen
+  cliente, problema, equipo, dirección y badge de prioridad (mismo
+  criterio visual que `OrderCard.tsx`), vía eager-load
+  `subject.customer`/`subject.equipment` en `BookingController::index()`.
+- **Check-in conectado a Crear Parte** (`57ffcf8`): "el que dice el
+  supervisor que vaya a un lugar, en general va a terminar con un
+  parte" — al hacer check-in aparece ahí mismo el botón para completar
+  el parte de esa misma orden, mismo `ParteForm` que ya se usaba.
+
+### Notificaciones push web (commits `f6fca65`→`220b118`, fixes `90817a4`/`0f61817`/`f166722`)
+
+Configurables vía `lookup_values` (categoría `push_notification_events`,
+mismo patrón que `email_notification_recipients`): `parte_rechazado`,
+`parte_aprobado`, `parte_pendiente_aprobacion`, `orden_nueva_asignada`.
+Paquete `laravel-notification-channels/webpush`. Dos audiencias, dos
+orígenes: técnicos vía `sw.js` de la PWA, supervisores/admins vía un
+`push-sw.js` nuevo servido por Filament (que no tenía service worker
+antes).
+
+**Incidente real (deploy rompió producción ~1-2 min)**: el deploy
+automático (`deploy-sertecapp.sh`) usa `git archive`, **nunca corre
+`composer install`** — agregar una dependencia PHP nueva sin instalarla
+a mano en el servidor tira fatal error en cada request. Documentado como
+gotcha en el skill `deploy-laravel-hostinger` (sección nueva, con el
+comando exacto para no repetirlo).
+
+**Hallazgo de seguridad propio, corregido** (`90817a4`): el widget de
+push en Filament emitía un token Sanctum de un solo uso pero **sin
+escopear** (abilities `['*']`, acceso completo a la API si se filtraba
+del navegador) — se agregó ability `push-subscriptions:manage` y el
+endpoint la valida explícitamente.
+
+**VAPID public key** (`0f61817`): Cloudflare Pages no tiene forma de
+setear una variable de **build** (solo runtime/Functions) vía
+`wrangler` CLI — confirmado con `wrangler pages secret put`, que
+guarda pero nunca llega al build de Next.js. Como es una clave
+*pública* (por diseño, `NEXT_PUBLIC_`), se hardcodeó como fallback en
+`lib/config.ts` en vez de depender del dashboard.
+
+**Widget de Filament no hacía nada** (`f166722`): condición de carrera
+de Alpine.js — el `x-data` se evaluaba antes de que el `<script>`
+(pusheado al final del body vía `@push('scripts')`) definiera la
+función. Arreglado registrando el componente via
+`Alpine.data(...)` dentro de `document.addEventListener('alpine:init', ...)`,
+patrón robusto independiente del orden de carga.
+
+### Chequeo de email antes de avisar al cliente (commit `f14f790`)
+
+Hugo encontró un caso real: creó una orden de prueba y por suerte el
+cliente no tenía email cargado — si lo hubiera tenido, le llega un
+aviso de prueba a un cliente real, sin ningún chequeo previo. Se agregó
+un campo "Email de contacto" (precargado, editable) en **Crear/Editar
+Orden (Filament)** y al **completar el parte (PWA)** — el campo mismo
+es la confirmación, se ve antes de que se dispare cualquier email. Si
+se corrige, `Customer::updateEmailIfChanged()` mueve el anterior a
+`secondary_email` (ya existía esa columna, sin usar) en vez de
+pisarlo — nada se pierde.
+
+De paso, bug real encontrado en el mismo formulario: el Select de
+"Cliente" en `WorkOrderResource::form()` usaba `$customer->name`, que
+no existe como atributo — rompía el dropdown entero para cualquier
+cliente tipo "individual" sin `business_name`. Corregido a
+`business_name ?: full_name`.
+
+### Paridad Filament ↔ PWA para agendar órdenes (commit `30145d5`)
+
+Hasta acá, solo "Nueva Orden" en el admin de la PWA (vía API) agendaba
+sola una Visita al cargar técnico+fecha — Filament no tenía esos campos
+en el formulario. Hugo: "en un principio debería poder hacerse lo
+mismo desde ambos lados". Se agregaron `scheduled_date`/
+`scheduled_time`/`estimated_duration_minutes` a
+`WorkOrderResource::form()`, y `WorkOrderService::syncBooking()` pasó
+de `private` a `public` para que Filament la reuse tal cual en vez de
+duplicar la lógica (`CreateWorkOrder::afterCreate()` /
+`EditWorkOrder::afterSave()`).
+
+### Hueco de permisos cerrado (commit `1d871b8`)
+
+`UpdateUserRequest` bloqueaba editar cuentas `administrador`/
+`super_admin`, pero nunca bloqueaba que un supervisor edite la cuenta
+de **otro supervisor** — el comentario del código decía que sí, nunca
+se implementó. Encontrado en auditoría de otra sesión en paralelo,
+anotado en `PENDIENTES.md`, cerrado acá con excepción para que un
+supervisor sí pueda editarse a sí mismo.
+
+### Gotcha de testing (para la próxima sesión)
+
+`User::role(['x', 'y'])` de Spatie tira excepción si **cualquiera** de
+los roles no existe en la guard — varios tests nuevos fallaron hasta
+sumar `super_admin`/`supervisor` a los roles creados en `beforeEach`
+aunque el test no los usara directamente (el código de producción sí
+los consulta indirectamente, ej. notificaciones a supervisores).
+`Livewire::test(...)->fillForm(...)` en un campo `Repeater` necesita
+keys tipo UUID (`Str::uuid()`), no un array indexado plano, o Filament
+no reconoce los ítems. `dehydrated(false)` en un campo de formulario lo
+**saca** de `$form->getState()` (no solo de la mass-assignment al
+modelo) — si `afterCreate()`/`afterSave()` necesita leer ese valor, no
+usar `dehydrated(false)`, confiar en que `$fillable` del modelo ya
+ignora columnas que no existen.
+
+**Estado final**: 113 tests, todos en verde. Todo deployado y
+verificado en vivo (health check + pruebas manuales de Hugo) antes de
+cerrar la sesión.

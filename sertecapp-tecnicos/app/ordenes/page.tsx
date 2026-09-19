@@ -314,7 +314,18 @@ export default function OrdenesPage() {
             <div className="flex items-center gap-2">
               <img src="/fitness-logo.png" alt="Fitness Company" className="h-8 w-auto" />
             </div>
-            <div className="flex items-center gap-3 relative">
+            <div className="flex items-center gap-2 relative">
+              {/* Mi Agenda - antes escondida en el menú desplegable, ahora acceso directo de un toque */}
+              <button
+                onClick={() => router.push('/agenda')}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="hidden sm:inline">Mi Agenda</span>
+              </button>
+
               {/* User Menu Button with Status Indicator */}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -410,19 +421,6 @@ export default function OrdenesPage() {
                             {pendingSync}
                           </span>
                         )}
-                      </button>
-                      
-                      <button
-                        onClick={() => {
-                          setMenuOpen(false);
-                          router.push('/agenda');
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
-                      >
-                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Mi Agenda
                       </button>
 
                       {/* Tema (componente compartido con admin - ver ThemeSelector.tsx) */}

@@ -1,6 +1,7 @@
 <?php
 
 use App\Filament\Resources\BookingResource\Pages\ArmarRecorrido;
+use App\Filament\Resources\BookingResource\Pages\ListBookings;
 use App\Models\Booking;
 use App\Models\Customer;
 use App\Models\Equipment;
@@ -73,4 +74,25 @@ test('el recorrido requiere al menos una parada', function () {
         ->assertHasFormErrors(['paradas']);
 
     expect(Booking::count())->toBe(0);
+});
+
+// Regresion 2026-09-18: la lista de Agenda quedo agrupada por tecnico
+// (Group::make('resource')) sin decirle a Filament como ordenar la
+// consulta real - probaba "ORDER BY resource", columna inexistente, y
+// tiraba 500 apenas habia una Booking para mostrar (incluido justo
+// despues de guardar un recorrido, por el redirect a esta pantalla).
+test('la lista de Agenda renderiza sin error con Visitas creadas', function () {
+    Booking::create([
+        'resource_type' => User::class,
+        'resource_id' => $this->tecnico->id,
+        'subject_type' => WorkOrder::class,
+        'subject_id' => $this->ordenA->id,
+        'starts_at' => now()->addDay(),
+        'status' => 'scheduled',
+    ]);
+
+    $this->actingAs($this->admin);
+
+    Livewire::test(ListBookings::class)
+        ->assertSuccessful();
 });

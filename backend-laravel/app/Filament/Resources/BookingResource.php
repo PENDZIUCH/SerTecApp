@@ -104,6 +104,9 @@ class BookingResource extends Resource
                     ->getTitleFromRecordUsing(fn (Booking $record) => $record->resource_type === User::class
                         ? (optional(User::find($record->resource_id))->name ?? 'Técnico eliminado')
                         : 'Recurso #' . $record->resource_id)
+                    ->orderQueryUsing(fn (Builder $query, string $direction) => $query
+                        ->orderBy('resource_type', $direction)
+                        ->orderBy('resource_id', $direction))
             )
             ->filters([
                 SelectFilter::make('resource_id')

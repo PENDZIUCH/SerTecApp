@@ -5,6 +5,7 @@ namespace App\Filament\Resources\WorkOrderResource\Pages;
 use App\Filament\Resources\WorkOrderResource;
 use App\Mail\OrdenCreadaMail;
 use App\Services\WorkOrderNotifier;
+use App\Services\WorkOrderService;
 use Filament\Actions;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
@@ -50,5 +51,11 @@ class CreateWorkOrder extends CreateRecord
         // Notificar al técnico asignado (in-app + Web Push si el evento
         // 'orden_nueva_asignada' está activo — ver WorkOrderNotifier).
         WorkOrderNotifier::notifyAssignedTechnician($record);
+
+        // Con técnico + fecha programada cargados en el formulario, agenda
+        // sola una Visita (mismo motor que "Armar Recorrido" y que el
+        // camino de creación por API) - ver WorkOrderService::syncBooking().
+        $estimatedDuration = $this->form->getState()['estimated_duration_minutes'] ?? null;
+        app(WorkOrderService::class)->syncBooking($record, $estimatedDuration ? (int) $estimatedDuration : null);
     }
 }

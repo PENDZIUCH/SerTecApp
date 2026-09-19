@@ -111,6 +111,27 @@ class WorkOrderResource extends Resource
                         ->required()
                         ->helperText('Requerido — asignar un técnico antes de enviar'),
 
+                    // Agenda (2026-09-19): con técnico + fecha cargados acá,
+                    // se genera/actualiza sola una Visita en Agenda para ese
+                    // día (WorkOrderService::syncBooking, ver
+                    // CreateWorkOrder/EditWorkOrder afterCreate/afterSave) -
+                    // mismo comportamiento que ya tenía "Nueva Orden" en el
+                    // admin de la PWA, ahora también acá. Los tres campos son
+                    // opcionales: una orden puede quedar sin agendar y
+                    // agendarse después con "Armar Recorrido".
+                    Forms\Components\Group::make([
+                        Forms\Components\DatePicker::make('scheduled_date')
+                            ->label('Fecha programada')
+                            ->helperText('Con técnico + fecha, se agenda sola en Agenda.'),
+                        Forms\Components\TimePicker::make('scheduled_time')
+                            ->label('Hora programada'),
+                        Forms\Components\TextInput::make('estimated_duration_minutes')
+                            ->label('Duración estimada (min)')
+                            ->numeric()
+                            ->default(60)
+                            ->helperText('Para calcular el fin de la visita en Agenda.'),
+                    ])->columns(3)->columnSpanFull(),
+
                     Forms\Components\Select::make('priority')
                         ->label('Prioridad')
                         ->options([

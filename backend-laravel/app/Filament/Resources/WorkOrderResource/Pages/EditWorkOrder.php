@@ -4,6 +4,7 @@ namespace App\Filament\Resources\WorkOrderResource\Pages;
 
 use App\Filament\Resources\WorkOrderResource;
 use App\Services\WorkOrderNotifier;
+use App\Services\WorkOrderService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -42,6 +43,12 @@ class EditWorkOrder extends EditRecord
         // OrdenCreadaMail, solo actualiza el dato.
         $contactEmail = trim((string) ($this->form->getState()['contact_email'] ?? ''));
         $this->record->customer?->updateEmailIfChanged($contactEmail);
+
+        // Igual criterio que CreateWorkOrder: técnico + fecha programada
+        // agenda/actualiza sola la Visita correspondiente (o la borra si se
+        // le sacó el técnico o la fecha - ver WorkOrderService::syncBooking).
+        $estimatedDuration = $this->form->getState()['estimated_duration_minutes'] ?? null;
+        app(WorkOrderService::class)->syncBooking($this->record->fresh(), $estimatedDuration ? (int) $estimatedDuration : null);
     }
 
     protected function getHeaderActions(): array

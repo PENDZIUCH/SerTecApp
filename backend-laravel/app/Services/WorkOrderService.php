@@ -56,8 +56,16 @@ class WorkOrderService
      * mantiene sincronizado un Booking donde resource=tecnico (App\Models\User)
      * y subject=la orden (App\Models\WorkOrder). No toca ni migra Visit -
      * ambos sistemas conviven en paralelo por ahora.
+     *
+     * Publica (no privada) para que Filament (CreateWorkOrder/EditWorkOrder,
+     * que no pasan por create()/update() de este service - usan el flujo
+     * default de Filament sobre el modelo directo) puedan reusar exactamente
+     * esta misma logica despues de guardar, en vez de duplicarla. Ver
+     * WorkOrderResource::form() por los campos scheduled_date/scheduled_time/
+     * estimated_duration_minutes (2026-09-19, Hugo: "en un principio debería
+     * poder hacerse lo mismo desde ambos lados").
      */
-    private function syncBooking(WorkOrder $workOrder, ?int $estimatedDurationMinutes = null): void
+    public function syncBooking(WorkOrder $workOrder, ?int $estimatedDurationMinutes = null): void
     {
         $existing = Booking::where('subject_type', WorkOrder::class)
             ->where('subject_id', $workOrder->id)

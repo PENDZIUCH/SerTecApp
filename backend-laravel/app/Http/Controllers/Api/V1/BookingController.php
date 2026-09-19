@@ -33,7 +33,11 @@ class BookingController extends Controller
 
     public function index()
     {
-        $query = Booking::with(['resource', 'subject']);
+        // subject.customer/equipment: para que la PWA pueda mostrar la orden
+        // con datos reales (cliente, direccion, prioridad) en vez de solo el
+        // numero de orden - pedido de Hugo, "Mi Agenda" tiene que verse como
+        // una orden de trabajo real, no un codigo pelado.
+        $query = Booking::with(['resource', 'subject.customer', 'subject.equipment']);
 
         if (auth()->user()->hasAnyRole(['técnico', 'tecnico'])) {
             $query->where('resource_type', User::class)

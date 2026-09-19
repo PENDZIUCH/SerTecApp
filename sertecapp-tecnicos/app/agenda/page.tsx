@@ -16,6 +16,10 @@ interface BookingSubject {
   id: number;
   wo_number?: string;
   title?: string;
+  description?: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  customer?: { business_name?: string | null; first_name?: string | null; last_name?: string | null; address?: string | null; city?: string | null } | null;
+  equipment?: { brand?: string | null; model?: string | null } | null;
   [key: string]: unknown;
 }
 
@@ -61,6 +65,20 @@ const statusColor: Record<Booking['status'], string> = {
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   no_show: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 };
+
+// Mismo mapeo que TechnicianController::mapPriority() en el backend - la
+// orden viaja con el valor crudo en inglés (low/medium/high/urgent).
+const priorityConfig: Record<string, { border: string; badge: string; label: string }> = {
+  urgent: { border: 'border-l-4 border-red-500', badge: 'bg-red-500 text-white', label: 'Urgente' },
+  high:   { border: 'border-l-4 border-orange-500', badge: 'bg-orange-500 text-white', label: 'Alta' },
+  medium: { border: 'border-l-4 border-yellow-500', badge: 'bg-yellow-500 text-white', label: 'Media' },
+  low:    { border: 'border-l-4 border-gray-400', badge: 'bg-gray-500 text-white', label: 'Baja' },
+};
+
+function customerName(customer?: BookingSubject['customer']): string {
+  if (!customer) return '';
+  return customer.business_name || [customer.first_name, customer.last_name].filter(Boolean).join(' ') || '';
+}
 
 function formatTime(iso: string | null): string {
   if (!iso) return '--:--';
@@ -204,32 +222,55 @@ export default function AgendaPage() {
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
   const renderBooking = (booking: Booking) => {
-    const subjectLabel = booking.subject?.wo_number || booking.subject?.title || (booking.subject_id ? `#${booking.subject_id}` : 'Reserva');
+    const subject = booking.subject;
+    const client = customerName(subject?.customer);
+    const wo = subject?.wo_number ? `#${subject.wo_number}` : (booking.subject_id ? `#${booking.subject_id}` : '');
+    const equipmentLabel = [subject?.equipment?.brand, subject?.equipment?.model].filter(Boolean).join(' ');
+    const address = [subject?.customer?.address, subject?.customer?.city].filter(Boolean).join(', ');
+    const prio = subject?.priority ? priorityConfig[subject.priority] : null;
     const busy = actingOn === booking.id;
 
     return (
       <div
         key={booking.id}
-        className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm"
+        className={`${prio?.border || 'border-l-4 border-transparent'} bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm`}
       >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{subjectLabel}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {formatTime(booking.starts_at)}{booking.ends_at ? ` – ${formatTime(booking.ends_at)}` : ''}
-            </p>
-          </div>
-          <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${statusColor[booking.status]}`}>
+        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {prio && <span className={`${prio.badge} text-xs font-medium px-2.5 py-0.5 rounded-full`}>{prio.label}</span>}
+          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap ${statusColor[booking.status]}`}>
             {statusLabel[booking.status]}
+          </span>
+          <span className="ml-auto text-xs font-semibold text-gray-500 dark:text-gray-400">
+            {formatTime(booking.starts_at)}{booking.ends_at ? ` – ${formatTime(booking.ends_at)}` : ''}
           </span>
         </div>
 
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
+          {client || 'Cliente sin nombre'}
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+          {subject?.title || subject?.description || 'Sin descripción'}
+        </p>
+        {equipmentLabel && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">🔧 {equipmentLabel}</p>
+        )}
+        {address && (
+          <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>{address}</span>
+          </div>
+        )}
+        {wo && <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Orden {wo}</p>}
+
         {booking.notes && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{booking.notes}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{booking.notes}</p>
         )}
 
         {booking.status === 'in_progress' && booking.check_in && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 mb-2">
             Check-in: {formatTime(booking.check_in)}
           </p>
         )}

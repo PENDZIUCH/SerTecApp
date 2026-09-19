@@ -980,6 +980,19 @@ función. Arreglado registrando el componente via
 `Alpine.data(...)` dentro de `document.addEventListener('alpine:init', ...)`,
 patrón robusto independiente del orden de carga.
 
+**Widget seguía sin mostrar botón — causa real (2026-09-19, arreglada a
+mano en el servidor, no por git)**: `/push-sw.js` devolvía 404 en
+producción. En Hostinger, `public_html/` solo tiene symlinks
+**específicos** (`css`, `js`, `fonts`, `images`, `storage`) hacia
+`backend-laravel/public/` — un archivo top-level nuevo como
+`push-sw.js` no estaba cubierto por ninguno, caía al router de Laravel
+y daba 404. El `register('/push-sw.js')` fallaba en silencio, el widget
+quedaba con `supported=false` y no mostraba ni botón ni mensaje. Fix:
+`ln -s backend-laravel/public/push-sw.js push-sw.js` en `public_html/`.
+**Este symlink NO viaja por git ni por el deploy automático** — si se
+recrea `public_html/` hay que rehacerlo. Documentado como gotcha en el
+skill `deploy-laravel-hostinger`.
+
 ### Chequeo de email antes de avisar al cliente (commit `f14f790`)
 
 Hugo encontró un caso real: creó una orden de prueba y por suerte el

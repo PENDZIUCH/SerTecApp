@@ -35,6 +35,13 @@ class EditWorkOrder extends EditRecord
         if ($newTechId && $newTechId !== $this->previousAssignedTechId) {
             WorkOrderNotifier::notifyAssignedTechnician($this->record->fresh(['customer', 'assignedTech']));
         }
+
+        // Campo "contact_email" del formulario (ver WorkOrderResource::form) -
+        // si se corrigió acá, queda como el email vigente del cliente (el
+        // anterior pasa a secondary_email). Editar una orden no reenvía
+        // OrdenCreadaMail, solo actualiza el dato.
+        $contactEmail = trim((string) ($this->form->getState()['contact_email'] ?? ''));
+        $this->record->customer?->updateEmailIfChanged($contactEmail);
     }
 
     protected function getHeaderActions(): array

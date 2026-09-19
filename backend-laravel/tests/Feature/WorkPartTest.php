@@ -66,3 +66,47 @@ test('saveParte no rompe cuando el tecnico no manda GPS', function () {
         'longitude' => null,
     ]);
 });
+
+// Feature 2026-09-18: el tecnico puede corregir el email del cliente al
+// completar el parte (campo "contact_email") - si difiere del que tenia,
+// ese pasa a ser el vigente y el anterior queda en secondary_email (ver
+// Customer::updateEmailIfChanged y CustomerEmailUpdateTest).
+test('saveParte actualiza el email del cliente cuando el tecnico lo corrige', function () {
+    $this->order->customer->update(['email' => 'viejo@ejemplo.com', 'secondary_email' => null]);
+
+    $response = $this->postJson('/api/v1/partes', [
+        'orden_id' => $this->order->id,
+        'tecnico_id' => $this->tecnico->id,
+        'diagnostico' => 'Diagnóstico de prueba',
+        'trabajo_realizado' => 'Trabajo de prueba',
+        'firma_base64' => str_repeat('a', 120),
+        'contact_email' => 'corregido@ejemplo.com',
+    ]);
+
+    $response->assertStatus(201);
+
+    $this->assertDatabaseHas('customers', [
+        'id' => $this->order->customer_id,
+        'email' => 'corregido@ejemplo.com',
+        'secondary_email' => 'viejo@ejemplo.com',
+    ]);
+});
+
+test('saveParte no toca el email del cliente si no se manda contact_email', function () {
+    $this->order->customer->update(['email' => 'sinTocar@ejemplo.com']);
+
+    $response = $this->postJson('/api/v1/partes', [
+        'orden_id' => $this->order->id,
+        'tecnico_id' => $this->tecnico->id,
+        'diagnostico' => 'Diagnóstico de prueba',
+        'trabajo_realizado' => 'Trabajo de prueba',
+        'firma_base64' => str_repeat('a', 120),
+    ]);
+
+    $response->assertStatus(201);
+
+    $this->assertDatabaseHas('customers', [
+        'id' => $this->order->customer_id,
+        'email' => 'sinTocar@ejemplo.com',
+    ]);
+});

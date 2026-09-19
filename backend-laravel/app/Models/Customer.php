@@ -35,6 +35,28 @@ class Customer extends Model
         ];
     }
 
+    /**
+     * Actualiza el email vigente si vino uno distinto (ej. desde el campo
+     * "contact_email" del formulario de Orden de Trabajo). El email anterior
+     * NO se pierde - pasa a secondary_email, salvo que no hubiera ninguno
+     * cargado todavía (primera carga, no es un reemplazo). Pedido de Hugo
+     * (2026-09-18): "que pueda dejar el anterior y poner el último como
+     * actual" en vez de pisarlo sin más.
+     */
+    public function updateEmailIfChanged(?string $newEmail): void
+    {
+        $newEmail = trim((string) $newEmail);
+
+        if (!$newEmail || $newEmail === $this->email) {
+            return;
+        }
+
+        $this->update([
+            'email' => $newEmail,
+            'secondary_email' => $this->email ?: $this->secondary_email,
+        ]);
+    }
+
     protected function fullName(): Attribute
     {
         return Attribute::make(

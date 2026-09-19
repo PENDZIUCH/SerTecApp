@@ -107,6 +107,16 @@ class TechnicianController extends Controller
 
             DB::commit();
 
+            // Email de contacto tal como lo dejó el técnico en el formulario -
+            // si difiere del que tenía el cliente, ese pasa a ser el vigente
+            // (el anterior queda en secondary_email, ver
+            // Customer::updateEmailIfChanged). Mismo criterio que el campo
+            // "contact_email" en Filament al crear/editar la orden.
+            $order->load('customer');
+            if ($order->customer) {
+                $order->customer->updateEmailIfChanged($request->contact_email);
+            }
+
             $parteConRelaciones = $parte->load(['workOrder.customer', 'technician']);
             $technician = $parteConRelaciones->technician;
             // Buscar supervisores y super_admins usando Spatie roles

@@ -35,16 +35,50 @@ class WorkOrderResource extends Resource
                     Forms\Components\Select::make('customer_id')
                         ->label('Cliente')
                         ->options(function () {
+                            // Bug real encontrado 2026-09-18: usaba $customer->name,
+                            // que no existe como atributo (Customer no tiene columna
+                            // "name") - para un cliente individual sin business_name
+                            // el label salia null y rompia el Select entero.
                             return \App\Models\Customer::query()
                                 ->get()
                                 ->mapWithKeys(fn ($customer) => [
-                                    $customer->id => $customer->business_name ?: $customer->name
+                                    $customer->id => $customer->business_name ?: $customer->full_name ?: "Cliente #{$customer->id}"
                                 ]);
                         })
                         ->searchable()
                         ->required()
                         ->live()
-                        ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('equipment_id', null)),
+                        ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            $set('equipment_id', null);
+                            $set('contact_email', $state ? \App\Models\Customer::find($state)?->email : null);
+                        }),
+
+                    // No es columna de work_orders - $fillable de WorkOrder no
+                    // la incluye, así que Create/EditRecord la ignora sola al
+                    // guardar el modelo (no hace falta dehydrated(false); de
+                    // hecho lo rompe: Filament borra el campo de
+                    // getState() si no está dehidratado, y afterCreate()/
+                    // afterSave() lo necesitan para mandar el email y
+                    // actualizar el cliente). Es el email al que se manda el
+                    // aviso de "orden creada" y, si se edita acá, el que queda
+                    // guardado como el email vigente del cliente. Pedido de
+                    // Hugo (2026-09-18): antes el email se mandaba a ciegas al
+                    // que hubiera en la ficha del cliente, sin mostrarlo ni
+                    // poder corregirlo - encontró un caso real donde casi se
+                    // manda a un email viejo/de prueba.
+                    Forms\Components\TextInput::make('contact_email')
+                        ->label('Email de contacto (aviso al cliente)')
+                        ->email()
+                        ->live()
+                        ->helperText(fn (Forms\Get $get) => $get('contact_email')
+                            ? 'Se le va a avisar a esta dirección. Si la cambiás, queda como el email del cliente de ahora en más.'
+                            : 'El cliente no tiene email cargado — no se le va a enviar ningún aviso. Podés cargarlo acá.')
+                        ->afterStateHydrated(function (Forms\Set $set, ?WorkOrder $record) {
+                            if ($record) {
+                                $set('contact_email', $record->customer?->email);
+                            }
+                        })
+                        ->columnSpanFull(),
 
                     Forms\Components\Select::make('equipment_id')
                         ->label('Equipo')

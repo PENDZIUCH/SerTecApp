@@ -41,6 +41,7 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
   const [precachedGeo, setPrecachedGeo] = useState<{lat: number; lng: number; accuracy: number} | null>(null);
   const [geoStatus, setGeoStatus] = useState<'pending' | 'ok' | 'failed'>('pending');
   const [parteRechazado, setParteRechazado] = useState<{supervisor_notes: string; diagnosis?: string; work_done?: string} | null>(null);
+  const [contactEmail, setContactEmail] = useState('');
 
   useEffect(() => {
     getGeoLocation().then(geo => {
@@ -61,6 +62,21 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
         if (data.data.diagnosis) setDiagnostico(data.data.diagnosis);
         if (data.data.work_done) setTrabajoRealizado(data.data.work_done);
       }
+    }).catch(() => {});
+  }, [orderId]);
+
+  // Email del cliente al que se le avisa al completar el parte - precargado
+  // desde la orden, editable acá mismo por si el técnico se entera en el
+  // lugar de que está mal/vacío (pedido de Hugo 2026-09-18, mismo criterio
+  // que el campo "contact_email" en Filament al crear/editar la orden).
+  useEffect(() => {
+    if (!orderId) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    fetch(`${API_URL}/api/v1/work-orders/${orderId}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+    }).then(r => r.json()).then(data => {
+      setContactEmail(data?.data?.customer?.email || data?.customer?.email || '');
     }).catch(() => {});
   }, [orderId]);
 
@@ -157,6 +173,7 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
       repuestos_usados: repuestos,
       firma_base64: firma,
       ...(geo && { lat: geo.lat, lng: geo.lng }),
+      ...(contactEmail.trim() && { contact_email: contactEmail.trim() }),
     };
 
     if (effectiveOnline) {
@@ -211,6 +228,18 @@ export function ParteForm({ orderId, onSuccess, onCancel }: ParteFormProps) {
           {geoStatus === 'failed' && (
             <span className="text-amber-700 dark:text-amber-400">⚠️ Sin ubicación disponible — el parte se guardará sin GPS</span>
           )}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Email del cliente (aviso al completar)</label>
+          <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
+            placeholder="cliente@ejemplo.com" />
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            {contactEmail.trim()
+              ? 'Se le va a avisar a esta dirección. Si la corregís, queda como el email vigente del cliente.'
+              : 'El cliente no tiene email cargado — no se le va a avisar. Podés cargarlo acá si te lo da en el lugar.'}
+          </p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">

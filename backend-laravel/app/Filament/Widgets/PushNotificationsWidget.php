@@ -19,6 +19,13 @@ class PushNotificationsWidget extends Widget
 
     protected static ?int $sort = -1;
 
+    // No lazy: los widgets de Filament son lazy por defecto (se renderizan
+    // en una segunda request de Livewire) y un @push('scripts') dentro de
+    // esa segunda request se pierde - el <script> con el componente Alpine
+    // nunca llega al navegador y el widget queda sin boton. Con lazy=false
+    // el widget sale en el render inicial de la pagina y el @push funciona.
+    protected static bool $isLazy = false;
+
     protected int|string|array $columnSpan = 1;
 
     public static function canView(): bool

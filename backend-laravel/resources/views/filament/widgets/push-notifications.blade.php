@@ -47,7 +47,9 @@
                     return outputArray;
                 }
 
-                document.addEventListener('alpine:init', () => {
+                // Si Alpine ya arrancó (script entregado tarde), registra ya;
+                // si no, espera a alpine:init. Cubre ambos órdenes de carga.
+                const registerPushWidget = () => {
                     Alpine.data('pushNotificationsWidget', ({ vapidPublicKey, token }) => ({
                         supported: false,
                         permission: 'default',
@@ -137,7 +139,13 @@
                             }
                         },
                     }));
-                });
+                };
+
+                if (window.Alpine) {
+                    registerPushWidget();
+                } else {
+                    document.addEventListener('alpine:init', registerPushWidget);
+                }
             </script>
         @endpush
     @endonce

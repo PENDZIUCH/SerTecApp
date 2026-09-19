@@ -46,6 +46,15 @@ _(vacío por ahora)_
 
 ## Resueltos
 
+- **Sesión 2026-09-18/19 — Agenda de punta a punta.** Motor genérico de
+  reservas (`Booking`), pantalla "Agenda" + "Armar Recorrido" en Filament,
+  "Mi Agenda" en la PWA (con check-in/check-out conectado a Crear Parte),
+  notificaciones push configurables (técnico + supervisor), y un chequeo de
+  email antes de avisar al cliente al crear/editar orden o completar un
+  parte (encontrado por Hugo probando en producción, casi se manda un aviso
+  de prueba a un cliente real). Detalle completo, bugs reales encontrados en
+  el camino y gotchas de testing en `CLAUDE.md`, sección "Sesión 2026-09-18/19
+  (continuación)". 113 tests en verde.
 - **Modo oscuro en las 6 pantallas de admin de la PWA** (commit `14fa9af`,
   2026-09-17) — mismo mapeo de colores ya probado en técnico, 296 clases
   `dark:` agregadas. Sin tocar lógica, build verificado antes de subir.

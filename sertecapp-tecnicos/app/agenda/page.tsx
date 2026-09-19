@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { API_URL } from '../../lib/config';
 import { useToast } from '../../hooks/useToast';
 import { Toast } from '../components/ui/Toast';
+import { ParteForm } from '../components/ParteForm';
 
 // "Mi Agenda" - pantalla del tecnico sobre el motor de agenda/reservas
 // generico (App\Models\Booking del backend). El endpoint /api/v1/bookings
@@ -77,6 +78,7 @@ export default function AgendaPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingOn, setActingOn] = useState<number | null>(null);
+  const [parteModalOrderId, setParteModalOrderId] = useState<string | null>(null);
   const { toasts, showToast, hideToast, updateToast } = useToast();
 
   const loadBookings = async () => {
@@ -232,6 +234,15 @@ export default function AgendaPage() {
           </p>
         )}
 
+        {booking.status === 'in_progress' && booking.subject_type?.endsWith('WorkOrder') && booking.subject_id && (
+          <button
+            onClick={() => setParteModalOrderId(String(booking.subject_id))}
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold py-2 rounded-lg transition-colors mb-2"
+          >
+            📝 Crear Parte
+          </button>
+        )}
+
         {(booking.status === 'scheduled' || booking.status === 'in_progress') && (
           <div className="flex gap-2 mt-2">
             {booking.status === 'scheduled' && (
@@ -318,6 +329,29 @@ export default function AgendaPage() {
           <Toast key={toast.id} message={toast.message} type={toast.type} onClose={() => hideToast(toast.id)} />
         ))}
       </div>
+
+      {/* Modal del Parte - misma orden de la visita, mismo formulario que /ordenes */}
+      {parteModalOrderId && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="bg-white dark:bg-gray-900 w-full md:max-w-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-screen md:max-h-[90vh]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Parte de Trabajo — Orden #{parteModalOrderId.padStart(4, '0')}</h2>
+              <button onClick={() => setParteModalOrderId(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <ParteForm
+                orderId={parteModalOrderId}
+                onSuccess={() => { setParteModalOrderId(null); loadBookings(); }}
+                onCancel={() => setParteModalOrderId(null)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
